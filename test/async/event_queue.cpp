@@ -7,7 +7,7 @@
 #include "async.h"
 #include <cassert>
 
-std::unique_ptr<cydui::async::event_queue_t> ev_q = test::async::make_event_queue();
+std::unique_ptr<cyd::fabric::async::event_queue_t> ev_q = test::async::make_event_queue();
 
 void setup() {
 }
@@ -72,8 +72,8 @@ TEST("Nominal Queue Swapping") (
 TEST("Nominal Listener Addition") (
   assert(ev_q->event_listeners.empty());
   
-  auto* listener = ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [](const cydui::async::ParsedEvent<TestEvent> &ev) { }
+  auto* listener = ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) { }
   ));
   
   assert(ev_q->event_listeners.size() == 1);
@@ -89,8 +89,8 @@ TEST("Nominal Listener Addition") (
 TEST("Nominal Listener Removal") (
   assert(ev_q->event_listeners.empty());
   
-  auto* listener = ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [](const cydui::async::ParsedEvent<TestEvent> &ev) { }
+  auto* listener = ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) { }
   ));
   
   assert(ev_q->event_listeners.size() == 1);
@@ -113,8 +113,8 @@ TEST("Nominal Event Dispatch") (
   bool processed = false;
   
   // Add a listener that will check the event is dispatched correctly
-  auto* listener = ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [&](const cydui::async::ParsedEvent<TestEvent> &ev) {
+  auto* listener = ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [&](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) {
       if (ev.data->test_data == "hello.") {
         processed = true;
       }
@@ -137,22 +137,22 @@ TEST("Nominal Event Dispatch Ordering") (
   int processed = 0;
   
   // Add listeners that will check events are dispatched correctly AND in order
-  ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [&](const cydui::async::ParsedEvent<TestEvent> &ev) {
+  ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [&](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) {
       if (ev.data->test_data == "hello 1") {
         if (processed == 0) processed++;
       }
     }
   ));
-  ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [&](const cydui::async::ParsedEvent<TestEvent> &ev) {
+  ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [&](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) {
       if (ev.data->test_data == "hello 2") {
         if (processed == 1) processed++;
       }
     }
   ));
-  ev_q->on_event<TestEvent>(cydui::async::Consumer<TestEvent>(
-    [&](const cydui::async::ParsedEvent<TestEvent> &ev) {
+  ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
+    [&](const cyd::fabric::async::ParsedEvent<TestEvent> &ev) {
       if (ev.data->test_data == "hello 3") {
         if (processed == 2) processed++;
       }

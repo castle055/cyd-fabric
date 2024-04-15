@@ -7,7 +7,7 @@ FILE(GLOB_RECURSE TEST_LIST
 foreach (test ${TEST_LIST})
     get_filename_component(TName ${test} NAME_WLE)
     add_executable(TEST_${TName} ${test})
-    target_link_libraries(TEST_${TName} PRIVATE cyd_ui)
+    target_link_libraries(TEST_${TName} PRIVATE cyd_fabric)
     target_include_directories(TEST_${TName} PRIVATE ${TEST_DIR}/common)
 
     file(STRINGS ${test} TLines)

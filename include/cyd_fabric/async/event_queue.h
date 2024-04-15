@@ -17,7 +17,7 @@ namespace cyd::fabric::async {
       
       std::unordered_map<
         str,
-        std::deque<std::shared_ptr<cydui::async::listener_t>>
+        std::deque<std::shared_ptr<cyd::fabric::async::listener_t>>
       > event_listeners {};
     private TEST_PUBLIC:
       std::mutex event_mutex;
@@ -25,7 +25,7 @@ namespace cyd::fabric::async {
     
     private TEST_PUBLIC: /// @name Raw Event Handling
       // ? This function creates a copy of the eve, thus increasing its ref count.
-      void push_event(const cydui::async::event_t &ev) {
+      void push_event(const cyd::fabric::async::event_t &ev) {
         {
           std::scoped_lock lk {event_mutex};
           front_event_queue.push(ev);

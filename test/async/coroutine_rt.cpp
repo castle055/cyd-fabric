@@ -3,7 +3,7 @@
 #include "async.h"
 #include <cassert>
 
-std::unique_ptr<cydui::async::coroutine_runtime_t> coro_rt = test::async::make_coroutine_runtime();
+std::unique_ptr<cyd::fabric::async::coroutine_runtime_t> coro_rt = test::async::make_coroutine_runtime();
 
 void setup() {
 }

@@ -5,13 +5,13 @@
 
 #include <chrono>
 
-std::unique_ptr<cydui::async::async_bus_t> bus = test::async::make_async_bus();
+std::unique_ptr<cyd::fabric::async::async_bus_t> bus = test::async::make_async_bus();
 
 void setup() {
 }
 
 TEST("Nominal Start-up") (
-  assert(bus->status == cydui::async::async_bus_status_e::RUNNING);
+  assert(bus->status == cyd::fabric::async::async_bus_status_e::RUNNING);
   assert(bus->thread != nullptr); return 0;
 )
 
@@ -26,17 +26,17 @@ TEST("Nominal Termination") (
     << " to join the bus thread."
     << std::endl;
   //assert((t1 - t0) < 300us);
-  assert(bus->status == cydui::async::async_bus_status_e::STOPPED);
+  assert(bus->status == cyd::fabric::async::async_bus_status_e::STOPPED);
   assert(bus->thread == nullptr);
   return 0;
 )
 
 TEST("Nominal Restart") (
   bus->thread_stop();
-  assert(bus->status == cydui::async::async_bus_status_e::STOPPED);
+  assert(bus->status == cyd::fabric::async::async_bus_status_e::STOPPED);
   assert(bus->thread == nullptr);
   bus->thread_start();
-  assert(bus->status == cydui::async::async_bus_status_e::RUNNING);
+  assert(bus->status == cyd::fabric::async::async_bus_status_e::RUNNING);
   assert(bus->thread != nullptr);
   return 0;
 )
