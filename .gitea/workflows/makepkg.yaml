@@ -1,0 +1,42 @@
+name: Makepkg Workflow
+run-name: ${{gitea.actor}} is building a package
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  makepkg:
+    runs-on: archlinux
+    steps:
+      - name: Set up system
+        run: |
+          pacman-key --init
+          pacman -Sy --noconfirm
+          pacman --noconfirm -S archlinux-keyring
+          pacman -Syu --noconfirm
+          pacman --noconfirm -S base-devel nodejs openssh git cmake ninja doxygen
+      - name: Set up SSH tunnel
+        env:
+          farpoint_key: ${{ secrets.FARPOINT_KEY }}
+        run: |
+          touch .ssh_key
+          chmod 600 .ssh_key
+          echo "$farpoint_key" >> .ssh_key
+          ssh -4 -i .ssh_key -NL 35400:localhost:35400 -o "StrictHostKeyChecking=no" -p 35500 farpoint@208.85.19.90 & sleep 3
+      - name: Prepare source code
+        run: |
+          git clone http://localhost:35400/castle/cyd-fabric.git
+          useradd farpoint
+          chown -R farpoint:farpoint ./
+      - name: Build Package
+        run: |
+          cd cyd-fabric
+          ls -lsah
+          su farpoint -c 'makepkg --skipinteg'
+          ls -lsah
+      - name: Deploy Package
+        run: |
+          ssh -4 -i .ssh_key -o "StrictHostKeyChecking=no" -p 35500 farpoint@208.85.19.90 'cd /mnt/space_port/pkgs/cpr-main && rm -vf cyd-fabric-*.pkg.tar.zst'
+          scp -4 -i .ssh_key -o 'StrictHostKeyChecking=no' -P 35500 cyd-ui/cyd-fabric-*.pkg.tar.zst farpoint@208.85.19.90:/mnt/space_port/pkgs/cpr-main/
+          ssh -4 -i .ssh_key -o "StrictHostKeyChecking=no" -p 35500 farpoint@208.85.19.90 'cd /mnt/space_port/pkgs/cpr-main && repo-add cpr-main.db.tar.gz $(ls *.pkg.tar.zst)'
