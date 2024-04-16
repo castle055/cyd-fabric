@@ -122,8 +122,8 @@ namespace cyd::fabric::async {
 // MACROS
 #define consumer [=](it)
 #define listen(EVENT, ...) \
-  on_event<EVENT>(cydui::async::Consumer<EVENT>( \
-      [&](const cydui::async::ParsedEvent<EVENT>& ev) __VA_ARGS__))
+  on_event<EVENT>(cyd::fabric::async::Consumer<EVENT>( \
+      [&](const cyd::fabric::async::ParsedEvent<EVENT>& ev) __VA_ARGS__))
 
 
 struct event_data_type_base_t {
