@@ -23,7 +23,9 @@ namespace cyd::fabric::type_aliases {
   using f64 = double;
 
   using str = std::string;
-  using vec = std::vector;
+
+  template<typename T>
+  using vec = std::vector<T>;
 }
 
 #endif //TYPE_ALIASES_H
