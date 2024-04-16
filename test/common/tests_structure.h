@@ -34,7 +34,7 @@ public:
 };
 
 #define TEST_ID case_
-#define TEST_ID_NUM __COUNTER__
+#define TEST_ID_NUM __LINE__
 #define CONCAT_IMPL(A, B) A##B
 #define CONCAT(A, B) CONCAT_IMPL(A, B)
 

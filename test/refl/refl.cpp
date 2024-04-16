@@ -5,6 +5,11 @@
 #include "common.h"
 
 #include "cyd_fabric/refl/refl.h"
+
+#include <ranges>
+#include <algorithm>
+
+#include "cyd_fabric/refl/match_type.h"
 using namespace cyd::fabric;
 
 
@@ -21,7 +26,7 @@ void print_obj(const refl<> &obj) {
     return ts;
   });
 
-    std::cout << "{" << std::endl;
+  std::cout << "{" << std::endl;
   for (auto &field: obj.fields()) {
     std::cout << "something" << std::endl;
   }
@@ -47,11 +52,94 @@ TEST("Nominal Start-up") (
   return 0;
 )
 
+//@formatter:on
+static void print_quantity(const std::string &label, int quantity) {
+  std::cout
+    << label
+    << ": "
+    << std::to_string(quantity / 100)
+    << "."
+    << std::to_string(quantity % 100)
+    << " €"
+    << std::endl;
+}
+
+//@formatter:off
+
 TEST("Nominal Start-up2") (
+  std::vector<int> prices{269,279,259,369,538,99,199,255,155,279,95,345,485,179,148,94,115};
+
+  int sum = 0;
+  for (int p: prices) {
+    sum += p;
+  }
+
+  print_quantity("TOTAL", sum);
+
+  sum = 0;
+  std::ranges::sort(prices);
+  for (int p: prices) {
+    sum += p;
+    print_quantity("", sum);
+  }
+
   return 0;
 )
 
+//@formatter:on
+
+
+template<typename VALUE>
+std::string print_type(VALUE &&val) {
+  std::string type;
+  match_type(val,
+             [&]<typename T>(std::vector<T> &i) { type = "vector " + print_type(i[0]); },
+             [&]<typename K, typename V>(std::unordered_map<K, V> &i) { type = "map"; },
+             [&](int &i) { type = "int"; },
+             [&](double &i) { type = "double"; },
+             [&](long &i) { type = "long"; },
+             [&](std::string &i) {
+               type = "std::string";
+               return 2.0f;
+             },
+             [&](float &i) { type = "float"; },
+             [&] { type = "default"; }
+  );
+  return type;
+}
+
+template<typename VALUE>
+std::string print_variant(VALUE &&val) {
+  std::string type;
+  match_variant(val,
+                [&]<typename T>(std::vector<T> &i) { type = "vector " + print_type(i[0]); },
+                [&]<typename K, typename V>(std::unordered_map<K, V> &i) { type = "map"; },
+                [&](int &i) { type = "int"; },
+                [&](double &i) { type = "double"; },
+                [&](long &i) { type = "long"; },
+                [&](std::string &i) {
+                  type = "std::string";
+                  return 2.0f;
+                },
+                [&](float &i) { type = "float"; },
+                [&] { type = "default"; }
+  );
+  return type;
+}
+
+//@formatter:off
+
 TEST("Nominal Start-up3") (
+  non_unique_variant_t<int, int, long> vb{};
+  vb = 12;
+  std::visit([&](auto&& v) {
+    assert(print_type(v) == "int");
+  },vb);
+  assert(print_variant(vb) == "int");
+
+  assert(print_type(123.23f) == "float");
+  assert(print_type(std::vector<int>{1, 2, 3}) == "vector int");
+  assert(print_type(std::vector<std::vector<int>>{{1, 2, 3}}) == "vector vector int");
   return 0;
 )
 

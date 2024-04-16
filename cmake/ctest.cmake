@@ -12,7 +12,7 @@ foreach (test ${TEST_LIST})
 
     file(STRINGS ${test} TLines)
     foreach (line ${TLines})
-        if ("${line}" MATCHES "TEST\\(\"(.*)\"\\)")
+        if ("${line}" MATCHES "^TEST\\(\"(.*)\"\\)")
             set(case ${CMAKE_MATCH_1})
             add_test(NAME "${TName} - ${case}" COMMAND $<TARGET_FILE:TEST_${TName}> "${case}")
         endif ()
