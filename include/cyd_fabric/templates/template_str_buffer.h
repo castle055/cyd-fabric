@@ -5,7 +5,7 @@
 #ifndef CYD_UI_TEMPLATE_STR_BUFFER_H
 #define CYD_UI_TEMPLATE_STR_BUFFER_H
 
-#include <string>
+#include "cyd_fabric/type_aliases.h"
 
 /**
  * Used in consteval literal operators implemented for strings, that way both the length and
