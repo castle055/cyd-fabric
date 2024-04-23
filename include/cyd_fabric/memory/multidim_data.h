@@ -106,18 +106,22 @@ struct md_buffer_t {
     size = new_size;
   }
   
-  E* get(std::array<size_t, D> coords) {
-    size_t index = compute_index(coords);
+  E* get(std::array<size_t, D> indices) {
+    size_t index = compute_index(indices);
     return &data[index];
   }
   
-  void set(std::array<size_t, D> coords, const E &value) {
-    size_t index = compute_index(coords);
+  void set(std::array<size_t, D> indices, const E &value) {
+    size_t index = compute_index(indices);
     if (index < compute_total_size(size)) {
       data[index] = value;
     }
   }
-
+  
+  template <typename ...C>
+  E& operator[](C... indices) {
+    return *get({indices...});
+  }
 private:
   size_t compute_total_size(std::array<size_t, D> s) const {
     size_t total_size = 1;
