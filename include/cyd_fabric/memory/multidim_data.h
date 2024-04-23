@@ -41,13 +41,13 @@ struct md_buffer_t {
     free(data);
   }
   
-  explicit md_buffer_t(const md_buffer_t& rhl) {
+  md_buffer_t(const md_buffer_t& rhl) {
     this->size = rhl.size;
     size_t total_size = compute_total_size(this->size);
     data = (E*) calloc(1, sizeof(E) * total_size);
     memcpy(data, rhl.data, sizeof(E) * total_size);
   }
-  explicit md_buffer_t(md_buffer_t&& rhl) {
+  md_buffer_t(md_buffer_t&& rhl) {
     this->size = rhl.size;
     data = rhl.data;
     for (auto &item: rhl.size) {
