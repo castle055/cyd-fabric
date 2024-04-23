@@ -37,6 +37,10 @@ struct md_buffer_t {
     size_t total_size = compute_total_size(this->size);
     data = (E*) calloc(1, sizeof(E) * total_size);
   }
+  explicit md_buffer_t(std::initializer_list<size_t> size): size(size) {
+    size_t total_size = compute_total_size(this->size);
+    data = (E*) calloc(1, sizeof(E) * total_size);
+  }
   ~md_buffer_t() {
     free(data);
   }
