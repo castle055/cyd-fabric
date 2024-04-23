@@ -122,6 +122,11 @@ struct md_buffer_t {
   E& operator[](C... indices) {
     return *get({indices...});
   }
+  template <typename ...C>
+  const E& operator[](C... indices) const {
+    size_t index = compute_index({indices...});
+    return data[index];
+  }
 private:
   size_t compute_total_size(std::array<size_t, D> s) const {
     size_t total_size = 1;
