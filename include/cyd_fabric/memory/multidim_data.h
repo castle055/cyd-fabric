@@ -1,6 +1,20 @@
-//
-// Created by castle on 10/6/23.
-//
+/*!
+ ! Copyright (c) 2024, Víctor Castillo Agüero.
+ ! This file is part of the Cydonia project.
+ !
+ ! This library is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This library is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this library.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef CYD_UI_STD_MULTIDIM_DATA_H
 #define CYD_UI_STD_MULTIDIM_DATA_H
@@ -23,9 +37,42 @@ struct md_buffer_t {
     size_t total_size = compute_total_size(this->size);
     data = (E*) calloc(1, sizeof(E) * total_size);
   }
-  
   ~md_buffer_t() {
     free(data);
+  }
+  
+  explicit md_buffer_t(const md_buffer_t& rhl) {
+    this->size = rhl.size;
+    size_t total_size = compute_total_size(this->size);
+    data = (E*) calloc(1, sizeof(E) * total_size);
+    memcpy(data, rhl.data, sizeof(E) * total_size);
+  }
+  explicit md_buffer_t(md_buffer_t&& rhl) {
+    this->size = rhl.size;
+    data = rhl.data;
+    for (auto &item: rhl.size) {
+      item = 0;
+    }
+    rhl.data = nullptr;
+  }
+  md_buffer_t& operator=(const md_buffer_t& rhl) {
+    auto copy = md_buffer_t{rhl};
+    this->swap(copy);
+    return *this;
+  }
+  md_buffer_t& operator=(md_buffer_t&& rhl) {
+    auto copy = md_buffer_t{std::forward<md_buffer_t&&>(rhl)};
+    this->swap(copy);
+    return *this;
+  }
+  
+  void swap(md_buffer_t& other) {
+    auto tmp_size = other.size;
+    auto tmp_data = other.data;
+    other.size = this->size;
+    other.data = this->data;
+    this->size = tmp_size;
+    this->data = tmp_data;
   }
   
   void resize(std::array<size_t, D> new_size) {
