@@ -37,7 +37,13 @@ struct md_buffer_t {
     size_t total_size = compute_total_size(this->size);
     data = (E*) calloc(1, sizeof(E) * total_size);
   }
-  explicit md_buffer_t(std::initializer_list<size_t> size): size(size) {
+  template <std::size_t ...sizes>
+  explicit md_buffer_t(): size{sizes...} {
+    size_t total_size = compute_total_size(this->size);
+    data = (E*) calloc(1, sizeof(E) * total_size);
+  }
+  template <typename ...S>
+  explicit md_buffer_t(S... sizes): size{sizes...} {
     size_t total_size = compute_total_size(this->size);
     data = (E*) calloc(1, sizeof(E) * total_size);
   }
