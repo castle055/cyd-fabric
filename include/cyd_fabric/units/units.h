@@ -178,6 +178,8 @@ struct NAME {                                      \
 #include "reduce_rules.h"
 
 #include "scales/distance_scale.h"
+#include "scales/mass_scale.h"
+#include "scales/volume_scale.h"
 #include "scales/angle_scale.h"
 #include "scales/time_scale.h"
 
