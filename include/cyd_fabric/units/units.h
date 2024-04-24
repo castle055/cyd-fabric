@@ -49,8 +49,8 @@ namespace cyd::fabric::units {
     template <typename T>
     using factor = ratio<
       T,
-      (int)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator),
-      (int)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator)
+      (long)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator),
+      (long)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator)
     >;
     
     UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")
@@ -64,8 +64,8 @@ namespace cyd::fabric::units {
     template <typename T>
     using factor = ratio<
       T,
-      (int)(Product1::template factor<T>::denominator * (... * Products::template factor<T>::denominator)),
-      (int)(Product1::template factor<T>::numerator * (... * Products::template factor<T>::numerator))
+      (long)(Product1::template factor<T>::denominator * (... * Products::template factor<T>::denominator)),
+      (long)(Product1::template factor<T>::numerator * (... * Products::template factor<T>::numerator))
     >;
     
     UNIT_SYMBOL(Product1::symbol() + (... + ("*" + Products::symbol())))
