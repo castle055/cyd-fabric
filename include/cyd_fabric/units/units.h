@@ -101,12 +101,16 @@ namespace cyd::fabric::units {
       return {this->value * rhl.value};
     }
     
-    quantity_t operator+(const quantity_t& rhl) const {
-      return {this->value + rhl.value};
+    template <typename U1, typename T1>
+    requires (SameScale<U,U1>)
+    quantity_t<typename U::reduce,T1> operator+(const quantity_t<U1,T1>& rhl) const {
+      return {this->value + rhl.template as<U>().value};
     }
     
-    quantity_t operator-(const quantity_t& rhl) const {
-      return {this->value - rhl.value};
+    template <typename U1, typename T1>
+    requires (SameScale<U,U1>)
+    quantity_t<typename U::reduce,T1> operator-(const quantity_t<U1,T1>& rhl) const {
+      return {this->value - rhl.template as<U>().value};
     }
     
     quantity_t(T value_): value(value_) {}
