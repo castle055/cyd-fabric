@@ -41,19 +41,11 @@ namespace cyd::fabric::units {
   struct frac<N, no_unit> {
     using reduce = typename N::reduce;
   };
-  template <typename N>
-  struct frac<no_unit, N> {
-    using reduce = typename N::reduce;
-  };
   
   
   
   template <typename P>
   struct mul<P, no_unit> {
-    using reduce = typename P::reduce;
-  };
-  template <typename P>
-  struct mul<no_unit, P> {
     using reduce = typename P::reduce;
   };
   template <typename P1, typename P2>
