@@ -101,6 +101,13 @@ namespace cyd::fabric::units {
       return {this->value * rhl.value};
     }
     
+    quantity_t(T value_): value(value_) {}
+    quantity_t(const quantity_t& other) {
+      this->value = other.value;
+    }
+    quantity_t(quantity_t&& other) noexcept {
+      this->value = other.value;
+    }
     quantity_t& operator=(const quantity_t& rhl) {
       this->value = rhl.value;
       return *this;
