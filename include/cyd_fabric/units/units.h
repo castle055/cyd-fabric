@@ -178,36 +178,37 @@ struct NAME {                                      \
 #include "reduce_rules.h"
 
 #include "scales/distance_scale.h"
+#include "scales/angle_scale.h"
 #include "scales/time_scale.h"
 
 #include "scales/speed_scale.h"
 
 #include <iostream>
 
-using namespace cyd::fabric::units;
-
-time::quantity auto compute_eta(
-  const distance::quantity auto& distance,
-  const speed::quantity auto& speed
-) {
-  return distance / speed;
-}
-
-void asdfasdfasdf() {
-  quantity_t<distance::meters, double> distance{123000};
-  quantity_t<speed::m_s, double> speed{20};
-  quantity_t<time::seconds, double> ETA = compute_eta(distance, speed);
-  std::cout << compute_eta(distance, speed) << std::endl;
-  std::cout << distance*distance.as<distance::kilometers>() << std::endl;
-  
-  std::cout
-    << speed << std::endl
-    << (speed.as<frac<distance::kilometers,time::seconds>>() * ETA) << std::endl
-  ;
-  
+//using namespace cyd::fabric::units;
+//
+//time::quantity auto compute_eta(
+//  const distance::quantity auto& distance,
+//  const speed::quantity auto& speed
+//) {
+//  return distance / speed;
+//}
+//
+//void asdfasdfasdf() {
+//  quantity_t<distance::meters, double> distance{123000};
+//  quantity_t<speed::m_s, double> speed{20};
+//  quantity_t<time::seconds, double> ETA = compute_eta(distance, speed);
+//  std::cout << compute_eta(distance, speed) << std::endl;
+//  std::cout << distance*distance.as<distance::kilometers>() << std::endl;
+//
+//  std::cout
+//    << speed << std::endl
+//    << (speed.as<frac<distance::kilometers,time::seconds>>() * ETA) << std::endl
+//  ;
+//
 //  quantity_t dkm = distance.as<kilometers>();
 //  quantity_t ds = distance.as<seconds>();
-  
-  quantity_t<speed::m_s, double> avg_speed = distance / ETA;
-}
+//
+//  quantity_t<speed::m_s, double> avg_speed = distance / ETA;
+//}
 #endif //CYD_FABRIC_UNITS_H
