@@ -1,4 +1,20 @@
-// Copyright (c) 2024, Victor Castillo, All rights reserved.
+/*!
+ ! Copyright (c) 2024, Víctor Castillo Agüero.
+ ! This file is part of the Cydonia project.
+ !
+ ! This library is free software: you can redistribute it and/or modify
+ ! it under the terms of the GNU General Public License as published by
+ ! the Free Software Foundation, either version 3 of the License, or
+ ! (at your option) any later version.
+ !
+ ! This library is distributed in the hope that it will be useful,
+ ! but WITHOUT ANY WARRANTY; without even the implied warranty of
+ ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ ! GNU General Public License for more details.
+ !
+ ! You should have received a copy of the GNU General Public License
+ ! along with this library.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef CYD_FABRIC_UNITS_H
 #define CYD_FABRIC_UNITS_H
@@ -84,6 +100,16 @@ namespace cyd::fabric::units {
     quantity_t<typename mul<U,U1>::reduce,T> operator*(const quantity_t<U1,T>& rhl) const {
       return {this->value * rhl.value};
     }
+    
+    quantity_t& operator=(const quantity_t& rhl) {
+      this->value = rhl.value;
+      return *this;
+    }
+    quantity_t& operator=(quantity_t&& rhl) noexcept {
+      this->value = rhl.value;
+      return *this;
+    }
+    
     
     template <typename U1>
     requires SameScale<U,U1> || Convertible<U,U1,T>
