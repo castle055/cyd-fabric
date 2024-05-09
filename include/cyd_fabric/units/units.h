@@ -189,7 +189,10 @@ namespace NAME {         \
 namespace NAME __VA_ARGS__
 #define UNIT(NAME, SYMBOL, FACTOR_NUM, FACTOR_DEN) \
 struct NAME {                                      \
+ _Pragma("GCC diagnostic push")                    \
+ _Pragma("GCC diagnostic ignored \"-Wchanges-meaning\"")\
   using scale = scale;                             \
+ _Pragma("GCC diagnostic pop")                     \
   template <typename T>                            \
   using factor = cyd::fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>; \
   using reduce = NAME;                             \
@@ -206,7 +209,7 @@ struct NAME {                                      \
 
 #include "scales/speed_scale.h"
 
-#include <iostream>
+// #include <iostream>
 
 //using namespace cyd::fabric::units;
 //
