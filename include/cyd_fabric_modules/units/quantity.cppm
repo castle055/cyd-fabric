@@ -9,8 +9,8 @@ import :concepts;
 export import :frac;
 export import :mul;
 
-namespace cyd::fabric::units {
-  export template<typename U, typename T>
+export namespace cyd::fabric::units {
+  template<typename U, typename T>
   struct quantity_t {
     using unit      = U;
     using data_type = T;

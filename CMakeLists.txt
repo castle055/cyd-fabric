@@ -39,7 +39,7 @@ pkg_check_modules(CAIROMM-1.16 REQUIRED cairomm-1.16)
 include_directories(${CAIROMM-1.16_INCLUDE_DIRS})
 
 
-FILE(GLOB_RECURSE SRC_LIST
+FILE(GLOB_RECURSE SRC_LIST CONFIGURE_DEPENDS
         ${INCLUDE_DIR}/*.h
         ${INCLUDE_DIR}/*.hpp
         ${INCLUDE_DIR}/*.cpp
@@ -47,7 +47,7 @@ FILE(GLOB_RECURSE SRC_LIST
         ${SOURCE_DIR}/*.hpp
         ${SOURCE_DIR}/*.cpp
 )
-FILE(GLOB_RECURSE SRC_MOD_LIST
+FILE(GLOB_RECURSE SRC_MOD_LIST CONFIGURE_DEPENDS
         ${INCLUDE_DIR}/*.cppm
         ${SOURCE_DIR}/*.cppm
 )
