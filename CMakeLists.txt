@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.29)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(cyd_fabric)
 
@@ -47,9 +47,21 @@ FILE(GLOB_RECURSE SRC_LIST
         ${SOURCE_DIR}/*.hpp
         ${SOURCE_DIR}/*.cpp
 )
+FILE(GLOB_RECURSE SRC_MOD_LIST
+        ${INCLUDE_DIR}/*.cppm
+        ${SOURCE_DIR}/*.cppm
+)
 
 add_library(cyd_fabric)
-target_sources(cyd_fabric PUBLIC ${SRC_LIST})
+target_sources(cyd_fabric
+        PUBLIC ${SRC_LIST}
+        PUBLIC
+        FILE_SET cxx_modules
+        #        FILE_SET "${APP_NAME}_modfiles"
+        TYPE CXX_MODULES
+        BASE_DIRS ${SOURCE_DIR} ${INCLUDE_DIR}
+        FILES ${SRC_MOD_LIST}
+)
 target_link_libraries(cyd_fabric
         PRIVATE
         X11 Xft Xrender fontconfig
