@@ -9,4 +9,7 @@
 
 #define UNIT_SYMBOL(...) static constexpr inline std::string symbol() noexcept { return (__VA_ARGS__); }
 
+namespace cyd::fabric::units {
+}
+
 #endif //UNITS_PREFACE_H
