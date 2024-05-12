@@ -1,6 +1,5 @@
-//
-// Created by castle on 4/27/24.
-//
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef PACKS_H
 #define PACKS_H
@@ -59,13 +58,8 @@ namespace cyd::fabric::ts::packs {
 
 
   //! append
-  template<typename What, template <typename...> typename From, typename... Args>
-  struct append<What, From<Args...>> {
-    using type = From<Args..., What>;
-  };
-
   template<typename... What>
-  struct append<What...> {
+  struct append {
     template<typename... T>
     struct to;
 
@@ -75,15 +69,15 @@ namespace cyd::fabric::ts::packs {
     };
   };
 
-
-  //! prepend
   template<typename What, template <typename...> typename From, typename... Args>
-  struct prepend<What, From<Args...>> {
-    using type = From<What, Args...>;
+  struct append<What, From<Args...>> {
+    using type = From<Args..., What>;
   };
 
+
+  //! prepend
   template<typename... What>
-  struct prepend<What...> {
+  struct prepend {
     template<typename... T>
     struct to;
 
@@ -91,6 +85,11 @@ namespace cyd::fabric::ts::packs {
     struct to<Pack<Args...>> {
       using type = Pack<What..., Args...>;
     };
+  };
+
+  template<typename What, template <typename...> typename From, typename... Args>
+  struct prepend<What, From<Args...>> {
+    using type = From<What, Args...>;
   };
 
 

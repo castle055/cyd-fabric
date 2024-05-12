@@ -32,6 +32,21 @@ export namespace cyd::fabric::units {
     UNIT_SYMBOL("(" + Numerator::symbol() + "*" + Denominator1::symbol() + ")/(" + Denominator2::symbol() + ")")
   };
 
+  template<typename Denominator, typename... Numerators>
+    requires ts::packs::Contains<Denominator, Numerators...>
+  struct frac<mul<Numerators...>, Denominator> {
+    using reduce = typename ts::packs::take_one_out<Denominator, mul<Numerators...>>::type::reduce;
+    UNIT_SYMBOL("(" + mul<Numerators...>::symbol() + ")/(" + Denominator::symbol() + ")")
+  };
+
+  template<typename Numerator, typename... Denominators>
+    requires ts::packs::Contains<Numerator, Denominators...>
+  struct frac<Numerator, mul<Denominators...>> {
+    using reduce = typename frac<no_unit, typename ts::packs::take_one_out<
+                                   Numerator, mul<Denominators...>>::type::reduce>::reduce;
+    UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + mul<Denominators...>::symbol() + ")")
+  };
+
   template<typename Numerator>
   struct frac<Numerator, Numerator> {
     using reduce = no_unit;
@@ -50,6 +65,12 @@ export namespace cyd::fabric::units {
     UNIT_SYMBOL("(" + N::symbol() + ")/(no unit)")
   };
 
+
+  template<typename P>
+  struct mul<P> {
+    using reduce = typename P::reduce;
+    UNIT_SYMBOL("(" + P::symbol() + ")")
+  };
 
   template<>
   struct mul<no_unit, no_unit> {

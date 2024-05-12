@@ -85,6 +85,7 @@ TEST("Unit reduction")(
   assert_unit   <frac<no_unit, seconds>>                            ::reduces_to<frac<no_unit, seconds>>();
   assert_unit   <frac<no_unit, no_unit>>                            ::reduces_to<no_unit>();
   assert_unit   <mul<no_unit, no_unit>>                             ::reduces_to<no_unit>();
+  assert_unit   <mul<meters>>                                       ::reduces_to<meters>();
   assert_unit   <mul<meters, no_unit>>                              ::reduces_to<meters>();
   assert_unit   <mul<no_unit, meters>>                              ::reduces_to<meters>();
   assert_unit   <mul<meters, frac<grams, meters>>>                  ::reduces_to<grams>();
@@ -92,13 +93,9 @@ TEST("Unit reduction")(
   assert_unit   <mul<meters, frac<grams, seconds>>>                 ::reduces_to<frac<mul<meters, grams>, seconds>>();
   assert_unit   <mul<frac<grams, seconds>, meters>>                 ::reduces_to<frac<mul<meters, grams>, seconds>>();
   assert_unit   <frac<mul<meters, meters>, mul<meters, meters>>>    ::reduces_to<no_unit>();
+  assert_unit   <frac<mul<meters, meters>, meters>>                 ::reduces_to<meters>();
+  assert_unit   <frac<meters, mul<meters, meters>>>                 ::reduces_to<frac<no_unit, meters>>();
 
-  quantity_t<mul<meters, meters>, float> asd;
-  quantity_t<frac<mul<meters, meters>,mul<meters, meters>>::reduce, float> fdsa = asd/asd;
-  quantity_t<no_unit, float> fsa = asd/asd;
-
-  fdsa;
-  fsa;
   return 0;
 )
 //@formatter:on

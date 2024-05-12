@@ -1,3 +1,6 @@
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 //
 // Created by castle on 5/11/24.
 //
@@ -6,9 +9,12 @@ module;
 export module fabric.units:mul;
 export import fabric.templates.ratio;
 
-namespace cyd::fabric::units {
-  export template<typename Product1, typename... Products>
-  struct mul {
+export namespace cyd::fabric::units {
+  template<typename...>
+  struct mul;
+
+  template<typename Product1, typename... Products>
+  struct mul<Product1, Products...> {
     using scale  = mul<typename Product1::scale, typename Products::scale...>;
     using reduce = mul<typename Product1::reduce, typename Products::reduce...>;
 
