@@ -39,7 +39,7 @@ namespace cyd::fabric::async {
       async_handle<promise_type> h_;
       
       async(async_handle<promise_type> &&h__, std::shared_future<Ret> &future__)
-        : h_(h__), future_(future__) { }
+        : future_(future__), h_(h__) { }
       
       struct promise_type {
         std::promise<Ret> value_promise_ {};

@@ -1,6 +1,5 @@
-//
-// Created by castle on 5/11/24.
-//
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 module;
 #include <cyd_fabric_modules/headers/units_preface.h>
 #include <typeinfo>

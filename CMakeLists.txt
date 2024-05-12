@@ -19,14 +19,14 @@ compiler_flags(
 
         "-Wliteral-suffix"
 
-        "-Wno-macro-redefine"
         "-Wno-unused-function"
         "-Wno-unused-parameter"
         "-Wno-unused-variable"
         "-Wno-unused-value"
         "-Wno-unused-but-set-variable"
         "-Wno-missing-field-initializers"
-        #"-Wno-error=unused"
+        "-Wno-error=unused"
+        "-Wno-unused-local-typedefs"
 
         "-Wno-unknown-pragmas"
 )
