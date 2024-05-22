@@ -96,6 +96,7 @@ target_link_libraries(cyd_fabric
         libstdc++exp.a
         std
 )
+include_directories(cyd_fabric PUBLIC ${CAIROMM-1.16_INCLUDE_DIRS})
 
 # Build Tests
 include(cmake/ctest.cmake)
