@@ -93,6 +93,7 @@ TEST("Unit reduction") {
   assert_unit   <frac<mul<meters, meters>, mul<meters, meters>>>    ::reduces_to<no_unit>();
   assert_unit   <frac<mul<meters, meters>, meters>>                 ::reduces_to<meters>();
   assert_unit   <frac<meters, mul<meters, meters>>>                 ::reduces_to<frac<no_unit, meters>>();
+  assert_unit   <mul<frac<meters, seconds>, frac<meters, seconds>>> ::reduces_to<frac<mul<meters, meters>, mul<seconds, seconds>>>();
 //@formatter:on
 
   // mechanics::newton::second_law

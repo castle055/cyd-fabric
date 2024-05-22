@@ -7,6 +7,7 @@
 module;
 #include <cyd_fabric_modules/headers/macros/units.h>
 export module fabric.units:reduce_rules;
+export import std;
 export import fabric.ts.packs;
 import :preface;
 import :frac;
@@ -113,5 +114,11 @@ export namespace cyd::fabric::units {
   struct mul<P2, frac<P1, N>> {
     using reduce = typename frac<mul<typename P2::reduce, typename P1::reduce>, typename N::reduce>::reduce;
     UNIT_SYMBOL("(" + P2::symbol() + ")*((" + P1::symbol() + ")/(" + N::symbol() + "))")
+  };
+
+  template<typename P1, typename P2, typename D1, typename D2>
+  struct mul<frac<P1, D1>, frac<P2, D2>> {
+    using reduce = typename frac<mul<typename P1::reduce, typename P2::reduce>, mul<typename D1::reduce, typename D2::reduce>>::reduce;
+    UNIT_SYMBOL("((" + P1::symbol() + ")/(" + D1::symbol() + "))*((" + P2::symbol() + ")/(" + D2::symbol() + "))")
   };
 }
