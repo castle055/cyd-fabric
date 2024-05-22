@@ -6,10 +6,9 @@
  *!
  */
 
-module;
-#include <cyd_fabric_modules/headers/units_preface.h>
-
 export module fabric.units;
+
+export import std;
 
 export import :preface;
 export import :concepts;
