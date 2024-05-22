@@ -1,4 +1,5 @@
-// Copyright (c) 2024, Victor Castillo, All rights reserved.
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 //
 // Created by castle on 4/3/24.
@@ -13,7 +14,8 @@ void setup() {
 }
 
 EVENT(TestEvent, {std::string test_data;})
-TEST("Nominal Initialization") (
+
+TEST("Nominal Initialization") {
 /// Just poke everything
   assert(ev_q->front_event_queue.empty());
   assert(ev_q->back_event_queue.empty());
@@ -24,8 +26,8 @@ TEST("Nominal Initialization") (
   ev_q->listeners_mutex.unlock();
   
   return 0;
-)
-TEST("Nominal Event Emission") (
+}
+TEST("Nominal Event Emission") {
   assert(ev_q->front_event_queue.empty());
   ev_q->emit<TestEvent>({.test_data = "hello"});
   assert(ev_q->front_event_queue.size() == 1);
@@ -33,8 +35,8 @@ TEST("Nominal Event Emission") (
   assert(ev_q->front_event_queue.front()->parse<TestEvent>().data->test_data == "hello");
   
   return 0;
-)
-TEST("Nominal Multiple Event Emission") (
+}
+TEST("Nominal Multiple Event Emission") {
   std::vector<std::string> test_data {
     "hello 1",
     "hello 2",
@@ -54,8 +56,8 @@ TEST("Nominal Multiple Event Emission") (
   assert(ev_q->front_event_queue.front()->parse<TestEvent>().data->test_data == test_data[0]);
   
   return 0;
-)
-TEST("Nominal Queue Swapping") (
+}
+TEST("Nominal Queue Swapping") {
   assert(ev_q->front_event_queue.empty());
   assert(ev_q->back_event_queue.empty());
   ev_q->emit<TestEvent>({.test_data = "hello"});
@@ -68,8 +70,8 @@ TEST("Nominal Queue Swapping") (
   assert(ev_q->back_event_queue.size() == 1);
   
   return 0;
-)
-TEST("Nominal Listener Addition") (
+}
+TEST("Nominal Listener Addition") {
   assert(ev_q->event_listeners.empty());
   
   auto* listener = ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
@@ -85,8 +87,8 @@ TEST("Nominal Listener Addition") (
   assert(ev_q->event_listeners[TestEvent::type].front()->is_active());
   
   return 0;
-)
-TEST("Nominal Listener Removal") (
+}
+TEST("Nominal Listener Removal") {
   assert(ev_q->event_listeners.empty());
   
   auto* listener = ev_q->on_event<TestEvent>(cyd::fabric::async::Consumer<TestEvent>(
@@ -108,8 +110,8 @@ TEST("Nominal Listener Removal") (
   assert(ev_q->event_listeners[TestEvent::type].empty());
   
   return 0;
-)
-TEST("Nominal Event Dispatch") (
+}
+TEST("Nominal Event Dispatch") {
   bool processed = false;
   
   // Add a listener that will check the event is dispatched correctly
@@ -131,9 +133,9 @@ TEST("Nominal Event Dispatch") (
   assert(processed);
   
   return 0;
-)
+}
 
-TEST("Nominal Event Dispatch Ordering") (
+TEST("Nominal Event Dispatch Ordering") {
   int processed = 0;
   
   // Add listeners that will check events are dispatched correctly AND in order
@@ -171,4 +173,4 @@ TEST("Nominal Event Dispatch Ordering") (
   assert(processed == 3);
   
   return 0;
-)
+}

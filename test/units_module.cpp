@@ -56,27 +56,27 @@ struct assert_unit {
 void setup() {
 }
 
-//@formatter:off
-TEST("Nominal Start-up")(
+TEST("Nominal Start-up") {
   return 0;
-)
+}
 
-TEST("Factors")(
+TEST("Factors") {
   using namespace cyd::fabric::units;
 
-  quantity_t<distance::meters, double> d1{10};
-  quantity_t<distance::kilometers, double> d2{1};
+  quantity_t<distance::meters, double> d1 {10};
+  quantity_t<distance::kilometers, double> d2 {1};
 
   std::cout << "d1: " << (d1) << std::endl;
   std::cout << "d1: " << (d1.as<distance::kilometers>()) << std::endl;
   std::cout << "d2: " << (d2) << std::endl;
   std::cout << "d2: " << (d2.as<distance::meters>()) << std::endl;
-  std::cout << " *: " << (d1*d2) << std::endl;
+  std::cout << " *: " << (d1 * d2) << std::endl;
 
   return 0;
-)
+}
 
-TEST("Unit reduction")(
+TEST("Unit reduction") {
+//@formatter:off
   assert_unit   <frac<meters, frac<meters, seconds>>>               ::reduces_to<seconds>();
   assert_unit   <frac<meters, frac<seconds, meters>>>               ::reduces_to<frac<mul<meters,meters>,seconds>>();
   assert_unit   <frac<frac<meters, seconds>, seconds>>              ::reduces_to<frac<meters, mul<seconds, seconds>>>();
@@ -95,7 +95,17 @@ TEST("Unit reduction")(
   assert_unit   <frac<mul<meters, meters>, mul<meters, meters>>>    ::reduces_to<no_unit>();
   assert_unit   <frac<mul<meters, meters>, meters>>                 ::reduces_to<meters>();
   assert_unit   <frac<meters, mul<meters, meters>>>                 ::reduces_to<frac<no_unit, meters>>();
+//@formatter:on
+
+  // mechanics::newton::second_law
+  //   ::isolate<mechanics::newton::second_law::acceleration>
+  //   ::substitute<mechanics::newton::second_law::force>(1.0)
+  //   ::substitute<mechanics::newton::second_law::mass>(1.0);
+  //
+  // using second_law = mechanics::newton::second_law;
+  // second_law::isolate<second_law::acceleration>
+  //           ::substitute<second_law::force>(1.0)
+  //           ::substitute<second_law::mass>(1.0);
 
   return 0;
-)
-//@formatter:on
+}

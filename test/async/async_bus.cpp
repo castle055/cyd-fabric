@@ -10,12 +10,12 @@ std::unique_ptr<cyd::fabric::async::async_bus_t> bus = test::async::make_async_b
 void setup() {
 }
 
-TEST("Nominal Start-up") (
+TEST("Nominal Start-up") {
   assert(bus->status == cyd::fabric::async::async_bus_status_e::RUNNING);
   assert(bus->thread != nullptr); return 0;
-)
+}
 
-TEST("Nominal Termination") (
+TEST("Nominal Termination") {
   auto t0 = std::chrono::system_clock::now();
   bus->thread_stop();
   auto t1 = std::chrono::system_clock::now();
@@ -29,9 +29,9 @@ TEST("Nominal Termination") (
   assert(bus->status == cyd::fabric::async::async_bus_status_e::STOPPED);
   assert(bus->thread == nullptr);
   return 0;
-)
+}
 
-TEST("Nominal Restart") (
+TEST("Nominal Restart") {
   bus->thread_stop();
   assert(bus->status == cyd::fabric::async::async_bus_status_e::STOPPED);
   assert(bus->thread == nullptr);
@@ -39,4 +39,4 @@ TEST("Nominal Restart") (
   assert(bus->status == cyd::fabric::async::async_bus_status_e::RUNNING);
   assert(bus->thread != nullptr);
   return 0;
-)
+}
