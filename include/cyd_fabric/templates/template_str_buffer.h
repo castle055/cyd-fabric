@@ -20,9 +20,7 @@
  */
 template<std::size_t length>
 struct template_str_buffer {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "google-explicit-constructor"
-  
+
   // Needs to be implicit if it's to work with literal operators
   consteval template_str_buffer(const char(&str)[length]) noexcept {
     for (std::size_t i = 0; i < length; ++i) {
@@ -30,8 +28,6 @@ struct template_str_buffer {
     }
   }
 
-#pragma clang diagnostic pop
-  
   char data[length] = {0};
   constexpr static size_t count = length - sizeof(char);
 };
