@@ -5,17 +5,9 @@
  *! \brief 
  *!
  */
-module;
-#include <string>
-#include <memory>
-#include <chrono>
-#include <filesystem>
-#include <regex>
-#include <format>
-#include <string_view>
-#include <sstream>
-
 export module fabric.logging.target_base;
+import std;
+
 export import fabric.logging.entry;
 
 export namespace LOG {
@@ -52,3 +44,7 @@ export namespace LOG {
     requires std::derived_from<T, target_base>;
   };
 }
+
+export namespace LOG::TARGETS {
+  /* empty */
+};

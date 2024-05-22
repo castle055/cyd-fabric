@@ -5,8 +5,8 @@
  *! \brief 
  *!
  */
-
-export module fabric.logging:log_levels;
+export module fabric.logging.levels;
+import std;
 
 export namespace LOG {
   struct LEVEL {
