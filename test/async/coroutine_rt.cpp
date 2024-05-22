@@ -12,21 +12,21 @@ async<int> test_coroutine(int n = 0) {
   co_return n * 2;
 }
 
-TEST("Nominal Initialization") (
+TEST("Nominal Initialization") {
 /// Just poke everything
   assert(coro_rt->coroutine_queue.empty());
   assert(coro_rt->queue_mtx.try_lock());
   coro_rt->queue_mtx.unlock();
   
   return 0;
-)
-TEST("Nominal Function Coroutine Queuing") (
+}
+TEST("Nominal Function Coroutine Queuing") {
   coro_rt->coroutine_enqueue(test_coroutine, 10);
   assert(coro_rt->coroutine_queue.size() == 1);
   
   return 0;
-)
-TEST("Nominal Lambda Coroutine Queuing") (
+}
+TEST("Nominal Lambda Coroutine Queuing") {
   coro_rt->coroutine_enqueue(
     [](int n) -> async<int> {
       co_return n * 2;
@@ -35,16 +35,16 @@ TEST("Nominal Lambda Coroutine Queuing") (
   assert(coro_rt->coroutine_queue.size() == 1);
   
   return 0;
-)
-TEST("Nominal Pre-Existing Coroutine Queuing") (
+}
+TEST("Nominal Pre-Existing Coroutine Queuing") {
   async<int> a = test_coroutine();
   async<int> b = coro_rt->coroutine_enqueue(a);
   assert(coro_rt->coroutine_queue.size() == 1);
   assert(a.h_.address() == b.h_.address());
   
   return 0;
-)
-TEST("Nominal Coroutine Handling") (
+}
+TEST("Nominal Coroutine Handling") {
   async<int> a = coro_rt->coroutine_enqueue(test_coroutine, 10);
   assert(coro_rt->coroutine_queue.size() == 1);
   assert(!a.h_.done());
@@ -55,6 +55,6 @@ TEST("Nominal Coroutine Handling") (
   assert(a.h_.promise().future_.get() == 20);
   
   return 0;
-)
+}
 
 // [TODO] Tests for co_await

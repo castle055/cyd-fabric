@@ -1,24 +1,10 @@
-/*!
- ! Copyright (c) 2024, Víctor Castillo Agüero.
- ! This file is part of the Cydonia project.
- !
- ! This library is free software: you can redistribute it and/or modify
- ! it under the terms of the GNU General Public License as published by
- ! the Free Software Foundation, either version 3 of the License, or
- ! (at your option) any later version.
- !
- ! This library is distributed in the hope that it will be useful,
- ! but WITHOUT ANY WARRANTY; without even the implied warranty of
- ! MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- ! GNU General Public License for more details.
- !
- ! You should have received a copy of the GNU General Public License
- ! along with this library.  If not, see <https://www.gnu.org/licenses/>.
- */
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CYD_UI_TESTS_STRUCTURE_H
 #define CYD_UI_TESTS_STRUCTURE_H
 
+#include <source_location>
 #include <unordered_map>
 #include <string>
 #include <functional>
@@ -38,14 +24,21 @@ test_case_list_t CASES { };
 class test_case_t {
 public:
   std::string name;
+  std::source_location location;
   std::function<int()> body = []() { return 1; };
 
-  test_case_t(const std::string &name_, std::function<int()> body_): name(name_), body(std::move(body_)) {
+  test_case_t(
+    const std::string &name_,
+    const std::source_location location_,
+    std::function<int()> body_
+  )
+    : name(name_), location(location_), body(std::move(body_)) {
     CASES.test_cases.emplace(std::pair<std::string, test_case_t &> {name_, *this});
   }
 };
 
 #define TEST_ID case_
+#define TEST_BLOCK_ID case_block_
 #define TEST_ID_NUM __LINE__
 #define CONCAT_IMPL(A, B) A##B
 #define CONCAT(A, B) CONCAT_IMPL(A, B)
@@ -54,10 +47,17 @@ public:
   __VA_ARGS__                          \
 }};
 
-#define TEST(NAME) \
-test_case_t CONCAT(TEST_ID,TEST_ID_NUM) { \
-  NAME,            \
-  __TEST_BODY_DECL__
+#define __TEST_DECL(NAME, ID) \
+int CONCAT(TEST_BLOCK_ID,ID)(); \
+test_case_t CONCAT(TEST_ID, ID) { \
+  NAME, \
+  std::source_location::current(), \
+  []() { return CONCAT(TEST_BLOCK_ID,ID)(); } \
+}; \
+int CONCAT(TEST_BLOCK_ID,ID)()
+
+
+#define TEST(NAME) __TEST_DECL(NAME, TEST_ID_NUM)
 
 void setup();
 
@@ -65,8 +65,16 @@ int main(int argc, char* argv[]) {
   if (argc != 2) return 1;
   std::string name {argv[1]};
 
+  const auto &test_case = CASES.test_cases.at(name);
+  std::cout
+    << "Test location: "
+    << test_case.location.file_name()
+    << ":"
+    << test_case.location.line()
+    << std::endl;
+  std::cout << "Running setup function" << std::endl;
   setup();
-  return CASES.test_cases.at(name).body();
+  return test_case.body();
 }
 
 #endif //CYD_UI_TESTS_STRUCTURE_H

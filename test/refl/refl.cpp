@@ -49,16 +49,14 @@ void print_obj(const refl<> &obj) {
   std::cout << "}" << std::endl;
 }
 
-//@formatter:off
-
-TEST("Nominal Start-up") (
-  test_struct ts{};
-  test_struct tt{};
+TEST("Nominal Start-up") {
+  test_struct ts { };
+  test_struct tt { };
   tt.i_val = 2;
   tt.d_val = 2.45;
 
   ts.d_val = tt.d_val;
-  ts.i_val = 100*tt.i_val / 3;
+  ts.i_val = 100 * tt.i_val / 3;
 
   print_obj(ts);
 
@@ -66,9 +64,8 @@ TEST("Nominal Start-up") (
     field;
   }
   return 0;
-)
+}
 
-//@formatter:on
 static void print_quantity(const std::string &label, int quantity) {
   std::cout
     << label
@@ -80,10 +77,8 @@ static void print_quantity(const std::string &label, int quantity) {
     << std::endl;
 }
 
-//@formatter:off
-
-TEST("Nominal Start-up2") (
-  std::vector<int> prices{269,279,259,369,538,99,199,255,155,279,95,345,485,179,148,94,115};
+TEST("Nominal Start-up2") {
+  std::vector<int> prices {269, 279, 259, 369, 538, 99, 199, 255, 155, 279, 95, 345, 485, 179, 148, 94, 115};
 
   int sum = 0;
   for (int p: prices) {
@@ -91,18 +86,16 @@ TEST("Nominal Start-up2") (
   }
 
   print_quantity("TOTAL", sum);
-  auto rs = std::ranges::sort(prices, std::ranges::greater{}, [](auto&& it){ return 1/it; });
-  sum = 0;
-  for (const int& p: prices) {
+  auto rs = std::ranges::sort(prices, std::ranges::greater { }, [](auto &&it) { return 1 / it; });
+  sum     = 0;
+  for (const int &p: prices) {
     sum += p;
     // print_quantity("", sum);
     print_quantity("", p);
   }
 
   return 0;
-)
-
-//@formatter:on
+}
 
 
 template<typename VALUE>
@@ -143,20 +136,16 @@ std::string print_variant(VALUE &&val) {
   return type;
 }
 
-//@formatter:off
-
-TEST("Nominal Start-up3") (
-  non_unique_variant_t<int, int, long> vb{};
+TEST("Nominal Start-up3") {
+  non_unique_variant_t<int, int, long> vb { };
   vb = 12;
-  std::visit([&](auto&& v) {
+  std::visit([&](auto &&v) {
     assert(print_type(v) == "int");
-  },vb);
+  }, vb);
   assert(print_variant(vb) == "int");
 
   assert(print_type(123.23f) == "float");
   assert(print_type(std::vector<int>{1, 2, 3}) == "vector int");
   assert(print_type(std::vector<std::vector<int>>{{1, 2, 3}}) == "vector vector int");
   return 0;
-)
-
-//@formatter:on
+}
