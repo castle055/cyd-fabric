@@ -6,9 +6,6 @@
  *!
  */
 
-module;
-#include <cyd_fabric_modules/headers/units_preface.h>
-
 export module fabric.units:concepts;
 import :preface;
 

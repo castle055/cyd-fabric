@@ -1,7 +1,5 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
-#include <cyd_fabric_modules/headers/units_includes.h>
-
 #include "common.h"
 #include <cassert>
 

@@ -1,9 +1,8 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
-module;
-#include <cyd_fabric_modules/headers/units_preface.h>
-#include <typeinfo>
+
 export module fabric.units:quantity;
+export import std;
 import :preface;
 import :concepts;
 export import :frac;

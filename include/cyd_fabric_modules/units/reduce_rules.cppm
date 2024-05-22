@@ -5,8 +5,9 @@
 // Created by castle on 5/11/24.
 //
 module;
-#include <cyd_fabric_modules/headers/units_preface.h>
+#include <cyd_fabric_modules/headers/macros/units.h>
 export module fabric.units:reduce_rules;
+export import fabric.ts.packs;
 import :preface;
 import :frac;
 import :mul;
