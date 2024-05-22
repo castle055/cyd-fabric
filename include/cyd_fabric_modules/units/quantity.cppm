@@ -4,6 +4,7 @@ module;
 #include <cyd_fabric_modules/headers/units_preface.h>
 #include <typeinfo>
 export module fabric.units:quantity;
+import :preface;
 import :concepts;
 export import :frac;
 export import :mul;
