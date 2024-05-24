@@ -1,21 +1,53 @@
-cmake_minimum_required(VERSION 3.29.20240518 FATAL_ERROR)
-#set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "0e5b6991-d74f-4b3d-a41c-cf096e0b2508")
-#set(CMAKE_CXX_MODULE_STD 1)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Copyright (c) 2024, Víctor Castillo Agüero.
+# SPDX-License-Identifier: GPL-3.0-or-later
 
+################################################################################
+#[[                            PROJECT OVERVIEW                              ]]#
+################################################################################
+#                                                                              #
+#    CMAKE STRUCTURE:                                                          #
+#      - Project setup                                                         #
+#      - Configure dependencies:                                               #
+#          - STD Module                                                        #
+#          - Cairomm-1.16                                                      #
+#      - Configure CYD_FABRIC                                                  #
+#      - Configure tests                                                       #
+#      - Configure Doxygen documentation                                       #
+#                                                                              #
+################################################################################
+
+################################################################################
+#[[                              PROJECT SETUP                               ]]#
+################################################################################
+if (CMAKE_SOURCE_DIR STREQUAL ${CMAKE_BINARY_DIR})
+    message(FATAL_ERROR "Prevented in-tree build. Create a `build/` directory and call `cmake ..` from there.")
+endif ()
+
+# Select 'Release' build type by default.
+# Has to be done before the call to `project()`.
+# Use `-DCMAKE_BUILD_TYPE=` to override this.
+set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
+
+cmake_minimum_required(VERSION 3.29.20240518 FATAL_ERROR)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 project(cyd_fabric LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules-ts -std=c++23")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 message("CMAKE VERSION: " ${CMAKE_VERSION})
 message("COMPILER: " ${CMAKE_CXX_COMPILER})
 
-SET(TEST_DIR ${CMAKE_CURRENT_LIST_DIR}/test)
-SET(INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
-SET(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
+SET(FABRIC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(FABRIC_TEST_DIR ${FABRIC_DIR}/test)
+SET(FABRIC_INCLUDE_DIR ${FABRIC_DIR}/include)
+SET(FABRIC_SOURCE_DIR ${FABRIC_DIR}/src)
+SET(FABRIC_CMAKE_DIR ${FABRIC_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${FABRIC_CMAKE_DIR}/Modules)
+
 
 include(cmake/compiler_flags.cmake)
 compiler_flags(
@@ -40,7 +72,14 @@ compiler_flags(
 #        "-freport-bug"
 )
 
+################################################################################
+#[[                          CONFIGURE DEPENDENCIES                          ]]#
+################################################################################
+include(ExternalProject)
 include(FetchContent)
+find_package(PkgConfig)
+
+#[[                           CONFIGURE STD MODULE                           ]]#
 FetchContent_Declare(
   std
   URL "file:///usr/lib/c++/v1/"
@@ -49,99 +88,63 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(std)
 
-include_directories(${INCLUDE_DIR})
+#[[                          CONFIGURE CAIROMM-1.16                          ]]#
+find_package(CAIROMM)
+#pkg_check_modules(CAIROMM-1.16 REQUIRED cairomm-1.16)
+#include_directories(${CAIROMM-1.16_INCLUDE_DIRS})
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(CAIROMM-1.16 REQUIRED cairomm-1.16)
-include_directories(${CAIROMM-1.16_INCLUDE_DIRS})
 
+################################################################################
+#[[                           CONFIGURE CYD FABRIC                           ]]#
+################################################################################
 
 FILE(GLOB_RECURSE SRC_LIST CONFIGURE_DEPENDS
-        ${INCLUDE_DIR}/*.h
-        ${INCLUDE_DIR}/*.hpp
-        ${INCLUDE_DIR}/*.cpp
-        ${SOURCE_DIR}/*.h
-        ${SOURCE_DIR}/*.hpp
-        ${SOURCE_DIR}/*.cpp
+        ${FABRIC_INCLUDE_DIR}/*.h
+        ${FABRIC_INCLUDE_DIR}/*.hpp
+        ${FABRIC_INCLUDE_DIR}/*.cpp
+        ${FABRIC_SOURCE_DIR}/*.h
+        ${FABRIC_SOURCE_DIR}/*.hpp
+        ${FABRIC_SOURCE_DIR}/*.cpp
 )
 FILE(GLOB_RECURSE SRC_MOD_LIST CONFIGURE_DEPENDS
-        ${INCLUDE_DIR}/*.cppm
-        ${SOURCE_DIR}/*.cppm
+        ${FABRIC_INCLUDE_DIR}/*.cppm
+        ${FABRIC_SOURCE_DIR}/*.cppm
 )
 
-#message(${CMAKE_CXX_COMPILER})
-#message(FLAGS: ${CMAKE_CXX_FLAGS})
-#add_custom_target(std_modules
-#        COMMAND ${CMAKE_CXX_COMPILER} -fmodules-ts -std=gnu++23 -fno-module-lazy -g -c -xc++-user-header string
-#)
-#include_directories(SYSTEM build/debug/gcm.cache)
-
 add_library(cyd_fabric)
+target_include_directories(cyd_fabric PUBLIC ${FABRIC_INCLUDE_DIR})
 target_compile_features(cyd_fabric PUBLIC cxx_std_23)
-add_dependencies(cyd_fabric std)
 target_sources(cyd_fabric
         PUBLIC ${SRC_LIST}
         PUBLIC
         FILE_SET cxx_modules
         #        FILE_SET "${APP_NAME}_modfiles"
         TYPE CXX_MODULES
-        BASE_DIRS ${SOURCE_DIR} ${INCLUDE_DIR}
+        BASE_DIRS ${FABRIC_SOURCE_DIR} ${FABRIC_INCLUDE_DIR}
         FILES ${SRC_MOD_LIST}
 )
 target_link_libraries(cyd_fabric
         PUBLIC
         X11 Xft Xrender fontconfig
-        ${CAIROMM-1.16_LIBRARIES}
+#        ${CAIROMM-1.16_LIBRARIES}
+        cairomm
         yaml-cpp jpeg
         libstdc++exp.a
         std
 )
 
-# Build Tests
-include(cmake/ctest.cmake)
+################################################################################
+#[[                             CONFIGURE TESTS                              ]]#
+################################################################################
+include(${FABRIC_CMAKE_DIR}/ctest.cmake)
+target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR})
 
-# Build Doxygen Documentation
-include(cmake/docs.cmake)
-
-# Build Local tests
-if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/local_test)
-    FILE(GLOB_RECURSE TEST_LIST
-            ${CMAKE_CURRENT_LIST_DIR}/local_test/*.h
-            ${CMAKE_CURRENT_LIST_DIR}/local_test/*.hpp
-            ${CMAKE_CURRENT_LIST_DIR}/local_test/*.cpp
-            #        ${TEST_DIR}/**/*.*
-    )
-    #FILE(GLOB_RECURSE TEST_MOD_LIST
-    #        ${TEST_DIR}/*.cppm
-    #        ${TEST_DIR}/**/*.*
-    #)
-    add_executable(cyd_fabric_test ${TEST_LIST})
-    #target_sources(cyd_fabric_test
-    #        PRIVATE FILE_SET CXX_MODULES FILES ${TEST_MOD_LIST})
-    target_include_directories(cyd_fabric_test PRIVATE ${CMAKE_CURRENT_LIST_DIR}/local_test)
-    target_link_libraries(cyd_fabric_test
-            PRIVATE cyd_fabric
-    )
-endif ()
-
-if (CMAKE_BUILD_TYPE MATCHES "Release")
-    add_custom_command(TARGET cyd_fabric POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory dist
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-    )
-    add_custom_command(TARGET cyd_fabric POST_BUILD
-            COMMAND cp -v
-            $<TARGET_FILE:cyd_fabric>
-            ${CMAKE_CURRENT_LIST_DIR}/dist/
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-            COMMENT "Copying binary into distribution directory..."
-    )
-    add_custom_command(TARGET cyd_fabric POST_BUILD
-            COMMAND cp -rv
-            ${INCLUDE_DIR}
-            ${CMAKE_CURRENT_LIST_DIR}/dist/
-            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-            COMMENT "Copying header files into distribution directory..."
-    )
-endif ()
+################################################################################
+#[[                     CONFIGURE DOXYGEN DOCUMENTATION                      ]]#
+################################################################################
+include(${FABRIC_CMAKE_DIR}/docs.cmake)
+target_configure_doxygen(cyd_fabric
+        DOXYFILE ${FABRIC_DIR}/Doxyfile
+        BASE_DIR ${FABRIC_DIR}
+)
 
