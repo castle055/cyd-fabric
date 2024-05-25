@@ -1,10 +1,6 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 5/22/24.
-//
-
 #ifndef FABRIC_UNITS_MACROS_H
 #define FABRIC_UNITS_MACROS_H
 

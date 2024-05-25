@@ -1,4 +1,5 @@
-// Copyright (c) 2024, Victor Castillo, All rights reserved.
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CYD_FABRIC_RATIO_H
 #define CYD_FABRIC_RATIO_H

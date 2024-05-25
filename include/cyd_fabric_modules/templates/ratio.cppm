@@ -1,10 +1,6 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 5/11/24.
-//
-
 export module fabric.templates.ratio;
 
 namespace cyd::fabric {

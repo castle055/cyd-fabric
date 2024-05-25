@@ -5,8 +5,15 @@
 ################################################################################
 #[[                            PROJECT OVERVIEW                              ]]#
 ################################################################################
+#                                                                CYD-FABRIC    #
 #                                                                              #
-#    CMAKE STRUCTURE:                                                          #
+#[[  AVAILABLE OPTIONS:                                                      ]]#
+#      - FABRIC_BUILD_TESTS ............................. DEV_MODE only, ON    #
+#            whether or not tests should be built                              #
+#      - FABRIC_BUILD_DOCS .............................. DEV_MODE only, ON    #
+#            whether or not the documentation should be built                  #
+#                                                                              #
+#[[  CMAKE STRUCTURE:                                                        ]]#
 #      - Project setup                                                         #
 #      - Configure dependencies:                                               #
 #          - STD Module   (system)                                             #
@@ -34,8 +41,8 @@ endif ()
 
 #[[                         DEVELOPER MODE OPTIONS                           ]]#
 if(FABRIC_DEV_MODE)
-    option(FABRIC_BUILD_TESTS "whether or not tests should be build" ON)
-    option(FABRIC_BUILD_DOCS "whether or not the documentation should be build" ON)
+    option(FABRIC_BUILD_TESTS "whether or not tests should be built" ON)
+    option(FABRIC_BUILD_DOCS "whether or not the documentation should be built" ON)
 endif ()
 
 # Select 'Release' build type by default.
