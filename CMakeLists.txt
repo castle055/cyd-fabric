@@ -1,6 +1,7 @@
 # Copyright (c) 2024, Víctor Castillo Agüero.
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+
 ################################################################################
 #[[                            PROJECT OVERVIEW                              ]]#
 ################################################################################
@@ -8,19 +9,33 @@
 #    CMAKE STRUCTURE:                                                          #
 #      - Project setup                                                         #
 #      - Configure dependencies:                                               #
-#          - STD Module                                                        #
-#          - Cairomm-1.16                                                      #
+#          - STD Module   (system)                                             #
+#          - Cairomm      (1.18.0)                                             #
 #      - Configure CYD_FABRIC                                                  #
 #      - Configure tests                                                       #
 #      - Configure Doxygen documentation                                       #
 #                                                                              #
 ################################################################################
 
+
 ################################################################################
 #[[                              PROJECT SETUP                               ]]#
 ################################################################################
+#[[                          PREVENT IN-TREE BUILD                           ]]#
 if (CMAKE_SOURCE_DIR STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Prevented in-tree build. Create a `build/` directory and call `cmake ..` from there.")
+endif ()
+
+#[[                          CHECK DEVELOPER MODE                            ]]#
+set(FABRIC_DEV_MODE OFF)
+if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(FABRIC_DEV_MODE ON)
+endif ()
+
+#[[                         DEVELOPER MODE OPTIONS                           ]]#
+if(FABRIC_DEV_MODE)
+    option(FABRIC_BUILD_TESTS "whether or not tests should be build" ON)
+    option(FABRIC_BUILD_DOCS "whether or not the documentation should be build" ON)
 endif ()
 
 # Select 'Release' build type by default.
@@ -72,6 +87,7 @@ compiler_flags(
 #        "-freport-bug"
 )
 
+
 ################################################################################
 #[[                          CONFIGURE DEPENDENCIES                          ]]#
 ################################################################################
@@ -90,13 +106,12 @@ FetchContent_MakeAvailable(std)
 
 #[[                          CONFIGURE CAIROMM-1.16                          ]]#
 find_package(CAIROMM)
-#pkg_check_modules(CAIROMM-1.16 REQUIRED cairomm-1.16)
-#include_directories(${CAIROMM-1.16_INCLUDE_DIRS})
 
 
 ################################################################################
 #[[                           CONFIGURE CYD FABRIC                           ]]#
 ################################################################################
+add_library(cyd_fabric)
 
 FILE(GLOB_RECURSE SRC_LIST CONFIGURE_DEPENDS
         ${FABRIC_INCLUDE_DIR}/*.h
@@ -111,7 +126,6 @@ FILE(GLOB_RECURSE SRC_MOD_LIST CONFIGURE_DEPENDS
         ${FABRIC_SOURCE_DIR}/*.cppm
 )
 
-add_library(cyd_fabric)
 target_include_directories(cyd_fabric PUBLIC ${FABRIC_INCLUDE_DIR})
 target_compile_features(cyd_fabric PUBLIC cxx_std_23)
 target_sources(cyd_fabric
@@ -126,25 +140,32 @@ target_sources(cyd_fabric
 target_link_libraries(cyd_fabric
         PUBLIC
         X11 Xft Xrender fontconfig
-#        ${CAIROMM-1.16_LIBRARIES}
         cairomm
         yaml-cpp jpeg
         libstdc++exp.a
         std
 )
 
+
 ################################################################################
 #[[                             CONFIGURE TESTS                              ]]#
 ################################################################################
 include(${FABRIC_CMAKE_DIR}/ctest.cmake)
-target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR})
+
+if (FABRIC_DEV_MODE AND FABRIC_BUILD_TESTS)
+    target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR})
+endif ()
+
 
 ################################################################################
 #[[                     CONFIGURE DOXYGEN DOCUMENTATION                      ]]#
 ################################################################################
 include(${FABRIC_CMAKE_DIR}/docs.cmake)
-target_configure_doxygen(cyd_fabric
-        DOXYFILE ${FABRIC_DIR}/Doxyfile
-        BASE_DIR ${FABRIC_DIR}
-)
+
+if (FABRIC_DEV_MODE AND FABRIC_BUILD_DOCS)
+    target_configure_doxygen(cyd_fabric
+            DOXYFILE ${FABRIC_DIR}/Doxyfile
+            BASE_DIR ${FABRIC_DIR}
+    )
+endif ()
 
