@@ -4,12 +4,12 @@
 #ifndef FABRIC_UNITS_MACROS_H
 #define FABRIC_UNITS_MACROS_H
 
-#define SCALE(NAME, ...) \
+#define SCALE(NAME) \
 namespace NAME {         \
   struct scale {};       \
   template <typename Q> concept quantity = Quantity<Q, scale>; \
 }                        \
-namespace NAME __VA_ARGS__
+namespace NAME
 
 #define UNIT_SYMBOL(...) static constexpr inline std::string symbol() noexcept { return (__VA_ARGS__); }
 
@@ -20,6 +20,15 @@ struct NAME {                                      \
   using factor = cyd::fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>; \
   using reduce = NAME;                             \
   UNIT_SYMBOL(SYMBOL)                              \
+};
+
+#define UNIT_IN_SCALE(SCALE, NAME, SYMBOL, FACTOR_NUM, FACTOR_DEN) \
+struct NAME {                                                      \
+  using scale = SCALE;                                             \
+  template <typename T>                                            \
+  using factor = cyd::fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>;    \
+  using reduce = NAME;                                             \
+  UNIT_SYMBOL(SYMBOL)                                              \
 };
 
 #endif //FABRIC_UNITS_MACROS_H

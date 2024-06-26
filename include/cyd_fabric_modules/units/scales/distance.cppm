@@ -7,7 +7,7 @@ export module fabric.units.scales:distance;
 export import fabric.units;
 
 export namespace cyd::fabric::units {
-  SCALE(distance, {
+  SCALE(distance) {
     UNIT(meters, "m", 1,1)
 
     //! Metric
@@ -31,5 +31,5 @@ export namespace cyd::fabric::units {
 
     UNIT(fathom, "ftm", 463,250)
     UNIT(nautical_mile, "nmi", 1852,1)
-  })
+  }
 }

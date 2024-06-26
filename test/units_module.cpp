@@ -1,5 +1,9 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
+
+#define CAIRO_HAS_PDF_SURFACE true
+#include <cairomm/cairomm.h>
+
 #include "common.h"
 #include <cassert>
 
@@ -94,6 +98,9 @@ TEST("Unit reduction") {
   assert_unit   <frac<mul<meters, meters>, meters>>                 ::reduces_to<meters>();
   assert_unit   <frac<meters, mul<meters, meters>>>                 ::reduces_to<frac<no_unit, meters>>();
   assert_unit   <mul<frac<meters, seconds>, frac<meters, seconds>>> ::reduces_to<frac<mul<meters, meters>, mul<seconds, seconds>>>();
+  assert_unit   <frac<mul<meters, mul<meters, seconds>, seconds>, mul<seconds, seconds, meters, seconds>>>
+                                                                    ::reduces_to<frac<meters, seconds>>();
+  assert_unit   <mul<mul<meters,seconds>,kilograms>>                ::reduces_to<mul<meters,seconds, kilograms>>();
 //@formatter:on
 
   // mechanics::newton::second_law
@@ -106,5 +113,42 @@ TEST("Unit reduction") {
   //           ::substitute<second_law::force>(1.0)
   //           ::substitute<second_law::mass>(1.0);
 
+  return 0;
+}
+
+TEST("Unit conversion") {
+  quantity_t<frac<meters,seconds>, double> vel = 100.0;
+  std::cout << "v: " << vel << std::endl;
+  std::cout << "v: " << vel.as<frac<kilometers, hours>>() << std::endl;
+
+  quantity_t<mul<meters,seconds>, double> something = 100.0;
+  std::cout << "s: " << something << std::endl;
+  std::cout << "s: " << something.as<mul<kilometers, hours>>() << std::endl;
+  return 0;
+}
+
+TEST("Quantity comparison") {
+  quantity_t<frac<meters,seconds>, int> vel = 100.0;
+  quantity_t<frac<meters,seconds>, int> vel1 = 150.0;
+  quantity_t<frac<meters,hours>, int> vel2 = 150.0;
+  quantity_t<mul<meters,seconds>, int> something = 100.0;
+
+  if (vel < vel1) {}
+  if (vel > vel1) {}
+  if (vel <= vel1) {}
+  if (vel >= vel1) {}
+  if (vel == vel1) {}
+  if (vel != vel1) {}
+  if (vel < vel2) {}
+  if (vel > vel2) {}
+  if (vel <= vel2) {}
+  if (vel >= vel2) {}
+  if (vel == vel2) {}
+  if (vel != vel2) {}
+  // if (vel < something) {}
+  // if (vel == something) {}
+
+  // std::cout << "s: " << something << std::endl;
+  // std::cout << "s: " << something.as<mul<kilometers, hours>>() << std::endl;
   return 0;
 }

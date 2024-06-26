@@ -3,9 +3,24 @@
 
 export module fabric.units.scales;
 
-export import :distance;
-export import :angle;
+//* SI base units
 export import :time;
-export import :speed;
+export import :distance;
 export import :mass;
+// electric current
+export import :temperature;
+// substance quantity
+// light intensity
+
+export import :angle;
+
+//* Derived units
+export import :speed;
 export import :volume;
+
+/* todo
+
+  - Add derived scales
+  - Add derived units
+
+*/

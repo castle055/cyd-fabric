@@ -8,6 +8,7 @@ module;
 #include <cyd_fabric_modules/headers/macros/units.h>
 export module fabric.units:frac;
 import std;
+import fabric.ts.packs;
 export import fabric.templates.ratio;
 
 namespace cyd::fabric::units {
@@ -19,10 +20,14 @@ namespace cyd::fabric::units {
     template<typename T>
     using factor = ratio<
       T,
-      (long)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator),
-      (long)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator)
+      (long)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator),
+      (long)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator)
     >;
 
     UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")
   };
+
+  template <typename F>
+  using is_frac = ts::packs::is_type<frac, F>;
+
 }

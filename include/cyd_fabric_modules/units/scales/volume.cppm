@@ -7,7 +7,7 @@ export module fabric.units.scales:volume;
 export import fabric.units;
 
 export namespace cyd::fabric::units {
-  SCALE(volume, {
+  SCALE(volume) {
     UNIT(liters, "L", 1,1)
 
     //! Metric
@@ -22,5 +22,5 @@ export namespace cyd::fabric::units {
     UNIT(kiloliters, "kL", 1000, 1)
     UNIT(megaliters, "ML", 1000000, 1)
 
-  })
+  }
 }

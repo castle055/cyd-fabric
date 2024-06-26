@@ -7,7 +7,7 @@ export module fabric.units.scales:time;
 export import fabric.units;
 
 export namespace cyd::fabric::units {
-  SCALE(time, {
+  SCALE(time) {
     UNIT(seconds, "s", 1,1)
 
     UNIT(milliseconds, "ms", 1,1000)
@@ -22,5 +22,5 @@ export namespace cyd::fabric::units {
     UNIT(decades, "decades", years::factor<T>::numerator*10,1)
     UNIT(centuries, "centuries", decades::factor<T>::numerator*10,1)
     UNIT(millennia, "millennia", centuries::factor<T>::numerator*10,1)
-  })
+  }
 }

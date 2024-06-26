@@ -16,7 +16,33 @@ export namespace cyd::fabric::units {
 
     T value { };
 
+
     template<typename U1>
+      requires SameScale<U, U1>
+    auto operator<=>(const quantity_t<U1, T>& rhl) const {
+      return this->value <=> rhl.template as<U>().value;
+    }
+
+    template<typename U1>
+      requires SameScale<U, U1>
+    bool operator<(const quantity_t<U1, T>& rhl) const {
+      return this->value == rhl.template as<U>().value;
+    }
+
+    template<typename U1>
+      requires SameScale<U, U1>
+    bool operator==(const quantity_t<U1, T>& rhl) const {
+      return this->value == rhl.template as<U>().value;
+    }
+
+    template<typename U1>
+      requires SameScale<U, U1>
+    quantity_t<typename frac<U, U>::reduce, T> operator/(const quantity_t<U1, T> &rhl) const {
+      return {this->value / rhl.template as<U>().value};
+    }
+
+    template<typename U1>
+      requires (!SameScale<U, U1>)
     quantity_t<typename frac<U, U1>::reduce, T> operator/(const quantity_t<U1, T> &rhl) const {
       return {this->value / rhl.value};
     }

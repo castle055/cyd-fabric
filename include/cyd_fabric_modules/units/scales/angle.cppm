@@ -7,10 +7,8 @@ export module fabric.units.scales:angle;
 export import fabric.units;
 
 export namespace cyd::fabric::units {
-  SCALE(angle, {
+  SCALE(angle) {
     UNIT(degrees, "deg", 1,1)
-
-    //! Metric
     UNIT(radians, "rad", 180*10000000000000000,31415926535893238)
-  })
+  }
 }
