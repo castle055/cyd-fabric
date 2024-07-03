@@ -1,5 +1,9 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
+module;
+
+//! Syntax sugar - Apply reduce
+#define R(...) reduce<__VA_ARGS__>
 
 export module fabric.units:quantity;
 export import std;
@@ -37,38 +41,38 @@ export namespace cyd::fabric::units {
 
     template<typename U1>
       requires SameScale<U, U1>
-    quantity_t<typename frac<U, U>::reduce, T> operator/(const quantity_t<U1, T> &rhl) const {
-      return {this->value / rhl.template as<U>().value};
+    quantity_t<R(frac<R(U), R(U)>), T> operator/(const quantity_t<U1, T> &rhl) const {
+      return {this->value / rhl.template as<R(U)>().value};
     }
 
     template<typename U1>
       requires (!SameScale<U, U1>)
-    quantity_t<typename frac<U, U1>::reduce, T> operator/(const quantity_t<U1, T> &rhl) const {
+    quantity_t<R(frac<R(U), R(U1)>), T> operator/(const quantity_t<U1, T> &rhl) const {
       return {this->value / rhl.value};
     }
 
     template<typename U1>
       requires SameScale<U, U1>
-    quantity_t<typename mul<U, U>::reduce, T> operator*(const quantity_t<U1, T> &rhl) const {
-      return {this->value * rhl.template as<U>().value};
+    quantity_t<R(mul<R(U), R(U)>), T> operator*(const quantity_t<U1, T> &rhl) const {
+      return {this->value * rhl.template as<R(U)>().value};
     }
 
     template<typename U1>
       requires (!SameScale<U, U1>)
-    quantity_t<typename mul<U, U1>::reduce, T> operator*(const quantity_t<U1, T> &rhl) const {
+    quantity_t<R(mul<R(U), R(U1)>), T> operator*(const quantity_t<U1, T> &rhl) const {
       return {this->value * rhl.value};
     }
 
     template<typename U1, typename T1>
       requires (SameScale<U, U1>)
-    quantity_t<typename U::reduce, T1> operator+(const quantity_t<U1, T1> &rhl) const {
-      return {this->value + rhl.template as<U>().value};
+    quantity_t<R(U), T1> operator+(const quantity_t<U1, T1> &rhl) const {
+      return {this->value + rhl.template as<R(U)>().value};
     }
 
     template<typename U1, typename T1>
       requires (SameScale<U, U1>)
-    quantity_t<typename U::reduce, T1> operator-(const quantity_t<U1, T1> &rhl) const {
-      return {this->value - rhl.template as<U>().value};
+    quantity_t<R(U), T1> operator-(const quantity_t<U1, T1> &rhl) const {
+      return {this->value - rhl.template as<R(U)>().value};
     }
 
     quantity_t() = default;
@@ -114,7 +118,8 @@ export namespace cyd::fabric::units {
       } else if constexpr (requires { unit_conversion_t<U1, U, T>::factor; }) {
         return {this->value / unit_conversion_t<U1, U, T>::factor};
       } else {
-        static_assert(false, "No conversion factor available for these units.");
+        static_assert(false, "No conversion factor available between these units.");
+        return {0};
       }
     }
 

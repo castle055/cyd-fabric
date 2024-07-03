@@ -9,21 +9,15 @@ module;
 
 export module fabric.units:mul;
 import std;
-import fabric.ts.packs;
 import :preface;
+import :frac;
 export import fabric.templates.ratio;
 
 export namespace cyd::fabric::units {
-  template <typename...>
-  struct mul;
-
-  template <typename M>
-  using is_mul = ts::packs::is_type<mul, M>;
-
   template <typename... Products>
   struct mul {
     using scale  = mul<typename Products::scale...>;
-    using reduce = typename ts::packs::flatten<mul<typename Products::reduce...>>::type;
+    // using reduce = typename ts::packs::flatten<mul<typename Products::reduce...>>::type;
 
     template <typename T>
     using factor = ratio<
@@ -32,44 +26,23 @@ export namespace cyd::fabric::units {
       (long)(1 * ... * Products::template factor<T>::denominator)
     >;
 
-    using first_product = typename ts::packs::get_first<Products...>::type;
-    using tail_products = typename ts::packs::take_one_out<first_product, mul>::type;
+    UNIT_SYMBOL(symbol_builder<Products...>::symbol())
 
-    UNIT_SYMBOL(first_product::symbol() + "*" + tail_products::symbol())
-  };
-
-  template <typename Mul, typename CancelProduct>
-  using cancel_out = typename ts::packs::take_one_out<CancelProduct, Mul>::type;
-
-  template <typename...>
-  struct cancel_out_many {};
-
-  template <typename Mul, typename CP>
-  struct cancel_out_many<Mul, CP> {
-    using type = cancel_out<Mul, CP>;
-  };
-
-  template <typename Mul, typename CP1, typename... CancelProducts>
-  struct cancel_out_many<Mul, CP1, CancelProducts...> {
   private:
-    using cancelled      = typename ts::packs::take_one_out<CP1, Mul>::type;
-    using cancelled_many = std::conditional_t<
-      (sizeof...(CancelProducts) > 1),
-      cancel_out_many<cancelled, CancelProducts...>,
-      ts::packs::take_one_out<typename ts::packs::get_first<CancelProducts...>::type, cancelled>>;
+    template <typename...>
+    struct symbol_builder {
+      UNIT_SYMBOL(no_unit::symbol())
+    };
 
-    using result = std::conditional_t<
-      sizeof...(CancelProducts) == 0,
-      cancelled,
-      typename cancelled_many::type>;
+    template <typename P>
+    struct symbol_builder<P> {
+      UNIT_SYMBOL(P::symbol())
+    };
 
-  public:
-    using type = result;
+    template <typename P, typename... Ps>
+      requires (sizeof...(Ps) > 0)
+    struct symbol_builder<P, Ps...> {
+      UNIT_SYMBOL(P::symbol() + "*" + symbol_builder<Ps...>::symbol())
+    };
   };
-
-  template <typename Mul, template <typename...> typename Pack, typename... CancelProducts>
-  struct cancel_out_many<Mul, Pack<CancelProducts...>> {
-    using type = typename cancel_out_many<Mul, CancelProducts...>::type;
-  };
-
 }

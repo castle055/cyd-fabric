@@ -15,7 +15,7 @@ namespace cyd::fabric::units {
   export template<typename Numerator, typename Denominator>
   struct frac {
     using scale  = frac<typename Numerator::scale, typename Denominator::scale>;
-    using reduce = frac<typename Numerator::reduce, typename Denominator::reduce>;
+    // using reduce = frac<typename Numerator::reduce, typename Denominator::reduce>;
 
     template<typename T>
     using factor = ratio<
@@ -26,8 +26,4 @@ namespace cyd::fabric::units {
 
     UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")
   };
-
-  template <typename F>
-  using is_frac = ts::packs::is_type<frac, F>;
-
 }

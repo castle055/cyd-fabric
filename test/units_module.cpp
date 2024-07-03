@@ -9,8 +9,11 @@
 
 #include <chrono>
 
+#include "cyd_fabric_modules/headers/macros/units.h"
+
 // import fabric.units;
 import fabric.units.scales;
+import fabric.ts.packs;
 
 using namespace cyd::fabric::units;
 using namespace cyd::fabric::units::distance;
@@ -19,6 +22,7 @@ using namespace cyd::fabric::units::time;
 using namespace cyd::fabric::units::mass;
 using namespace cyd::fabric::units::volume;
 using namespace cyd::fabric::units::speed;
+using namespace cyd::fabric::units::temperature;
 
 //! I know this can be checked at compile-time, but for the purpose of
 //! consistency, I want ALL tests to fail/succeed at run-time.
@@ -44,10 +48,10 @@ struct assert_unit {
   //! run-time.
   template<typename U2>
   static void reduces_to() {
-    if constexpr (std::is_same_v<typename U1::reduce, U2>) {
+    if constexpr (std::is_same_v<reduce<U1>, U2>) {
       std::cout << "[PASS] [" << U1::symbol() << "] reduces to [" << U2::symbol() << "]" << std::endl;
     } else {
-      std::cerr << "[FAIL] [" << U1::symbol() << "] reduces to [" << U1::reduce::symbol() << "] (expected [" <<
+      std::cerr << "[FAIL] [" << U1::symbol() << "] reduces to [" << reduce<U1>::symbol() << "] (expected [" <<
         U2::symbol() << "])" << std::endl;
       // __assert_fail(("[" + U1::symbol() + "] reduces to [" + U2::symbol() + "]").c_str(), __FILE_NAME__, __LINE__, __ASSERT_FUNCTION);
       std::abort();
@@ -152,3 +156,46 @@ TEST("Quantity comparison") {
   // std::cout << "s: " << something.as<mul<kilometers, hours>>() << std::endl;
   return 0;
 }
+
+template <typename U>
+using value = quantity_t<reduce<U>, double>;
+
+TEST("Example") {
+  using joules = frac<mul<kilograms, meters, meters>, mul<seconds, seconds>>;
+  using newtons = frac<mul<kilograms, meters>, mul<seconds, seconds>>;
+  struct watts: frac<mul<kilograms, meters, meters>, mul<seconds, seconds, seconds>> {
+    UNIT_SYMBOL("W");
+  };
+
+  // Water
+  value<kelvin> T_ci = 303;
+  value<frac<kilograms, seconds>> m_c = 0.2;
+  // Dimensions
+  value<meters> L = 70;
+  value<millimeter> D_i = 25;
+  // Oil
+  value<kelvin> T_hi = 373;
+  value<kelvin> T_ho = 333;
+  value<frac<kilograms, seconds>> m_h = 0.1;
+
+  // Water properties @ 310K
+  value<frac<joules, mul<kilograms,kelvin>>> cp_w = 4178;
+  value<frac<mul<newtons,seconds>,mul<meters,meters>>> mu_w = 725e-6;
+  value<no_unit> Pr_w = 4.85;
+  value<frac<watts,mul<meters,kelvin>>> k_w = 0.625;
+
+  // Water properties @ 310K
+  value<frac<joules, mul<kilograms,kelvin>>> cp_oil = 2131;
+  value<frac<mul<newtons,seconds>,mul<meters,meters>>> mu_oil = 3.25e-2;
+  value<frac<watts,mul<meters,kelvin>>> k_oil = 0.138;
+
+  auto q_oil = m_h * cp_oil * (T_hi - T_ho);
+
+  auto T_co = T_ci + q_oil / (m_c * cp_w);
+
+  std::cout << "Temperature: " << T_co << std::endl;
+  std::cout << "Heat Flux: " << q_oil.as<watts>() << std::endl;
+
+  return 0;
+}
+
