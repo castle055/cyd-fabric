@@ -42,6 +42,8 @@ export namespace cyd::fabric::ts::packs {
   template<typename...>
   struct prepend;
   template<typename...>
+  struct take_one_out_w_predicate;
+  template<typename...>
   struct take_one_out;
   template<typename...>
   struct substitute;
@@ -50,6 +52,8 @@ export namespace cyd::fabric::ts::packs {
 }
 
 namespace cyd::fabric::ts::packs::impl {
+  template<typename...>
+  struct take_one_out_w_predicate;
   template<typename...>
   struct take_one_out;
   template<typename...>
@@ -132,6 +136,15 @@ namespace cyd::fabric::ts::packs {
   };
 
 
+  //! take_one_out_w_predicate
+  template<template <typename, typename> typename BoolPredicate, typename PredicateArg1, template <typename, typename...> typename From, typename... Args>
+  struct take_one_out_w_predicate<BoolPredicate<PredicateArg1, void>, From<Args...>> {
+    using type = typename impl::take_one_out_w_predicate<BoolPredicate<PredicateArg1, void>, From<Args...>>::type;
+  };
+  template<template <typename> typename BoolPredicate, template <typename, typename...> typename From, typename... Args>
+  struct take_one_out_w_predicate<BoolPredicate<void>, From<Args...>> {
+    using type = typename impl::take_one_out_w_predicate<BoolPredicate<void>, From<Args...>>::type;
+  };
   //! take_one_out
   template<typename What, template <typename...> typename From, typename... Args>
     requires (!Contains<What, Args...>)
@@ -189,6 +202,40 @@ namespace cyd::fabric::ts::packs::impl {
   > requires (!std::same_as<What, A1>)
   struct take_one_out<What, From<A1, Args...>> {
     using type = typename prepend<A1, typename take_one_out<What, From<Args...>>::type>::type;
+  };
+
+  //! take_one_out_w_predicate
+  template<template <typename, typename> typename Predicate, typename What, template <typename, typename...> typename From, typename A1, typename... Args>
+    requires (Predicate<What, A1>::value)
+  struct take_one_out_w_predicate<Predicate<What, void>, From<A1, Args...>> {
+    using type = From<Args...>;
+  };
+
+  template<
+    template <typename, typename> typename Predicate,
+    typename What,
+    template <typename, typename...> typename From,
+    typename A1,
+    typename... Args
+  > requires (!Predicate<What, A1>::value)
+  struct take_one_out_w_predicate<Predicate<What, void>, From<A1, Args...>> {
+    using type = typename prepend<A1, typename take_one_out_w_predicate<Predicate<What, void>, From<Args...>>::type>::type;
+  };
+
+  template<template <typename> typename Predicate, template <typename, typename...> typename From, typename A1, typename... Args>
+    requires (Predicate<A1>::value)
+  struct take_one_out_w_predicate<Predicate<void>, From<A1, Args...>> {
+    using type = From<Args...>;
+  };
+
+  template<
+    template <typename> typename Predicate,
+    template <typename, typename...> typename From,
+    typename A1,
+    typename... Args
+  > requires (!Predicate<A1>::value)
+  struct take_one_out_w_predicate<Predicate<void>, From<A1, Args...>> {
+    using type = typename prepend<A1, typename take_one_out_w_predicate<Predicate<void>, From<Args...>>::type>::type;
   };
 
 
