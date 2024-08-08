@@ -26,6 +26,9 @@ namespace cyd::fabric::units {
   struct unit_conversion_t {
   };
 
+  export template<typename S_FROM, typename S_TO>
+  struct scale_conversion_t;
+
   export {
     template <typename Expr>
     struct reduce_impl {
@@ -54,6 +57,14 @@ namespace cyd::fabric::units {
 
     template <typename F>
     constexpr bool is_frac_v = is_frac<F>::value;
+
+    template <typename S>
+    concept has_scale = requires {
+      typename S::scale;
+    };
+
+    template <typename S>
+    constexpr bool has_scale_v = has_scale<S>;
 
     template <typename Mul, typename CancelProduct>
     using cancel_out = typename ts::packs::take_one_out<CancelProduct, Mul>::type;

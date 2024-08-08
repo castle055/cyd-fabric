@@ -105,6 +105,10 @@ TEST("Unit reduction") {
   assert_unit   <frac<mul<meters, mul<meters, seconds>, seconds>, mul<seconds, seconds, meters, seconds>>>
                                                                     ::reduces_to<frac<meters, seconds>>();
   assert_unit   <mul<mul<meters,seconds>,kilograms>>                ::reduces_to<mul<meters,seconds, kilograms>>();
+
+  assert_unit   <mul<frac<meters, mul<seconds, seconds>>, seconds>> ::reduces_to<frac<meters, seconds>>();
+  assert_unit   <mul<frac<meters, mul<seconds, seconds, seconds>>, seconds>>
+                                                                    ::reduces_to<frac<meters, mul<seconds, seconds>>>();
 //@formatter:on
 
   // mechanics::newton::second_law
@@ -163,12 +167,11 @@ using value = quantity_t<reduce<U>, double>;
 TEST("Example") {
   using joules = frac<mul<kilograms, meters, meters>, mul<seconds, seconds>>;
   using newtons = frac<mul<kilograms, meters>, mul<seconds, seconds>>;
-  struct watts: frac<mul<kilograms, meters, meters>, mul<seconds, seconds, seconds>> {
-    UNIT_SYMBOL("W");
-  };
+  using namespace power;
 
   // Water
   value<kelvin> T_ci = 303;
+  T_ci.as<celsius>().as<kelvin>();
   value<frac<kilograms, seconds>> m_c = 0.2;
   // Dimensions
   value<meters> L = 70;
@@ -194,7 +197,20 @@ TEST("Example") {
   auto T_co = T_ci + q_oil / (m_c * cp_w);
 
   std::cout << "Temperature: " << T_co << std::endl;
+  std::cout << "Temperature: " << T_co.as<celsius>() << std::endl;
   std::cout << "Heat Flux: " << q_oil.as<watts>() << std::endl;
+  std::cout << "Heat Flux: " << q_oil.as<kilowatts>() << std::endl;
+  std::cout << "Heat Flux: " << q_oil.as<megawatts>() << std::endl;
+
+  value<kilowatts> p1 {1.2345};
+  value<seconds> s1{1.234};
+  std::cout << "P: " << p1*s1 << std::endl;
+  std::cout << "P: " << p1*s1*s1 << std::endl;
+  std::cout << "P: " << (p1*s1*s1).as<frac<mul<grams, meters, meters>, seconds>>() << std::endl;
+  std::cout << "P: " << p1.as<watts>() << std::endl;
+  std::cout << "P: " << p1.as<kilowatts>() << std::endl;
+  std::cout << "P: " << p1.as<megawatts>() << std::endl;
+  std::cout << "P: " << p1.as<frac<mul<kilograms, meters, meters>, mul<seconds, seconds, seconds>>>() << std::endl;
 
   return 0;
 }

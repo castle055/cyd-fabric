@@ -7,12 +7,20 @@
  */
 
 export module fabric.units:concepts;
+import :reduce_rules;
 import :preface;
 
 namespace cyd::fabric::units {
   export template<typename U_FROM, typename U_TO, typename T>
   concept Convertible = requires { unit_conversion_t<U_FROM, U_TO, T>::factor; }
                         || requires { unit_conversion_t<U_TO, U_FROM, T>::factor; };
+
+  // export template<typename S_FROM, typename S_TO, typename U_FROM, typename U_TO, typename T>
+  // concept ConvertibleScales = requires { scale_conversion_t<S_FROM, S_TO>::template forward<U_FROM, U_TO, T>; }
+                              // || requires { scale_conversion_t<S_TO, S_FROM>::template backward<U_FROM, U_TO, T>; };
+  export template<typename S_FROM, typename S_TO, typename U_FROM, typename U_TO, typename T>
+  concept ConvertibleScales = requires { scale_conversion_t<S_FROM, S_TO>{}; }
+                              || requires { scale_conversion_t<S_TO, S_FROM>{}; };
 
   // export {
     template <typename...>
@@ -76,8 +84,24 @@ namespace cyd::fabric::units {
     };
   // }
 
+  export template <typename Scale>
+  struct reduce_scale {
+    using type = Scale;
+  };
+
+  export template <typename Scale>
+  requires requires {
+    typename reduce_impl<Scale>::type;
+  }
+  struct reduce_scale<Scale> {
+    using type = reduce<Scale>;
+  };
+
   export template<typename U1, typename U2>
-  concept SameScale = compare_eq<typename U1::scale, typename U2::scale>::value;
+  concept CompareScales = compare_eq<typename reduce_scale<U1>::type, typename reduce_scale<U2>::type>::value;
+
+  export template<typename U1, typename U2>
+  concept SameScale = CompareScales<typename U1::scale, typename U2::scale>;
 
   export template<typename Q, typename S>
   concept Quantity = std::same_as<typename Q::unit::scale, S>;

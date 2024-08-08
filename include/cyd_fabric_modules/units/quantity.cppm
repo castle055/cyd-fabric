@@ -100,7 +100,7 @@ export namespace cyd::fabric::units {
 
 
     template<typename U1>
-      requires SameScale<U, U1> || Convertible<U, U1, T>
+      requires SameScale<U, U1> || Convertible<U, U1, T> || ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>
     [[nodiscard]]
     quantity_t<U1, T> as() const {
       if constexpr (std::is_same_v<U, U1>) {
@@ -113,6 +113,14 @@ export namespace cyd::fabric::units {
           / (U1::template factor<T>::numerator
              * U::template factor<T>::denominator)
         };
+      // } else if constexpr (requires { scale_conversion_t<typename U::scale, typename U1::scale>::template forward<U, U1, T>(*this); }) {
+      //   return scale_conversion_t<typename U::scale, typename U1::scale>::template forward<U, U1, T>(*this);
+      // } else if constexpr (requires { scale_conversion_t<typename U1::scale, typename U::scale>::template backward<U, U1, T>(*this); }) {
+      //   return scale_conversion_t<typename U1::scale, typename U::scale>::template backward<U, U1, T>(*this);
+      } else if constexpr (requires { scale_conversion_t<typename U::scale, typename U1::scale>{}; }) {
+        return scale_conversion_t<typename U::scale, typename U1::scale>::template forward<U, U1, T>(*this);
+      } else if constexpr (requires { scale_conversion_t<typename U1::scale, typename U::scale>{}; }) {
+        return scale_conversion_t<typename U1::scale, typename U::scale>::template backward<U, U1, T>(*this);
       } else if constexpr (requires { unit_conversion_t<U, U1, T>::factor; }) {
         return {this->value * unit_conversion_t<U, U1, T>::factor};
       } else if constexpr (requires { unit_conversion_t<U1, U, T>::factor; }) {

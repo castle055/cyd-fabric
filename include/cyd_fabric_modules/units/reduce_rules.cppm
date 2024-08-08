@@ -48,13 +48,21 @@ export namespace cyd::fabric::units {
 
 
   template <typename N, typename ...Ds>
-  requires ts::packs::Contains<N, Ds...>
+  requires (ts::packs::Contains<N, Ds...>)
   REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<no_unit, reduce<cancel_out<mul<Ds...>, N>>>>);
 
+  // template <typename N, typename ...Ds>
+  // requires (!ts::packs::Contains<N, Ds...> && !is_mul_v<N> && !is_frac_v<N>)
+  // REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<reduce<N>, reduce<mul<Ds...>>>>);
+  //
   template <typename D, typename ...Ns>
-  requires ts::packs::Contains<D, Ns...>
+  requires (ts::packs::Contains<D, Ns...>)
   REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<cancel_out<mul<Ns...>, D>>);
 
+  // template <typename D, typename ...Ns>
+  // requires (!ts::packs::Contains<D, Ns...> && !is_mul_v<D> && !is_frac_v<D>)
+  // REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<frac<reduce<mul<Ns...>>, reduce<D>>>);
+  //
   template <typename M1, typename M2>
   requires (is_mul_v<M1> && is_mul_v<M2> && !ts::packs::share_items<M1, M2>::value)
   REDUCE_PATTERN(frac<M1, M2>) TO(frac<M1, M2>);

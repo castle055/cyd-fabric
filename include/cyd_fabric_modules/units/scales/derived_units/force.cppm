@@ -3,17 +3,15 @@
 
 module;
 #include "cyd_fabric_modules/headers/macros/units.h"
-export module fabric.units.scales:speed;
+export module fabric.units.scales:force;
 export import fabric.units;
 
+import :mass;
 import :distance;
 import :time;
 
 export namespace cyd::fabric::units {
-  namespace speed {
-    using scale = frac<distance::scale, time::scale>;
-    template<typename Q> concept quantity = Quantity<Q, scale>;
-
-    using m_s = frac<distance::meters, time::seconds>;
+  DERIVED_SCALE(force, frac<mul<mass::scale, distance::scale>, mul<time::scale, time::scale>>) {
+    UNIT(newtons, "N", 1, 1);
   }
 }

@@ -4,23 +4,38 @@
 export module fabric.units.scales;
 
 //* SI base units
-export import :time;
 export import :distance;
 export import :mass;
-// electric current
 export import :temperature;
-// substance quantity
-// light intensity
+export import :time;
+export import :electric_current;
+export import :substance;
+export import :light_intensity;
 
 export import :angle;
 
 //* Derived units
-export import :speed;
+export import :solid_angle;
+// area
 export import :volume;
-
-/* todo
-
-  - Add derived scales
-  - Add derived units
-
-*/
+export import :speed;
+// acceleration
+export import :force;
+export import :pressure;
+export import :electric_charge;
+export import :energy;
+export import :power;
+export import :emf;
+export import :electric_resistance;
+export import :electric_conductance;
+export import :electric_capacitance;
+export import :magnetic_flux;
+export import :magnetic_flux_density;
+export import :inductance;
+export import :frequency;
+export import :absorbed_dose;
+export import :dose_equivalent;
+export import :radionuclide_activity;
+export import :catalytic_activity;
+export import :luminous_flux;
+export import :illuminance;

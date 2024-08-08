@@ -11,11 +11,19 @@ import std;
 import fabric.ts.packs;
 export import fabric.templates.ratio;
 
-namespace cyd::fabric::units {
-  export template<typename Numerator, typename Denominator>
+export namespace cyd::fabric::units {
+  template<typename Numerator, typename Denominator>
   struct frac {
+    UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")
+  };
+
+  template<typename Numerator, typename Denominator>
+  requires requires {
+    typename Numerator::scale;
+    typename Denominator::scale;
+  }
+  struct frac<Numerator, Denominator> {
     using scale  = frac<typename Numerator::scale, typename Denominator::scale>;
-    // using reduce = frac<typename Numerator::reduce, typename Denominator::reduce>;
 
     template<typename T>
     using factor = ratio<
