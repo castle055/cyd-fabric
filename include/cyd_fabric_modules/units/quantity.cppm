@@ -5,7 +5,7 @@ module;
 //! Syntax sugar - Apply reduce
 #define R(...) reduce<__VA_ARGS__>
 
-export module fabric.units:quantity;
+export module fabric.units.core:quantity;
 export import std;
 import :preface;
 import :concepts;

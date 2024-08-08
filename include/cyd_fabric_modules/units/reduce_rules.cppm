@@ -10,7 +10,7 @@ module;
 
 #define REDUCE_PATTERN(...) struct reduce_impl<__VA_ARGS__>
 
-export module fabric.units:reduce_rules;
+export module fabric.units.core:reduce_rules;
 export import std;
 export import fabric.ts.packs;
 import :preface;

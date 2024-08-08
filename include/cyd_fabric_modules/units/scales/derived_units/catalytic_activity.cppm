@@ -5,7 +5,7 @@ module;
 #include "cyd_fabric_modules/headers/macros/units.h"
 
 export module fabric.units.scales:catalytic_activity;
-export import fabric.units;
+export import fabric.units.core;
 
 import :substance;
 import :time;

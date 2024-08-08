@@ -4,7 +4,7 @@
 module;
 #include "cyd_fabric_modules/headers/macros/units.h"
 export module fabric.units.scales:electric_current;
-export import fabric.units;
+export import fabric.units.core;
 
 export namespace cyd::fabric::units {
   SCALE(electric_current) {

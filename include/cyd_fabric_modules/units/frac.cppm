@@ -6,7 +6,7 @@
 //
 module;
 #include <cyd_fabric_modules/headers/macros/units.h>
-export module fabric.units:frac;
+export module fabric.units.core:frac;
 import std;
 import fabric.ts.packs;
 export import fabric.templates.ratio;

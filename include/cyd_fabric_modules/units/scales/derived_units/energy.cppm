@@ -5,7 +5,7 @@ module;
 #include "cyd_fabric_modules/headers/macros/units.h"
 
 export module fabric.units.scales:energy;
-export import fabric.units;
+export import fabric.units.core;
 
 import :force;
 import :distance;

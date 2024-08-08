@@ -3,7 +3,7 @@
 
 module;
 #include "cyd_fabric_modules/headers/macros/units.h"
-export module fabric.units:preface;
+export module fabric.units.core:preface;
 export import std;
 export import fabric.ts.packs;
 import fabric.templates.ratio;

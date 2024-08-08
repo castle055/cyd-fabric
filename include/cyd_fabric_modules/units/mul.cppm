@@ -7,7 +7,7 @@
 module;
 #include <cyd_fabric_modules/headers/macros/units.h>
 
-export module fabric.units:mul;
+export module fabric.units.core:mul;
 import std;
 import :preface;
 import :frac;

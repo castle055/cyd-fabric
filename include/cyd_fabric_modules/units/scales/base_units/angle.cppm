@@ -4,7 +4,7 @@
 module;
 #include "../../../headers/macros/units.h"
 export module fabric.units.scales:angle;
-export import fabric.units;
+export import fabric.units.core;
 
 export namespace cyd::fabric::units {
   SCALE(angle) {

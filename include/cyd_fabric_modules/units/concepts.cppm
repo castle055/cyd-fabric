@@ -6,7 +6,7 @@
  *!
  */
 
-export module fabric.units:concepts;
+export module fabric.units.core:concepts;
 import :reduce_rules;
 import :preface;
 
