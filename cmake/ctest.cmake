@@ -1,9 +1,9 @@
 # Copyright (c) 2024, Víctor Castillo Agüero.
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-enable_testing()
-
 function(target_configure_test_directory TEST_TARGET TEST_DIR)
+    enable_testing()
+
     get_filename_component(TEST_DIR ${TEST_DIR} REALPATH)
 
     FILE(GLOB_RECURSE TEST_LIST
