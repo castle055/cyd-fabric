@@ -43,7 +43,7 @@ struct md_buffer_t {
     this->size        = rhl.size;
     size_t total_size = compute_total_size(this->size);
     data              = (E*)std::calloc(1, sizeof(E) * total_size);
-    memcpy(data, rhl.data, sizeof(E) * total_size);
+    std::memcpy(data, rhl.data, sizeof(E) * total_size);
   }
 
   md_buffer_t(md_buffer_t &&rhl) {
@@ -159,7 +159,7 @@ private:
     for (size_t i = 0; i < total_strides; ++i) {
       d_abs_index = compute_index(d_pos);
       s_abs_index = compute_index(s_pos);
-      memcpy(&this->data[d_abs_index], &source[s_abs_index], sizeof(E) * stride);
+      std::memcpy(&this->data[d_abs_index], &source[s_abs_index], sizeof(E) * stride);
 
       for (size_t d = 1; d < D; ++d) {
         if (0 == (i + 1) % _size[d]) {
