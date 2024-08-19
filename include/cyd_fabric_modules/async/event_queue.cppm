@@ -147,4 +147,11 @@ export namespace cyd::fabric::async {
         }
       }
     };
+
+    void listener_t::remove() {
+      if (nullptr != event_queue) event_queue->remove_listener(*this);
+      delete func;
+      func = nullptr;
+      active = false;
+    }
 }
