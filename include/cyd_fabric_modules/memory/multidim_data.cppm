@@ -36,7 +36,7 @@ struct md_buffer_t {
   }
 
   virtual ~md_buffer_t() {
-    free(data);
+    std::free(data);
   }
 
   md_buffer_t(const md_buffer_t &rhl) {
@@ -93,7 +93,7 @@ struct md_buffer_t {
     this->data = (E*)realloc(this->data, sizeof(E) * total_new_size);
     //this->data = (E*) calloc(1, sizeof(E) * total_new_size);
     //this->copy_from(old_data, {0, 0}, {0, 0}, total_size > total_new_size ? new_size : size);
-    //free(old_data);
+    //std::free(old_data);
     size = new_size;
   }
 
