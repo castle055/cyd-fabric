@@ -1,16 +1,16 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#ifndef FABRIC_EVENT_QUEUE_H
-#define FABRIC_EVENT_QUEUE_H
+module;
+#include <cyd_fabric_modules/headers/macros/test_enabled.h>
 
-#include <tuple>
-#include <utility>
-#include <queue>
+export module fabric.async:event_queue;
 
-#include "events.h"
+import std;
 
-namespace cyd::fabric::async {
+export import :events;
+
+export namespace cyd::fabric::async {
     class event_queue_t {
       // logging::logger log_task = {.name = "EV_Q", .on = true, .min_level = logging::INFO};
     private TEST_PUBLIC:
@@ -148,4 +148,3 @@ namespace cyd::fabric::async {
       }
     };
 }
-#endif //FABRIC_EVENT_QUEUE_H
