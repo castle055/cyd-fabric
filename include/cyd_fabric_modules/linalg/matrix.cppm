@@ -6,12 +6,10 @@
  *!
  */
 
-module;
-#include <cyd_fabric/memory/multidim_data.h>
-
 export module fabric.linalg:matrix;
 
 import std;
+import fabric.memory.multidim_data;
 
 import :vector;
 
