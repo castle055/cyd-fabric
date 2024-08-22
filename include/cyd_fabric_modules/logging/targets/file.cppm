@@ -5,9 +5,6 @@
  *! \brief 
  *!
  */
-module;
-// #include <filesystem>
-// #include <fstream>
 
 export module fabric.logging.targets.file;
 import fabric.logging.target_base;
