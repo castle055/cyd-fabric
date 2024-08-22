@@ -45,7 +45,7 @@ export namespace fabric {
            || overflow_strategy::throw_exception<>::is_valid<OverflowStrategy>
  class circular_buffer {
  public:
-  void push(const T &t) {
+  void push_back(const T &t) {
    if (write_head_ + 1 % SIZE >= read_head_) {
     if constexpr (std::same_as<OverflowStrategy, overflow_strategy::overwrite>) {
      pop();
@@ -62,9 +62,19 @@ export namespace fabric {
    wrap_write_head();
   }
 
-  void pop() {
+  void pop_front() {
+   if (empty()) return;
    ++read_head_;
    wrap_read_head();
+  }
+
+  void pop_back() {
+   if (empty()) return;
+   if (write_head_ == 0) {
+    write_head_ = SIZE;
+   } else {
+    --write_head_;
+   }
   }
 
   T &front() {
