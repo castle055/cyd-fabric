@@ -48,7 +48,7 @@ export namespace fabric {
   void push_back(const T &t) {
    if (write_head_ + 1 % SIZE >= read_head_) {
     if constexpr (std::same_as<OverflowStrategy, overflow_strategy::overwrite>) {
-     pop();
+     pop_front();
     } else if constexpr (std::same_as<OverflowStrategy, overflow_strategy::dont_write>) {
      return;
     } else {
