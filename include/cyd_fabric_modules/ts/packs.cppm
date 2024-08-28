@@ -62,7 +62,7 @@ namespace cyd::fabric::ts::packs::impl {
   struct flatten;
 }
 
-namespace cyd::fabric::ts::packs {
+export namespace cyd::fabric::ts::packs {
   //! is_type
   template <template <typename...> typename, typename...>
   struct is_type: std::false_type { };
@@ -87,7 +87,7 @@ namespace cyd::fabric::ts::packs {
   struct share_items<Pack1, Pack2<Pack2Args...>>: std::true_type { };
 }
 
-namespace cyd::fabric::ts::packs {
+export namespace cyd::fabric::ts::packs {
   //! get_first
   template<typename First, typename... Rest>
   struct get_first<First, Rest...> {
