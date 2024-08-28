@@ -7,7 +7,7 @@
  */
 
 export module fabric.logging:command_base;
-import :context;
+export import :context;
 
 export namespace LOG {
   void log_entry(const entry_t &entry) {
