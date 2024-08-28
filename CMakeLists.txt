@@ -103,13 +103,21 @@ include(FetchContent)
 find_package(PkgConfig)
 
 #[[                           CONFIGURE STD MODULE                           ]]#
-FetchContent_Declare(
-  std
-  URL "file:///usr/lib/c++/v1/"
-  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-  SYSTEM
+add_library(std)
+target_sources(std
+        PUBLIC
+        FILE_SET cxx_modules
+        #        FILE_SET "${APP_NAME}_modfiles"
+        TYPE CXX_MODULES
+        BASE_DIRS /usr/share/libc++/v1
+        FILES /usr/share/libc++/v1/std.cppm
+        /usr/share/libc++/v1/std.compat.cppm
 )
-FetchContent_MakeAvailable(std)
+target_compile_options(std
+    PUBLIC
+    -Wno-reserved-module-identifier
+    -Wno-deprecated-declarations
+)
 
 #[[                          CONFIGURE CAIROMM-1.16                          ]]#
 find_package(CAIROMM)
