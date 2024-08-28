@@ -4,6 +4,7 @@
 module;
 #include <cyd_fabric_modules/headers/macros/test_enabled.h>
 
+import std;
 export module fabric.async;
 
 export import :event_queue;
