@@ -45,7 +45,7 @@ export namespace LOG::TARGETS {
     const std::filesystem::path path_;
     const bool append_mode_ = true;
     const bool create_on_demand_ = false;
-    entry_format_t entry_format_ {"{entry:message}"};
+    entry_format_t entry_format_ {DEFAULT_ENTRY_FORMAT};
 
     std::ofstream log_file;
 
@@ -104,7 +104,7 @@ export namespace LOG::TARGETS {
       std::filesystem::path path_;
       bool append_           = true;
       bool create_on_demand_ = false;
-      entry_format_t entry_format_ {"{entry:message}"};
+      entry_format_t entry_format_ {DEFAULT_ENTRY_FORMAT};
     };
   };
 }

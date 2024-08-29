@@ -28,6 +28,7 @@ export namespace LOG {
     std::string function;
     const char* path;
     std::uint_least32_t linenum;
+    LEVEL level;
 
   public:
     NO_COPY(print);
@@ -39,10 +40,10 @@ export namespace LOG {
       const char* file_name    = normalize(__builtin_FILE(), __FILE__),
       const char* fun          = __builtin_FUNCTION(),
       const unsigned long line = __builtin_LINE()
-    ) {
-      function = fun;
-      linenum  = line;
-      path     = file_name;
+    ): level(level) {
+      function    = fun;
+      linenum     = line;
+      path        = file_name;
     }
 
     ~print() {
@@ -52,6 +53,7 @@ export namespace LOG {
         .linenum = linenum,
         .function = function,
         .message = message,
+        .level = level,
       });
     }
 

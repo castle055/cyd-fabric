@@ -16,16 +16,19 @@ TEST("Default Initialization") {
 
 TEST("Filter") {
   LOG::INIT { }
-    .FILTERS({{"", "stdout"}});
+    .filters({{"", "stdout"}});
   return 0;
 }
 
 TEST("Filter - Unknown Target") {
   try {
     LOG::INIT { }
-      .FILTERS({{"", "this target doesn't exit"}});
+      .filter()
+      .path("")
+      .levels({ERROR, {DEBUG, WARN}})["this target doesn't exist"]
+      .filter({"", "this target doesn't exist"});
   } catch (std::runtime_error &err) {
-    assert(std::string{err.what()} == "Target ID \"this target doesn't exit\" does not exists");
+    assert(std::string{err.what()} == "Target ID \"this target doesn't exist\" does not exist");
     return 0;
   }
   std::cerr
@@ -43,6 +46,21 @@ TEST("Target Configuration") {
       // LOG::TARGETS::FILE::BUILDER {"stderr"}
       // .entry_format("{entry:timestamp} | {entry:path}:{entry:line} [{entry:function}]  {entry:message}")
     );
+  return 0;
+}
+
+TEST("Level filtering Configuration") {
+  LOG::INIT { }
+    .filter().levels({{DEBUG, WARN}})["stdout"]
+    .filter().levels({ERROR})["stderr"];
+
+  LOG::print {DEBUG}("Some log");
+  LOG::print {INFO}("Some log");
+  LOG::print {WARN}("Some log");
+  LOG::print {ERROR}("Some log");
+  LOG::stacktrace {ERROR};
+  LOG::stacktrace {DEBUG, 5};
+  LOG::stacktrace {WARN};
   return 0;
 }
 

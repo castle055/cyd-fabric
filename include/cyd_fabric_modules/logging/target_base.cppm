@@ -11,13 +11,17 @@ import std;
 export import fabric.logging.entry;
 
 export namespace LOG {
+  constexpr const char* DEFAULT_ENTRY_FORMAT {"[{entry:level}] {entry:timestamp} | [{entry:path}:{entry:line}] [{entry:function}] {entry:message}"};
+
   struct target_id {
     using hash_type = std::size_t;
 
     std::string id_string;
     hash_type id_hash;
 
-    target_id(const std::string &&id): id_string(id), id_hash(std::hash<std::string> { }(id_string)) {
+    target_id(const std::string &id): id_string(id), id_hash(std::hash<std::string> { }(id_string)) {
+    }
+    target_id(std::string &&id): id_string(id), id_hash(std::hash<std::string> { }(id_string)) {
     }
   };
 

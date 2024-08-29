@@ -74,7 +74,7 @@ export namespace cyd::fabric::async {
         //}
         
         // Iterate over copy of listeners list. This should allow any listener to modify the listeners list (ie: removing themselves)
-        for (auto &listener: listeners) {
+        for (const auto &listener: listeners) {
           listener->operator()(ev);
         }
         

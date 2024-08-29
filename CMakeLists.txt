@@ -157,6 +157,7 @@ target_link_libraries(cyd_fabric
         X11 Xft Xrender fontconfig
         cairomm
         yaml-cpp jpeg
+        unwind
         libstdc++exp.a
         std
 )

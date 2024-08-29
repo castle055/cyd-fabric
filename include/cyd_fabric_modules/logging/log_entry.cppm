@@ -14,6 +14,7 @@ export namespace LOG {
   enum class entry_field_e {
     NONE,
     TIMESTAMP,
+    LEVEL,
     PATH,
     LINENUM,
     FUNCTION,
@@ -26,6 +27,7 @@ export namespace LOG {
     unsigned int linenum = 0;
     std::string_view function {""};
     std::string_view message {""};
+    LEVEL level {INFO};
   };
 
   struct entry_format_t {
@@ -35,6 +37,26 @@ export namespace LOG {
 
     [[nodiscard]]
     std::string format(const entry_t &entry) const {
+      if (entry.message.contains('\n')) {
+        std::string format_before_message = format_.substr(0, format_.find("{0:message}"));
+        std::string format_after_message = format_.substr(format_.find("{0:message}") + sizeof("{0:message}") - 1);
+        std::string line_header = std::vformat(std::string_view {format_before_message}, std::make_format_args(entry));
+        std::string line_footer = std::vformat(std::string_view {format_after_message}, std::make_format_args(entry));
+
+        std::stringstream ss;
+        ss << line_header;
+        for (std::size_t i = 0; i != std::string::npos; i = entry.message.find_first_of('\n', i + 1)) {
+          std::size_t next = entry.message.find_first_of('\n', i+1);
+          if (next == std::string::npos) {
+            ss << entry.message.substr(i==0?i:i+1);
+          } else {
+            ss << entry.message.substr(i==0?i:i+1, next - (i+1)) << std::endl;
+          }
+        }
+        ss << line_footer;
+        return ss.str();
+      }
+
       return std::vformat(std::string_view {format_}, std::make_format_args(entry));
     }
 
@@ -84,6 +106,9 @@ struct std::formatter<LOG::entry_t, CharT> {
     if (parse_field_fmt(first, last, "timestamp")) {
       entry_field = LOG::entry_field_e::TIMESTAMP;
       return (first);
+    } else if (parse_field_fmt(first, last, "level")) {
+      entry_field = LOG::entry_field_e::LEVEL;
+      return (first);
     } else if (parse_field_fmt(first, last, "path")) {
       entry_field = LOG::entry_field_e::PATH;
       return (first);
@@ -113,6 +138,9 @@ struct std::formatter<LOG::entry_t, CharT> {
         break;
       case LOG::entry_field_e::TIMESTAMP:
         ss << std::format("{0:%Y-%m-%d} {0:%H:%M:%S}", entry.timestamp);
+        break;
+      case LOG::entry_field_e::LEVEL:
+        ss << std::format("{}", entry.level.name);
         break;
       case LOG::entry_field_e::PATH:
         ss << std::format("{}", entry.path.string());
