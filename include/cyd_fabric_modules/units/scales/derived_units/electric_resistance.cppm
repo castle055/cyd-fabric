@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :emf;
 import :electric_current;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(electric_resistance, frac<emf::scale, electric_current::scale>) {
     METRIC_SCALE(ohms, "ohm", 1, 1)
   }

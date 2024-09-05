@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :luminous_flux;
 import :distance;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(illuminance, frac<luminous_flux::scale, mul<distance::scale, distance::scale>>) {
     METRIC_SCALE(lux, "lx", 1, 1)
   }

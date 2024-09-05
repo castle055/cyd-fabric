@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:distance;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(distance) {
     UNIT(meters, "m", 1,1)
 

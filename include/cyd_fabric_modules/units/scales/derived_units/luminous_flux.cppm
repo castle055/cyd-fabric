@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :light_intensity;
 import :solid_angle;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(luminous_flux, mul<light_intensity::scale, solid_angle::scale>) {
     METRIC_SCALE(lumen, "lm", 1, 1)
   }

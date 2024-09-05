@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :substance;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(catalytic_activity, frac<substance::scale, time::scale>) {
     METRIC_SCALE(katals, "kat", 1, 1)
   }

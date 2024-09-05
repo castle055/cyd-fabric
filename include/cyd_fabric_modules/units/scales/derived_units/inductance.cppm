@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :electric_current;
 import :magnetic_flux;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(inductance, frac<magnetic_flux::scale, electric_current::scale>) {
     METRIC_SCALE(henries, "H", 1, 1)
   }

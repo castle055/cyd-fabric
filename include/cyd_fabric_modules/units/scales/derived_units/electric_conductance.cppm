@@ -9,7 +9,7 @@ export import fabric.units.core;
 
 import :electric_resistance;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(electric_conductance, frac<no_scale, electric_resistance::scale>) {
     METRIC_SCALE(siemens, "S", 1, 1)
   }

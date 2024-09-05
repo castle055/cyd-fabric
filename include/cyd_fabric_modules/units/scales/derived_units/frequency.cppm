@@ -9,7 +9,7 @@ export import fabric.units.core;
 
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(frequency, frac<no_scale, time::scale>) {
     METRIC_SCALE(hertz, "Hz", 1, 1)
   }

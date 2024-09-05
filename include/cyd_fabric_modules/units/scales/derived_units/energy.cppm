@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :force;
 import :distance;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(energy, mul<force::scale, distance::scale>) {
     METRIC_SCALE(joule, "J", 1, 1)
   }

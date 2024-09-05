@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:time;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(time) {
     UNIT(seconds, "s", 1,1)
 

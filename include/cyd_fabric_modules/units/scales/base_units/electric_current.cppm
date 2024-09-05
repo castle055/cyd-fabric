@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:electric_current;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(electric_current) {
     METRIC_SCALE(ampere, "A", 1, 1)
   }

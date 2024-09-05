@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :power;
 import :electric_current;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(emf, frac<power::scale, electric_current::scale>) {
     METRIC_SCALE(volts, "V", 1, 1)
   }

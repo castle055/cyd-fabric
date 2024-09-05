@@ -6,9 +6,9 @@ module;
 export module fabric.units.core:preface;
 export import std;
 export import fabric.ts.packs;
-import fabric.templates.ratio;
+export import fabric.templates.ratio;
 
-namespace cyd::fabric::units {
+namespace fabric::units {
   export struct no_scale {
 
   };
@@ -17,7 +17,7 @@ namespace cyd::fabric::units {
     using reduce = no_unit;
 
     template<typename T>
-    using factor = ratio<T, 1, 1>;
+    using factor = fabric::ratio<T, 1, 1>;
 
     UNIT_SYMBOL("(no unit)")
   };

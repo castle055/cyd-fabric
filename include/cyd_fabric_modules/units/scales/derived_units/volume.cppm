@@ -9,7 +9,7 @@ export import fabric.units.core;
 
 import :distance;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(volume, mul<distance::scale, distance::scale, distance::scale>) {
     METRIC_SCALE(liters, "L", 1, 1)
   }

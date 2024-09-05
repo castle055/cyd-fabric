@@ -15,7 +15,7 @@ export import std;
 export import fabric.ts.packs;
 import :preface;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   template <typename N>
   REDUCE_PATTERN(frac<N, N>) TO(no_unit);
 

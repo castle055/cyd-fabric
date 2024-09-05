@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:substance;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(substance) {
     METRIC_SCALE(mole, "mol", 1, 1)
   }

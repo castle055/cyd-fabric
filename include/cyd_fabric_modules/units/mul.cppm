@@ -13,7 +13,7 @@ import :preface;
 import :frac;
 export import fabric.templates.ratio;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   template <typename... Products>
   struct mul {
     UNIT_SYMBOL(symbol_builder<Products...>::symbol())

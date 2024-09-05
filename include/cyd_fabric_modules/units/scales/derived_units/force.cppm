@@ -10,7 +10,7 @@ import :mass;
 import :distance;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(force, frac<mul<mass::scale, distance::scale>, mul<time::scale, time::scale>>) {
     UNIT(newtons, "N", 1, 1);
   }

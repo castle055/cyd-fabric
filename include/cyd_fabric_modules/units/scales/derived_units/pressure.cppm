@@ -11,7 +11,7 @@ import :distance;
 import :time;
 import :force;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(pressure, frac<force::scale, mul<distance::scale, distance::scale>>) {
     METRIC_SCALE(pascals, "Pa", 1, 1);
   }

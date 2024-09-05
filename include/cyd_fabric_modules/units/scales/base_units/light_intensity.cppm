@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:light_intensity;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(light_intensity) {
     METRIC_SCALE(candela, "cd", 1, 1)
   }

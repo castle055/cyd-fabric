@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :emf;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(magnetic_flux, mul<emf::scale, time::scale>) {
     METRIC_SCALE(webers, "Wb", 1, 1)
   }

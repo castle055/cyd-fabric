@@ -11,7 +11,7 @@ import std;
 import fabric.ts.packs;
 export import fabric.templates.ratio;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   template<typename Numerator, typename Denominator>
   struct frac {
     UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")

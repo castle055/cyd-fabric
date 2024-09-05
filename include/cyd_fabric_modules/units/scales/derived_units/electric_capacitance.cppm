@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :emf;
 import :electric_charge;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(electric_capacitance, frac<electric_charge::scale, emf::scale>) {
     METRIC_SCALE(farads, "F", 1, 1)
   }

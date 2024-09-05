@@ -9,7 +9,7 @@ export import fabric.units.core;
 import :distance;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   namespace speed {
     using scale = frac<distance::scale, time::scale>;
     template<typename Q> concept quantity = Quantity<Q, scale>;

@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :magnetic_flux;
 import :distance;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(magnetic_flux_density, frac<magnetic_flux::scale, mul<distance::scale, distance::scale>>) {
     METRIC_SCALE(teslas, "T", 1, 1)
   }

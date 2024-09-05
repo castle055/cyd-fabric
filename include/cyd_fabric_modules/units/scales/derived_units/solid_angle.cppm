@@ -9,7 +9,7 @@ export import fabric.units.core;
 
 import :angle;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(solid_angle, mul<angle::scale, angle::scale>) {
     METRIC_SCALE(steradian, "sr", 1, 1)
   }

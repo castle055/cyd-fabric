@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:mass;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(mass) {
     METRIC_SCALE(grams, "g", 1, 1000)
     UNIT(ton, "T", 1000, 1)

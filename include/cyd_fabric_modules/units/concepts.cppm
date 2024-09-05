@@ -10,7 +10,7 @@ export module fabric.units.core:concepts;
 import :reduce_rules;
 import :preface;
 
-namespace cyd::fabric::units {
+namespace fabric::units {
   export template<typename U_FROM, typename U_TO, typename T>
   concept Convertible = requires { unit_conversion_t<U_FROM, U_TO, T>::factor; }
                         || requires { unit_conversion_t<U_TO, U_FROM, T>::factor; };

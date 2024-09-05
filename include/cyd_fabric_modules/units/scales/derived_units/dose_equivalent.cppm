@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :energy;
 import :mass;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(dose_equivalent, mul<energy::scale, mass::scale>) {
     METRIC_SCALE(sieverts, "Sv", 1, 1)
   }

@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:angle;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   SCALE(angle) {
     UNIT(degrees, "deg", 1,1)
     UNIT(radians, "rad", 180*10000000000000000,31415926535893238)

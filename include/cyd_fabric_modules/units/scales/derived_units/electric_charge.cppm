@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :electric_current;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(electric_charge, mul<electric_current::scale, time::scale>) {
     METRIC_SCALE(coulombs, "C", 1, 1)
   }

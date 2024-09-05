@@ -6,7 +6,7 @@ module;
 export module fabric.units.scales:temperature;
 export import fabric.units.core;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   namespace temperature {
     namespace scales {
       SCALE(kelvin) {}
@@ -23,7 +23,7 @@ export namespace cyd::fabric::units {
   }
 }
 
-using namespace cyd::fabric::units::temperature;
+using namespace fabric::units::temperature;
 export
 {
 //@formatter:off

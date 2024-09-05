@@ -12,7 +12,7 @@ import :concepts;
 export import :frac;
 export import :mul;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   template<typename U, typename T>
   struct quantity_t {
     using unit      = U;
@@ -75,9 +75,13 @@ export namespace cyd::fabric::units {
       return {this->value - rhl.template as<R(U)>().value};
     }
 
-    quantity_t() = default;
+    quantity_t<U, T> operator-() const {
+      return {-(this->value)};
+    }
 
-    quantity_t(T value_): value(value_) {
+    constexpr quantity_t() = default;
+
+    constexpr quantity_t(T value_): value(value_) {
     }
 
     quantity_t(const quantity_t &other) {
@@ -146,7 +150,7 @@ export namespace cyd::fabric::units {
 }
 
 export template<typename U, typename T>
-std::ostream &operator<<(std::ostream &o, const cyd::fabric::units::quantity_t<U, T> &quantity) {
+std::ostream &operator<<(std::ostream &o, const fabric::units::quantity_t<U, T> &quantity) {
   o << quantity.to_string();
   return o;
 }

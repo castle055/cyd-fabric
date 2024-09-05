@@ -10,7 +10,7 @@ export import fabric.units.core;
 import :energy;
 import :time;
 
-export namespace cyd::fabric::units {
+export namespace fabric::units {
   DERIVED_SCALE(power, frac<energy::scale, time::scale>) {
     METRIC_SCALE(watts, "W", 1, 1)
   }
