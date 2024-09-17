@@ -52,7 +52,7 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
 
 cmake_minimum_required(VERSION 3.29.20240518 FATAL_ERROR)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-project(cyd_fabric LANGUAGES CXX)
+project(cyd_fabric LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
@@ -122,11 +122,14 @@ target_compile_options(std
 #[[                          CONFIGURE CAIROMM-1.16                          ]]#
 find_package(CAIROMM)
 
+#[[                         CONFIGURE CLANG PLUGINS                          ]]#
+add_subdirectory(clang)
 
 ################################################################################
 #[[                           CONFIGURE CYD FABRIC                           ]]#
 ################################################################################
 add_library(cyd_fabric)
+reflect_target(cyd_fabric)
 
 FILE(GLOB_RECURSE SRC_LIST CONFIGURE_DEPENDS
         ${FABRIC_INCLUDE_DIR}/*.h

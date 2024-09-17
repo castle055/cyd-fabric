@@ -21,6 +21,7 @@ macro(target_configure_test_directory TEST_TARGET TEST_DIR)
 
         get_filename_component(TName ${test} NAME_WLE)
         add_executable(TEST_${TName} ${test})
+        reflect_target(TEST_${TName})
         target_link_libraries(TEST_${TName} PRIVATE ${TEST_TARGET})
         target_include_directories(TEST_${TName} PRIVATE ${TEST_DIR}/common)
 
