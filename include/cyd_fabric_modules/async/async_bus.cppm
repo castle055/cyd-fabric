@@ -4,19 +4,19 @@
 module;
 #include <cyd_fabric_modules/headers/macros/test_enabled.h>
 
-import std;
 export module fabric.async;
 
-export import :event_queue;
+import std;
+export import fabric.async.ebus;
 export import :coroutine_rt;
 
-export namespace cyd::fabric::async {
+export namespace fabric::async {
     enum class async_bus_status_e {
       RUNNING,
       STOPPED,
     };
     
-    class async_bus_t: public event_queue_t,
+    class async_bus_t: public ebus,
                        public coroutine_runtime_t {
     public: /// @name Construction & RAII
       // ! Constructor

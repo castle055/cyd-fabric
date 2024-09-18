@@ -10,7 +10,7 @@ import std;
 
 export import :coroutines;
 
-export namespace cyd::fabric::async {
+export namespace fabric::async {
     class coroutine_runtime_t {
     private TEST_PUBLIC:
       std::queue<async_handle<>> coroutine_queue {};

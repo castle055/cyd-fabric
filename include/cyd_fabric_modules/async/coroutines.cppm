@@ -8,7 +8,7 @@ export module fabric.async:coroutines;
 
 import std;
 
-export namespace cyd::fabric::async {
+export namespace fabric::async {
     template<typename Ret>
     struct async;
     template<typename T = void>

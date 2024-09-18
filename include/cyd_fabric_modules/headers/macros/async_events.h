@@ -15,15 +15,19 @@
       [&](const cyd::fabric::async::ParsedEvent<EVENT>& ev) __VA_ARGS__))
 
 
-struct event_data_type_base_t {
-  unsigned long win = 0;
-};
 // TODO - In case of event name collision (it's possible), maybe append __FILE__ or __LINE__ to the `type`
 // variable to make the event type unique even if multiple translation units declare similarly named events.
-#define EVENT(NAME, DATA)                                                      \
-  struct NAME {                                                                \
-    constexpr static const char* type = #NAME;                                 \
-    struct DataType: public event_data_type_base_t DATA data;                  \
-  };
+#define EVENT(NAME)                            \
+  struct NAME;                                 \
+  struct EventType##NAME {                     \
+    constexpr static const char* type = #NAME; \
+  };                                           \
+  struct NAME: public EventType##NAME          \
+
+// #define EVENT(NAME, ...)                        \
+//   struct EventData##NAME __VA_ARGS__;           \
+//   struct NAME: public EventData##NAME {         \
+//     constexpr static const char* type = #NAME;  \
+//   }
 
 #endif //ASYNC_EVENTS_H
