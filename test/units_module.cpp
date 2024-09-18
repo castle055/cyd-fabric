@@ -14,14 +14,14 @@
 import fabric.units;
 import fabric.ts.packs;
 
-using namespace cyd::fabric::units;
-using namespace cyd::fabric::units::distance;
-using namespace cyd::fabric::units::angle;
-using namespace cyd::fabric::units::time;
-using namespace cyd::fabric::units::mass;
-using namespace cyd::fabric::units::volume;
-using namespace cyd::fabric::units::speed;
-using namespace cyd::fabric::units::temperature;
+using namespace fabric::units;
+using namespace fabric::units::distance;
+using namespace fabric::units::angle;
+using namespace fabric::units::time;
+using namespace fabric::units::mass;
+using namespace fabric::units::volume;
+using namespace fabric::units::speed;
+using namespace fabric::units::temperature;
 
 //! I know this can be checked at compile-time, but for the purpose of
 //! consistency, I want ALL tests to fail/succeed at run-time.
@@ -66,7 +66,7 @@ TEST("Nominal Start-up") {
 }
 
 TEST("Factors") {
-  using namespace cyd::fabric::units;
+  using namespace fabric::units;
 
   quantity_t<distance::meters, double> d1 {10};
   quantity_t<distance::kilometers, double> d2 {1};
