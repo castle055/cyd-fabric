@@ -24,3 +24,14 @@ export namespace LOG {
     }
   }
 }
+
+export
+{
+  constexpr const char* normalize(const char* path, const char* path_ref) {
+    std::size_t i = 0;
+    while (path[i] == path_ref[i] && path[i] != '\0' && path_ref[i] != '\0') {
+      ++i;
+    }
+    return path + i;
+  }
+}

@@ -19,14 +19,6 @@ import :command_base;
 import std;
 import std.compat;
 
-constexpr const char* normalize(const char* path, const char* path_ref) {
-  std::size_t i = 0;
-  while (path[i] == path_ref[i] && path[i] != '\0' && path_ref[i] != '\0') {
-    ++i;
-  }
-  return path + i;
-}
-
 export namespace LOG {
   class stacktrace {
     std::string function;
@@ -42,7 +34,7 @@ export namespace LOG {
     NO_MOVE(stacktrace);
 
     explicit constexpr stacktrace(
-      const LEVEL level,
+      const LEVEL level = ERROR,
       unsigned int skip_frames = 0,
       const char* file_name    = normalize(__builtin_FILE(), __FILE__),
       const char* fun          = __builtin_FUNCTION(),
