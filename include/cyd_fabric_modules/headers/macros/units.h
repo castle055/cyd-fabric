@@ -11,14 +11,14 @@ namespace NAME {          \
   struct scale {          \
     UNIT_SYMBOL(#NAME)    \
   };                      \
-  template <typename Q> concept quantity = Quantity<Q, scale>; \
+  template <typename Q> concept quantity = fabric::units::Quantity<Q, scale>; \
 }                         \
 namespace NAME
 
 #define DERIVED_SCALE(NAME, ...) \
 namespace NAME {         \
   using scale = typename reduce_scale<__VA_ARGS__>::type;       \
-  template <typename Q> concept quantity = Quantity<Q, scale>; \
+  template <typename Q> concept quantity = fabric::units::Quantity<Q, scale>; \
 }                        \
 namespace NAME
 
@@ -26,7 +26,7 @@ namespace NAME
 struct NAME {                                      \
   using scale = scale;                             \
   template <typename T>                            \
-  using factor = cyd::fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>; \
+  using factor = fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>; \
   using reduce = NAME;                             \
   UNIT_SYMBOL(SYMBOL)                              \
 };
@@ -35,7 +35,7 @@ struct NAME {                                      \
 struct NAME {                                                      \
   using scale = SCALE;                                             \
   template <typename T>                                            \
-  using factor = cyd::fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>;    \
+  using factor = fabric::ratio<T, FACTOR_NUM, FACTOR_DEN>;         \
   using reduce = NAME;                                             \
   UNIT_SYMBOL(SYMBOL)                                              \
 };
@@ -54,14 +54,14 @@ struct NAME {                                                      \
 
 
 #define SCALE_CONVERSION(FROM, TO) \
-template <> struct cyd::fabric::units::scale_conversion_t<FROM, TO> { \
+template <> struct fabric::units::scale_conversion_t<FROM, TO> { \
   using from_scale = FROM; \
   using to_scale = TO;
 
 #define SCALE_FORWARD_CONVERSION(...) \
   template <typename U_FROM, typename U_TO, typename T> \
-    requires cyd::fabric::units::CompareScales<from_scale, typename U_FROM::scale> \
-             && cyd::fabric::units::CompareScales<to_scale, typename U_TO::scale> \
+    requires fabric::units::CompareScales<from_scale, typename U_FROM::scale> \
+             && fabric::units::CompareScales<to_scale, typename U_TO::scale> \
   static quantity_t<U_TO, T> forward(const quantity_t<U_FROM, T>& quantity) { \
     quantity_t<U_TO, T> result { \
       quantity.value * U_FROM::template factor<T>::numerator / U_FROM::template factor<T>::denominator \
@@ -73,8 +73,8 @@ template <> struct cyd::fabric::units::scale_conversion_t<FROM, TO> { \
 
 #define SCALE_BACKWARD_CONVERSION(...) \
   template <typename U_FROM, typename U_TO, typename T> \
-    requires cyd::fabric::units::CompareScales<to_scale, typename U_FROM::scale> \
-             && cyd::fabric::units::CompareScales<from_scale, typename U_TO::scale> \
+    requires fabric::units::CompareScales<to_scale, typename U_FROM::scale> \
+             && fabric::units::CompareScales<from_scale, typename U_TO::scale> \
   static quantity_t<U_TO, T> backward(const quantity_t<U_FROM, T>& quantity) { \
     quantity_t<U_TO, T> result { \
       quantity.value * U_FROM::template factor<T>::numerator / U_FROM::template factor<T>::denominator \

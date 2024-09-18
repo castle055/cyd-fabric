@@ -133,5 +133,5 @@ private:
 };
 
 export template<typename... V>
-vec(V...) -> vec<cyd::fabric::ts::packs::get_first<V...>, sizeof...(V)>;
+vec(V...) -> vec<fabric::ts::packs::get_first<V...>, sizeof...(V)>;
 

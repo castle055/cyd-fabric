@@ -3,8 +3,9 @@
 
 export module fabric.templates.ratio;
 
-namespace cyd::fabric {
-  export template<typename T, auto Num, auto Den>
+export
+namespace fabric {
+  template<typename T, auto Num, auto Den>
   struct ratio {
     static constexpr T numerator   = Num;
     static constexpr T denominator = Den;

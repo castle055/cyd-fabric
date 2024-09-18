@@ -9,7 +9,7 @@
 export module fabric.ts.metadata;
 export import fabric.ts.apply;
 
-export namespace cyd::fabric::ts {
+export namespace fabric::ts {
   template<typename T>
   struct metadata;
 
