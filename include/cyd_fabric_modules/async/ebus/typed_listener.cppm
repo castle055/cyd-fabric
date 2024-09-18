@@ -21,6 +21,10 @@ export namespace fabric::async {
     void remove() { // Should not be 'const'
       raw_listener_->remove();
     }
+
+    raw_listener::sptr raw() const {
+      return raw_listener_;
+    }
   private:
     raw_listener::sptr raw_listener_;
   };
