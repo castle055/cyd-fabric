@@ -65,6 +65,11 @@ namespace refl {
   template <Reflected R>
   bool deep_eq(const R& lhs, const R& rhs) {
     static constexpr auto count = field_count<R>;
-    return for_each_field<R, deep_eq_impl::field_eq>(lhs, rhs);
+
+    auto impl = [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return ((deep_eq_impl::field_eq<R, field<R, I>>(lhs, rhs)) && ...);
+    };
+
+    return impl(std::make_index_sequence<count>{});
   }
 }
