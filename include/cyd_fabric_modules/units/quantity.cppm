@@ -20,6 +20,10 @@ export namespace fabric::units {
 
     T value { };
 
+    T value_as_base_unit() const {
+      return value * U::template factor<T>::numerator / U::template factor<T>::denominator;
+    }
+
 
     template<typename U1>
       requires SameScale<U, U1>
