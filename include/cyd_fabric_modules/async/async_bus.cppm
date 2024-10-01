@@ -59,7 +59,7 @@ export namespace fabric::async {
           prev_t = std::chrono::system_clock::now();
           events_process_batch();
           coroutine_run();
-          std::this_thread::sleep_until(prev_t + 100us);
+          std::this_thread::sleep_until(prev_t + 1ms);
         }
       }
     };
