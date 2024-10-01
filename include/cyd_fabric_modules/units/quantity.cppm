@@ -34,7 +34,7 @@ export namespace fabric::units {
     template<typename U1>
       requires SameScale<U, U1>
     bool operator<(const quantity_t<U1, T>& rhl) const {
-      return this->value == rhl.template as<U>().value;
+      return this->value < rhl.template as<U>().value;
     }
 
     template<typename U1>
