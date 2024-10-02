@@ -41,21 +41,31 @@ namespace refl::deep_eq_impl {
     return true;
   }
 
+  template <typename P>
+  bool std_pair_eq(const P& lhs, const P& rhs) {
+    using T1 = typename P::first_type;
+    using T2 = typename P::second_type;
+
+    if (not ref_eq<T1>(lhs.first, rhs.first)) {
+      return false;
+    }
+    if (not ref_eq<T2>(lhs.second, rhs.second)) {
+      return false;
+    }
+
+    return true;
+  }
+
   template <typename I>
   bool std_map_eq(const I& lhs, const I& rhs) {
     using T = typename I::value_type;
-    using T1 = typename T::first_type;
-    using T2 = typename T::second_type;
 
     if (lhs.size() != rhs.size()) {
       return false;
     }
     for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end();
          ++it1, ++it2) {
-      if (not ref_eq<T1>(it1->first, it2->first)) {
-        return false;
-      }
-      if (not ref_eq<T2>(it1->second, it2->second)) {
+      if (not std_pair_eq<T>(*it1, *it2)) {
         return false;
       }
     }
@@ -84,6 +94,8 @@ namespace refl::deep_eq_impl {
       return std_iterable_eq(lhs, rhs);
     } else if constexpr (is_type<std::unordered_set, T>::value) {
       return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::pair, T>::value) {
+      return std_pair_eq(lhs, rhs);
     } else if constexpr (std::equality_comparable<T>) {
       return lhs == rhs;
     } else if constexpr (Reflected<T>) {
