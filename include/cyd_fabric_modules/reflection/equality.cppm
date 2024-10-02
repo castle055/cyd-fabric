@@ -22,6 +22,9 @@ export namespace refl {
 }
 
 namespace refl::deep_eq_impl {
+  template <typename T>
+  bool ref_eq(const T& lhs, const T& rhs);
+
   template <typename I>
   bool std_iterable_eq(const I& lhs, const I& rhs) {
     using T = typename I::value_type;
@@ -29,21 +32,34 @@ namespace refl::deep_eq_impl {
     if (lhs.size() != rhs.size()) {
       return false;
     }
-    if constexpr (std::equality_comparable<T>) {
-      for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end(); ++it1, ++it2) {
-        if (*it1 != *it2) {
-          return false;
-        }
+    for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end();
+         ++it1, ++it2) {
+      if (not ref_eq<T>(*it1, *it2)) {
+        return false;
       }
-      return true;
-    } else if constexpr (Reflected<T>) {
-      for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end(); ++it1, ++it2) {
-        if (deep_eq(*it1, *it2)) {
-          return false;
-        }
-      }
-      return true;
     }
+    return true;
+  }
+
+  template <typename I>
+  bool std_map_eq(const I& lhs, const I& rhs) {
+    using T = typename I::value_type;
+    using T1 = typename T::first_type;
+    using T2 = typename T::second_type;
+
+    if (lhs.size() != rhs.size()) {
+      return false;
+    }
+    for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end();
+         ++it1, ++it2) {
+      if (not ref_eq<T1>(it1->first, it2->first)) {
+        return false;
+      }
+      if (not ref_eq<T2>(it1->second, it2->second)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   template <typename T>
@@ -61,9 +77,9 @@ namespace refl::deep_eq_impl {
     } else if constexpr (is_type<std::stack, T>::value) {
       return std_iterable_eq(lhs, rhs);
     } else if constexpr (is_type<std::map, T>::value) {
-      return std_iterable_eq(lhs, rhs);
+      return std_map_eq(lhs, rhs);
     } else if constexpr (is_type<std::unordered_map, T>::value) {
-      return std_iterable_eq(lhs, rhs);
+      return std_map_eq(lhs, rhs);
     } else if constexpr (is_type<std::set, T>::value) {
       return std_iterable_eq(lhs, rhs);
     } else if constexpr (is_type<std::unordered_set, T>::value) {
