@@ -72,6 +72,8 @@ namespace refl::deep_eq_impl {
       return lhs == rhs;
     } else if constexpr (Reflected<T>) {
       return deep_eq(lhs, rhs);
+    } else {
+      return false;
     }
   }
 
