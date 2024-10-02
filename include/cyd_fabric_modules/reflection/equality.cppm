@@ -22,6 +22,59 @@ export namespace refl {
 }
 
 namespace refl::deep_eq_impl {
+  template <typename I>
+  bool std_iterable_eq(const I& lhs, const I& rhs) {
+    using T = typename I::value_type;
+
+    if (lhs.size() != rhs.size()) {
+      return false;
+    }
+    if constexpr (std::equality_comparable<T>) {
+      for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end(); ++it1, ++it2) {
+        if (*it1 != *it2) {
+          return false;
+        }
+      }
+      return true;
+    } else if constexpr (Reflected<T>) {
+      for (auto it1 = lhs.begin(), it2 = rhs.begin(); it1 != lhs.end() && it2 != rhs.end(); ++it1, ++it2) {
+        if (deep_eq(*it1, *it2)) {
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  template <typename T>
+  bool ref_eq(const T& lhs, const T& rhs) {
+    using fabric::ts::packs::is_type;
+
+    if constexpr (is_type<std::vector, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::list, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::deque, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::queue, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::stack, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::map, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::unordered_map, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::set, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (is_type<std::unordered_set, T>::value) {
+      return std_iterable_eq(lhs, rhs);
+    } else if constexpr (std::equality_comparable<T>) {
+      return lhs == rhs;
+    } else if constexpr (Reflected<T>) {
+      return deep_eq(lhs, rhs);
+    }
+  }
+
   template <Reflected R, typename field_data>
   bool field_eq(const R& lhs, const R& rhs) {
     const auto& field1 = field_data::from_instance(lhs);
@@ -33,28 +86,17 @@ namespace refl::deep_eq_impl {
       }
 
       using field_type = std::remove_reference_t<typename field_data::type>;
-      if constexpr (std::equality_comparable<field_type>) {
-        return field1 == field2;
-      } else if constexpr (Reflected<field_type>) {
-        return deep_eq(field1, field2);
-      }
+      return ref_eq<field_type>(field1, field2);
     } else if constexpr (field_data::is_pointer) {
       if (field1 == field2) {
         return true;
       }
 
       using field_type = std::remove_pointer_t<typename field_data::type>;
-      if constexpr (std::equality_comparable<field_type>) {
-        return *field1 == *field2;
-      } else if constexpr (Reflected<field_type>) {
-        return deep_eq(*field1, *field2);
-      }
+      return ref_eq<field_type>(*field1, *field2);
     } else {
-      if constexpr (std::equality_comparable<typename field_data::type>) {
-        return field1 == field2;
-      } else if constexpr (Reflected<typename field_data::type>) {
-        return deep_eq(field1, field2);
-      }
+      using field_type = typename field_data::type;
+      return ref_eq<field_type>(field1, field2);
     }
 
     return false;
