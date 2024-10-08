@@ -23,6 +23,11 @@ export namespace fabric::wiring {
 
   template <typename Owner, typename... Args>
   class private_signal;
+  
+  template <typename Owner, typename... Args>
+  class output_signal;
+  template <typename Owner, typename... Args>
+  class input_signal;
 } // namespace fabric::wiring
 
 namespace fabric::wiring {

@@ -20,14 +20,16 @@ public:
   auto_disconnect() = default;
 
   ~auto_disconnect() {
-    for (auto && connection : connections_) {
+    for (auto&& connection: connections_) {
       connection.disconnect();
     }
   }
 
+  template <typename...> friend class fabric::wiring::signal;
+private:
   void add_connection(connection c) {
     connections_.emplace_front(c);
   }
-private:
+
   std::forward_list<connection> connections_{};
 };

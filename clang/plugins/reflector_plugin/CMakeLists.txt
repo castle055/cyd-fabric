@@ -22,5 +22,5 @@ target_compile_options(ReflectorPlugin PRIVATE "-stdlib=libstdc++")
 
 macro(reflect_target TARGET)
   add_dependencies(${TARGET} ReflectorPlugin)
-  set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS "-fplugin=/home/castle/repos/cpr/cyd-fabric/build/clang/plugins/test_plugin/libReflectorPlugin.so")
+  set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS "-fplugin=/home/castle/repos/cpr/cyd-fabric/build/clang/plugins/reflector_plugin/libReflectorPlugin.so")
 endmacro(reflect_target)
