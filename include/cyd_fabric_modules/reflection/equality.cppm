@@ -72,6 +72,12 @@ namespace refl::deep_eq_impl {
     return true;
   }
 
+  template <typename F>
+  bool std_function_eq(const F& lhs, const F& rhs) {
+    // I know this isn't correct, but properly comparing an std::function is impossible in C++
+    return lhs.target_type() == rhs.target_type();
+  }
+
   template <typename T>
   bool ref_eq(const T& lhs, const T& rhs) {
     using fabric::ts::packs::is_type;
@@ -96,6 +102,8 @@ namespace refl::deep_eq_impl {
       return std_iterable_eq(lhs, rhs);
     } else if constexpr (is_type<std::pair, T>::value) {
       return std_pair_eq(lhs, rhs);
+    } else if constexpr (is_type<std::function, T>::value) {
+      return std_function_eq(lhs, rhs);
     } else if constexpr (std::equality_comparable<T>) {
       return lhs == rhs;
     } else if constexpr (Reflected<T>) {
