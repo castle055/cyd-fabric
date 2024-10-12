@@ -46,7 +46,7 @@ public:
         Context(Ctx) {
 
     if (Context->getCurrentNamedModule() && checkModuleUsable(Context->getCurrentNamedModule())) {
-      llvm::outs() << "[WARN] MODULE USABLE " << "\n";
+      llvm::outs() << "[INFO] Adding stating type information to module." << "\n";
     }
   }
 
