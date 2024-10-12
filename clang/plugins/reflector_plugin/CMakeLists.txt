@@ -19,8 +19,9 @@ target_link_libraries(ReflectorPlugin PRIVATE
 target_include_directories(ReflectorPlugin PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 target_compile_options(ReflectorPlugin PRIVATE "-stdlib=libstdc++")
 
+set(REFLECTOR_PLUGIN_BINARY "${CMAKE_CURRENT_BINARY_DIR}/libReflectorPlugin.so")
 
 macro(reflect_target TARGET)
   add_dependencies(${TARGET} ReflectorPlugin)
-  set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS "-fplugin=/home/castle/repos/cpr/cyd-fabric/build/clang/plugins/reflector_plugin/libReflectorPlugin.so")
+  set_target_properties(${TARGET} PROPERTIES COMPILE_FLAGS "-fplugin=${REFLECTOR_PLUGIN_BINARY}")
 endmacro(reflect_target)
