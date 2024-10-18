@@ -253,14 +253,24 @@ export namespace fabric::ts::packs {
   };
 
   //! get_size
+  template <>
+  struct get_size<> {
+    static constexpr std::size_t value = 0UL;
+  };
+
   template <typename First, typename... Rest>
   struct get_size<First, Rest...> {
-    static constexpr std::size_t value = 1 + sizeof...(Rest);
+    static constexpr std::size_t value = 1UL + sizeof...(Rest);
+  };
+
+  template <template <typename...> typename Pack>
+  struct get_size<Pack<>> {
+    static constexpr std::size_t value = 0UL;
   };
 
   template <template <typename...> typename Pack, typename First, typename... Rest>
   struct get_size<Pack<First, Rest...>> {
-    static constexpr std::size_t value = 1 + sizeof...(Rest);
+    static constexpr std::size_t value = 1UL + sizeof...(Rest);
   };
 
   //! get
