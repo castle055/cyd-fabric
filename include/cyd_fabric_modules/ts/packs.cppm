@@ -450,8 +450,14 @@ export namespace fabric::ts::packs {
     using type = typename remove_first<N - 1, T...>::type;
   };
 
+  template <std::size_t N, typename First, typename... T>
+    requires(N == (sizeof...(T) + 1))
+  struct remove_first<N, First, T...> {
+    using type = pack<>;
+  };
+
   template <std::size_t N, template <typename...> typename Pack, typename... T>
-    requires(N < (sizeof...(T) + 1))
+    requires(N <= (sizeof...(T) + 1))
   struct remove_first<N, Pack<T...>> {
   private:
     using result_pack = typename remove_first<N, T...>::type;
