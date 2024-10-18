@@ -35,6 +35,8 @@ export namespace fabric::ts::packs {
   template <typename...>
   struct get_first;
   template <typename...>
+  struct get_last;
+  template <typename...>
   struct get_size;
   template <std::size_t, typename...>
   struct get;
@@ -42,6 +44,14 @@ export namespace fabric::ts::packs {
   struct append;
   template <typename...>
   struct prepend;
+  template <std::size_t N, typename... T>
+  struct remove_first;
+  template <std::size_t N, typename... T>
+  struct remove_last;
+  template <std::size_t N, typename... T>
+  struct shuffle_back;
+  template <std::size_t FROM, std::size_t N, typename... T>
+  struct slice;
   template <typename...>
   struct take_one_out_w_predicate;
   template <typename...>
@@ -50,6 +60,8 @@ export namespace fabric::ts::packs {
   struct substitute;
   template <typename...>
   struct flatten;
+  template <typename From, template <typename...> typename To>
+  struct swap_pack;
 
   namespace impl {
     template <typename...>
@@ -227,6 +239,19 @@ export namespace fabric::ts::packs {
     using type = First;
   };
 
+  //! get_last
+  template <typename... T>
+    requires(sizeof...(T) > 0)
+  struct get_last<T...> {
+    using type = typename get<sizeof...(T) - 1, T...>::type;
+  };
+
+  template <template <typename...> typename Pack, typename... T>
+    requires(sizeof...(T) > 0)
+  struct get_last<Pack<T...>> {
+    using type = typename get_last<T...>::type;
+  };
+
   //! get_size
   template <typename First, typename... Rest>
   struct get_size<First, Rest...> {
@@ -395,4 +420,97 @@ export namespace fabric::ts::packs {
   struct flatten<Pack<Args...>> {
     using type = typename impl::flatten<Pack<Args...>, sizeof...(Args)>::type;
   };
-}
+
+  //! swap_pack
+  template <template <typename...> typename From, template <typename...> typename To, typename... T>
+  struct swap_pack<From<T...>, To> {
+    using type = To<T...>;
+  };
+
+  //! remove_first
+  template <std::size_t N, typename First, typename... T>
+    requires(N == 0)
+  struct remove_first<N, First, T...> {
+    using type = pack<First, T...>;
+  };
+
+  template <std::size_t N, typename First, typename... T>
+    requires(N < (sizeof...(T) + 1))
+  struct remove_first<N, First, T...> {
+    using type = typename remove_first<N - 1, T...>::type;
+  };
+
+  template <std::size_t N, template <typename...> typename Pack, typename... T>
+    requires(N < (sizeof...(T) + 1))
+  struct remove_first<N, Pack<T...>> {
+  private:
+    using result_pack = typename remove_first<N, T...>::type;
+
+  public:
+    using type = typename swap_pack<result_pack, Pack>::type;
+  };
+
+  //! remove_last
+  template <std::size_t N, typename... T>
+  struct remove_last {
+  private:
+    using shuffled = typename shuffle_back<sizeof...(T) - N, T...>::type;
+    using removed  = typename remove_first<N, shuffled>::type;
+
+  public:
+    using type = removed;
+  };
+
+  template <std::size_t N, template <typename...> typename Pack, typename... T>
+  struct remove_last<N, Pack<T...>> {
+  private:
+    using result_pack = typename remove_last<N, T...>::type;
+
+  public:
+    using type = typename swap_pack<result_pack, Pack>::type;
+  };
+
+  //! shuffle_back
+  template <std::size_t N, typename First, typename... T>
+    requires(N == 0)
+  struct shuffle_back<N, First, T...> {
+    using type = pack<First, T...>;
+  };
+
+  template <std::size_t N, typename First, typename... T>
+    requires(N != 0)
+  struct shuffle_back<N, First, T...> {
+    using type = typename shuffle_back<N - 1, T..., First>::type;
+  };
+
+  template <std::size_t N, template <typename...> typename Pack, typename... T>
+  struct shuffle_back<N, Pack<T...>> {
+  private:
+    using result_pack = typename shuffle_back<N, T...>::type;
+
+  public:
+    using type = typename swap_pack<result_pack, Pack>::type;
+  };
+
+  //! slice
+  template <std::size_t FROM, std::size_t N, typename First, typename... T>
+    requires(FROM >= 0 && FROM + N <= (sizeof...(T) + 1))
+  struct slice<FROM, N, First, T...> {
+  private:
+    using without_head = typename remove_first<FROM, First, T...>::type;
+    using without_tail =
+      typename remove_first<get_size<without_head>::value - N, without_head>::type;
+
+  public:
+    using type = without_tail;
+  };
+
+  template <std::size_t FROM, std::size_t N, template <typename...> typename Pack, typename... T>
+  struct slice<FROM, N, Pack<T...>> {
+  private:
+    using result_pack = typename slice<FROM, N, T...>::type;
+
+  public:
+    using type = typename swap_pack<result_pack, Pack>::type;
+  };
+} // namespace fabric::ts::packs
