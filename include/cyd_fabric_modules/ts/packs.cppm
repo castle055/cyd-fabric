@@ -47,6 +47,8 @@ export namespace fabric::ts::packs {
   template <std::size_t N, typename... T>
   struct remove_first;
   template <std::size_t N, typename... T>
+  struct remove_first_in_pack;
+  template <std::size_t N, typename... T>
   struct remove_last;
   template <std::size_t N, typename... T>
   struct shuffle_back;
@@ -72,6 +74,8 @@ export namespace fabric::ts::packs {
     struct substitute;
     template <typename, std::size_t>
     struct flatten;
+    template <std::size_t N, typename... T>
+    struct remove_first;
   } // namespace impl
 
   //! is_type
@@ -226,6 +230,20 @@ export namespace fabric::ts::packs {
     struct flatten<Pack<P1, PRest...>, N> {
       using type = typename flatten<Pack<PRest..., P1>, N - 1>::type;
     };
+
+    //! remove_first
+    template <std::size_t N, typename First, typename... T>
+      requires(N == 0)
+    struct remove_first<N, First, T...> {
+      using type = pack<First, T...>;
+    };
+
+    template <std::size_t N, typename First, typename... T>
+      requires(N > 0)
+    struct remove_first<N, First, T...> {
+      using type = typename remove_first<N - 1, T...>::type;
+    };
+
   } // namespace impl
 
   //! get_first
@@ -438,29 +456,24 @@ export namespace fabric::ts::packs {
   };
 
   //! remove_first
-  template <std::size_t N, typename First, typename... T>
-    requires(N == 0)
-  struct remove_first<N, First, T...> {
-    using type = pack<First, T...>;
+  template <std::size_t N, typename... T>
+    requires(N < (sizeof...(T)))
+  struct remove_first<N, T...> {
+    using type = typename impl::remove_first<N, T...>::type;
   };
 
-  template <std::size_t N, typename First, typename... T>
-    requires(N < (sizeof...(T) + 1))
-  struct remove_first<N, First, T...> {
-    using type = typename remove_first<N - 1, T...>::type;
-  };
-
-  template <std::size_t N, typename First, typename... T>
-    requires(N == (sizeof...(T) + 1))
-  struct remove_first<N, First, T...> {
+  template <std::size_t N, typename... T>
+    requires(N >= (sizeof...(T)))
+  struct remove_first<N, T...> {
     using type = pack<>;
   };
 
+  //! remove_first_in_pack
   template <std::size_t N, template <typename...> typename Pack, typename... T>
     requires(N <= (sizeof...(T) + 1))
-  struct remove_first<N, Pack<T...>> {
+  struct remove_first_in_pack<N, Pack<T...>> {
   private:
-    using result_pack = typename remove_first<N, T...>::type;
+    using result_pack = typename impl::remove_first<N, T...>::type;
 
   public:
     using type = typename swap_pack<result_pack, Pack>::type;
