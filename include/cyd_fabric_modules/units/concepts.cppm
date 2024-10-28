@@ -9,6 +9,9 @@
 export module fabric.units.core:concepts;
 import :reduce_rules;
 import :preface;
+export import fabric.ts.packs;
+
+namespace packs = fabric::ts::packs;
 
 namespace fabric::units {
   export template<typename U_FROM, typename U_TO, typename T>
@@ -105,4 +108,16 @@ namespace fabric::units {
 
   export template<typename Q, typename S>
   concept Quantity = std::same_as<typename Q::unit::scale, S>;
+
+  export template<typename U, typename T>
+  struct quantity_t;
+
+  export template <typename T>
+  using is_quantity = packs::is_type<quantity_t, T>;
+
+  export template <typename T>
+  constexpr bool is_quantity_v = is_quantity<T>::value;
+
+  export template <typename T>
+  concept QuantityConcept = is_quantity_v<T>;
 }

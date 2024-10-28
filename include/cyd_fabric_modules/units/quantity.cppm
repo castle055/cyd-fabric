@@ -43,6 +43,24 @@ export namespace fabric::units {
       return this->value == rhl.template as<U>().value;
     }
 
+    template<typename T1>
+      requires (not QuantityConcept<T1>)
+    auto operator<=>(const T1& rhl) const {
+      return this->value <=> rhl;
+    }
+
+    template<typename T1>
+      requires (not QuantityConcept<T1>)
+    bool operator<(const T1& rhl) const {
+      return this->value < rhl;
+    }
+
+    template<typename T1>
+      requires (not QuantityConcept<T1>)
+    bool operator==(const T1& rhl) const {
+      return this->value == rhl;
+    }
+
     template<typename U1>
       requires SameScale<U, U1>
     quantity_t<R(frac<R(U), R(U)>), T> operator/(const quantity_t<U1, T> &rhl) const {
@@ -55,6 +73,12 @@ export namespace fabric::units {
       return {this->value / rhl.value};
     }
 
+    template<typename T1>
+      requires (not QuantityConcept<T1>)
+    quantity_t<R(U), T> operator/(const T1& rhl) const {
+      return {this->value / rhl};
+    }
+
     template<typename U1>
       requires SameScale<U, U1>
     quantity_t<R(mul<R(U), R(U)>), T> operator*(const quantity_t<U1, T> &rhl) const {
@@ -65,6 +89,12 @@ export namespace fabric::units {
       requires (!SameScale<U, U1>)
     quantity_t<R(mul<R(U), R(U1)>), T> operator*(const quantity_t<U1, T> &rhl) const {
       return {this->value * rhl.value};
+    }
+
+    template<typename T1>
+      requires (not QuantityConcept<T1>)
+    quantity_t<R(U), T> operator*(const T1& rhl) const {
+      return {this->value * rhl};
     }
 
     template<typename U1, typename T1>
@@ -151,6 +181,18 @@ export namespace fabric::units {
       return str;
     }
   };
+
+  template <QuantityConcept Q, typename T1>
+    requires(not QuantityConcept<T1>)
+  Q operator/(const T1& lhs, const Q& rhs) {
+    return {lhs / rhs->value};
+  }
+
+  template <QuantityConcept Q, typename T1>
+    requires(not QuantityConcept<T1>)
+  Q operator*(const T1& lhs, const Q& rhs) {
+    return rhs * lhs;
+  }
 }
 
 export template<typename U, typename T>
