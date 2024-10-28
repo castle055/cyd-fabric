@@ -1,6 +1,5 @@
-//
-// Created by castle on 4/9/24.
-//
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CONFIG_ERRORS_H
 #define CONFIG_ERRORS_H

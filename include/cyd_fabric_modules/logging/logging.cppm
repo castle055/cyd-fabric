@@ -11,6 +11,7 @@ export import std;
 export import :initializer;
 //! Commands
 export import :print;
+export import :print_stacktrace;
 
 //! SUBMODULES
 //!   Types:

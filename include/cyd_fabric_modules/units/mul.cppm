@@ -6,26 +6,66 @@
 //
 module;
 #include <cyd_fabric_modules/headers/macros/units.h>
-export module fabric.units:mul;
+
+export module fabric.units.core:mul;
 import std;
+import :preface;
+import :frac;
 export import fabric.templates.ratio;
 
-export namespace cyd::fabric::units {
-  template<typename...>
-  struct mul;
+export namespace fabric::units {
+  template <typename... Products>
+  struct mul {
+    UNIT_SYMBOL(symbol_builder<Products...>::symbol())
 
-  template<typename Product1, typename... Products>
-  struct mul<Product1, Products...> {
-    using scale  = mul<typename Product1::scale, typename Products::scale...>;
-    using reduce = mul<typename Product1::reduce, typename Products::reduce...>;
+  private:
+    template <typename...>
+    struct symbol_builder {
+      UNIT_SYMBOL(no_unit::symbol())
+    };
 
-    template<typename T>
+    template <typename P>
+    struct symbol_builder<P> {
+      UNIT_SYMBOL(P::symbol())
+    };
+
+    template <typename P, typename... Ps>
+      requires (sizeof...(Ps) > 0)
+    struct symbol_builder<P, Ps...> {
+      UNIT_SYMBOL(P::symbol() + "*" + symbol_builder<Ps...>::symbol())
+    };
+  };
+
+  template <typename... Products>
+  requires (has_scale_v<Products> && ...)
+  struct mul<Products...> {
+    using scale  = mul<typename Products::scale...>;
+    // using reduce = typename ts::packs::flatten<mul<typename Products::reduce...>>::type;
+
+    template <typename T>
     using factor = ratio<
       T,
-      (long)(Product1::template factor<T>::denominator * (... * Products::template factor<T>::denominator)),
-      (long)(Product1::template factor<T>::numerator * (... * Products::template factor<T>::numerator))
+      (long)(1 * ... * Products::template factor<T>::numerator),
+      (long)(1 * ... * Products::template factor<T>::denominator)
     >;
 
-    UNIT_SYMBOL(Product1::symbol() + (... + ("*" + Products::symbol())))
+    UNIT_SYMBOL(symbol_builder<Products...>::symbol())
+
+  private:
+    template <typename...>
+    struct symbol_builder {
+      UNIT_SYMBOL(no_unit::symbol())
+    };
+
+    template <typename P>
+    struct symbol_builder<P> {
+      UNIT_SYMBOL(P::symbol())
+    };
+
+    template <typename P, typename... Ps>
+      requires (sizeof...(Ps) > 0)
+    struct symbol_builder<P, Ps...> {
+      UNIT_SYMBOL(P::symbol() + "*" + symbol_builder<Ps...>::symbol())
+    };
   };
 }

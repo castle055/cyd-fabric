@@ -8,11 +8,7 @@
 
 export module fabric.units;
 
-export import std;
-
-export import :preface;
-export import :concepts;
-export import :reduce_rules;
-export import :quantity;
+export import fabric.units.core;
+export import fabric.units.scales;
 
 // export import fabric.templates.ratio;

@@ -1,16 +1,13 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 5/11/24.
-//
 module;
 #include "cyd_fabric_modules/headers/macros/units.h"
 export module fabric.units.scales:time;
-export import fabric.units;
+export import fabric.units.core;
 
-export namespace cyd::fabric::units {
-  SCALE(time, {
+export namespace fabric::units {
+  SCALE(time) {
     UNIT(seconds, "s", 1,1)
 
     UNIT(milliseconds, "ms", 1,1000)
@@ -25,5 +22,5 @@ export namespace cyd::fabric::units {
     UNIT(decades, "decades", years::factor<T>::numerator*10,1)
     UNIT(centuries, "centuries", decades::factor<T>::numerator*10,1)
     UNIT(millennia, "millennia", centuries::factor<T>::numerator*10,1)
-  })
+  }
 }

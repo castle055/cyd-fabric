@@ -1,124 +1,96 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 5/11/24.
-//
 module;
-#include <cyd_fabric_modules/headers/macros/units.h>
-export module fabric.units:reduce_rules;
+
+#define TO(...)             \
+{                           \
+  using type = __VA_ARGS__; \
+}
+
+#define REDUCE_PATTERN(...) struct reduce_impl<__VA_ARGS__>
+
+export module fabric.units.core:reduce_rules;
 export import std;
 export import fabric.ts.packs;
 import :preface;
-import :frac;
-import :mul;
 
-export namespace cyd::fabric::units {
-  template<typename Numerator, typename Denominator>
-  struct frac<Numerator, frac<Numerator, Denominator>> {
-    using reduce = typename Denominator::reduce;
-    UNIT_SYMBOL("(" + Numerator::symbol() + ")/((" + Numerator::symbol() + ")/(" + Denominator::symbol() + "))")
-  };
+export namespace fabric::units {
+  template <typename N>
+  REDUCE_PATTERN(frac<N, N>) TO(no_unit);
 
-  template<typename Numerator1, typename Numerator2, typename Denominator>
-  struct frac<Numerator1, frac<Numerator2, Denominator>> {
-    using reduce = typename frac<mul<typename Numerator1::reduce, typename Denominator::reduce>, typename
-                                 Numerator2::reduce>::reduce;
-    UNIT_SYMBOL("(" + Numerator1::symbol() + ")/(" + Numerator2::symbol() + "*" + Denominator::symbol() + ")")
-  };
+  template <typename N, typename D>
+  REDUCE_PATTERN(frac<N, D>) TO(frac<reduce<N>, reduce<D>>);
 
-  template<typename Numerator, typename Denominator1, typename Denominator2>
-  struct frac<frac<Numerator, Denominator1>, Denominator2> {
-    using reduce = typename frac<typename Numerator::reduce, mul<
-                                   typename Denominator1::reduce, typename Denominator2::reduce>>::reduce;
-    UNIT_SYMBOL("(" + Numerator::symbol() + "*" + Denominator1::symbol() + ")/(" + Denominator2::symbol() + ")")
-  };
+  template <>
+  REDUCE_PATTERN(frac<no_unit, no_unit>) TO(no_unit);
 
-  template<typename Denominator, typename... Numerators>
-    requires ts::packs::Contains<Denominator, Numerators...>
-  struct frac<mul<Numerators...>, Denominator> {
-    using reduce = typename ts::packs::take_one_out<Denominator, mul<Numerators...>>::type::reduce;
-    UNIT_SYMBOL("(" + mul<Numerators...>::symbol() + ")/(" + Denominator::symbol() + ")")
-  };
-
-  template<typename Numerator, typename... Denominators>
-    requires ts::packs::Contains<Numerator, Denominators...>
-  struct frac<Numerator, mul<Denominators...>> {
-    using reduce = typename frac<no_unit, typename ts::packs::take_one_out<
-                                   Numerator, mul<Denominators...>>::type::reduce>::reduce;
-    UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + mul<Denominators...>::symbol() + ")")
-  };
-
-  template<typename Numerator>
-  struct frac<Numerator, Numerator> {
-    using reduce = no_unit;
-    UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Numerator::symbol() + ")")
-  };
-
-  template<>
-  struct frac<no_unit, no_unit> {
-    using reduce = no_unit;
-    UNIT_SYMBOL("(no unit)/(no unit)")
-  };
-
-  template<typename N>
-  struct frac<N, no_unit> {
-    using reduce = typename N::reduce;
-    UNIT_SYMBOL("(" + N::symbol() + ")/(no unit)")
-  };
+  template <typename N>
+  REDUCE_PATTERN(frac<N, no_unit>) TO(reduce<N>);
 
 
-  template<typename P>
-  struct mul<P> {
-    using reduce = typename P::reduce;
-    UNIT_SYMBOL("(" + P::symbol() + ")")
-  };
+  template<typename N, typename D>
+  requires (!is_frac_v<N>)
+  REDUCE_PATTERN(frac<N, frac<N, D>>) TO(reduce<D>);
 
-  template<>
-  struct mul<no_unit, no_unit> {
-    using reduce = no_unit;
-    UNIT_SYMBOL("(no unit)*(no unit)")
-  };
+  template<typename N, typename D1, typename D2>
+  requires (!is_frac_v<N>)
+  REDUCE_PATTERN(frac<N, frac<D1, D2>>) TO(reduce<frac<reduce<mul<reduce<N>,reduce<D2>>>,reduce<D1>>>);
 
-  template<typename P>
-  struct mul<P, no_unit> {
-    using reduce = typename P::reduce;
-    UNIT_SYMBOL("(" + P::symbol() + ")*(no unit)")
-  };
+  template<typename N, typename D>
+  requires (!is_frac_v<N>)
+  REDUCE_PATTERN(frac<frac<N, D>, N>) TO(reduce<frac<no_unit,reduce<D>>>);
 
-  template<typename P>
-  struct mul<no_unit, P> {
-    using reduce = typename P::reduce;
-    UNIT_SYMBOL("(no unit)*(" + P::symbol() + ")")
-  };
+  template<typename N, typename D1, typename D2>
+  requires (!is_frac_v<N>)
+  REDUCE_PATTERN(frac<frac<D1, D2>, N>) TO(reduce<frac<reduce<D1>, reduce<mul<reduce<D2>,reduce<N>>>>>);
 
-  template<typename P1, typename P2>
-  struct mul<frac<P1, P2>, P2> {
-    using reduce = typename P1::reduce;
-    UNIT_SYMBOL("((" + P1::symbol() + ")/(" + P2::symbol() + "))*(" + P2::symbol() + ")")
-  };
+  template<typename N1, typename N2, typename D1, typename D2>
+  requires (!std::is_same_v<N1, D1> || !std::is_same_v<N2, D2>)
+  REDUCE_PATTERN(frac<frac<N1, N2>, frac<D1, D2>>) TO(reduce<frac<reduce<mul<reduce<N1>, reduce<D2>>>, reduce<mul<reduce<D1>,reduce<N2>>>>>);
 
-  template<typename P1, typename N, typename P2>
-  struct mul<frac<P1, N>, P2> {
-    using reduce = typename frac<mul<typename P2::reduce, typename P1::reduce>, typename N::reduce>::reduce;
-    UNIT_SYMBOL("((" + P1::symbol() + ")/(" + N::symbol() + "))*(" + P2::symbol() + ")")
-  };
 
-  template<typename P1, typename P2>
-  struct mul<P2, frac<P1, P2>> {
-    using reduce = typename P1::reduce;
-    UNIT_SYMBOL("(" + P2::symbol() + ")*((" + P1::symbol() + ")/(" + P2::symbol() + "))")
-  };
+  template <typename N, typename ...Ds>
+  requires (ts::packs::Contains<N, Ds...>)
+  REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<no_unit, reduce<cancel_out<reduce<mul<Ds...>>, N>>>>);
 
-  template<typename P1, typename N, typename P2>
-  struct mul<P2, frac<P1, N>> {
-    using reduce = typename frac<mul<typename P2::reduce, typename P1::reduce>, typename N::reduce>::reduce;
-    UNIT_SYMBOL("(" + P2::symbol() + ")*((" + P1::symbol() + ")/(" + N::symbol() + "))")
-  };
+  // template <typename N, typename ...Ds>
+  // requires (!ts::packs::Contains<N, Ds...> && !is_mul_v<N> && !is_frac_v<N>)
+  // REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<reduce<N>, reduce<mul<Ds...>>>>);
+  //
+  template <typename D, typename ...Ns>
+  requires (ts::packs::Contains<D, Ns...>)
+  REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<cancel_out<reduce<mul<Ns...>>, D>>);
 
-  template<typename P1, typename P2, typename D1, typename D2>
-  struct mul<frac<P1, D1>, frac<P2, D2>> {
-    using reduce = typename frac<mul<typename P1::reduce, typename P2::reduce>, mul<typename D1::reduce, typename D2::reduce>>::reduce;
-    UNIT_SYMBOL("((" + P1::symbol() + ")/(" + D1::symbol() + "))*((" + P2::symbol() + ")/(" + D2::symbol() + "))")
-  };
+  // template <typename D, typename ...Ns>
+  // requires (!ts::packs::Contains<D, Ns...> && !is_mul_v<D> && !is_frac_v<D>)
+  // REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<frac<reduce<mul<Ns...>>, reduce<D>>>);
+  //
+  template <typename M1, typename M2>
+  requires (is_mul_v<M1> && is_mul_v<M2> && !ts::packs::share_items<M1, M2>::value)
+  REDUCE_PATTERN(frac<M1, M2>) TO(frac<M1, M2>);
+
+  template <typename M1, typename M2>
+  requires (is_mul_v<M1> && is_mul_v<M2> && ts::packs::share_items<M1, M2>::value)
+  REDUCE_PATTERN(frac<M1, M2>) TO(reduce<frac<reduce<typename cancel_out_many<M1, M2>::type>, reduce<typename cancel_out_many<M2,M1>::type>>>);
+
+
+  template <>
+  REDUCE_PATTERN(mul<>) TO(no_unit);
+
+  template <typename P>
+  REDUCE_PATTERN(mul<P>) TO(reduce<P>);
+
+  template <typename ...Ps>
+  requires (!ts::packs::Contains<no_unit, Ps...> && ((!is_mul_v<Ps> && !is_frac_v<Ps>) && ...))
+  REDUCE_PATTERN(mul<Ps...>) TO(mul<Ps...>);
+
+  template <typename ...Ps>
+  requires (!ts::packs::Contains<no_unit, Ps...> && ((is_mul_v<Ps> || is_frac_v<Ps>) || ...))
+  REDUCE_PATTERN(mul<Ps...>) TO(reduce<normalize_t<mul<Ps...>>>);
+
+  template <typename ...Ps>
+  requires ts::packs::Contains<no_unit, Ps...>
+  REDUCE_PATTERN(mul<Ps...>) TO(reduce<cancel_out<mul<Ps...>, no_unit>>);
+
 }

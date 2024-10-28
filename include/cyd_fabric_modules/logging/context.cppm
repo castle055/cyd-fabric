@@ -8,11 +8,11 @@
 
 export module fabric.logging:context;
 
-import :filter;
+export import :filter;
 
-import fabric.logging.entry;
-import fabric.logging.levels;
-import fabric.logging.target_base;
+export import fabric.logging.entry;
+export import fabric.logging.levels;
+export import fabric.logging.target_base;
 
 import fabric.logging.targets.stdout;
 import fabric.logging.targets.stderr;

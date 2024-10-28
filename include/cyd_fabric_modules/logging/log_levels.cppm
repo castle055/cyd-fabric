@@ -10,11 +10,13 @@ import std;
 
 export namespace LOG {
   struct LEVEL {
+    const char* name;
     const int priority;
   };
 }
 
-export constexpr LOG::LEVEL DEBUG {0};
-export constexpr LOG::LEVEL INFO {1};
-export constexpr LOG::LEVEL WARN {2};
-export constexpr LOG::LEVEL ERROR {3};
+export constexpr LOG::LEVEL DEBUG {"DEBUG", 0};
+export constexpr LOG::LEVEL INFO  {"INFO ", 1};
+export constexpr LOG::LEVEL WARN  {"WARN ", 2};
+export constexpr LOG::LEVEL ERROR {"ERROR", 3};
+export constexpr LOG::LEVEL FATAL {"FATAL", 4};

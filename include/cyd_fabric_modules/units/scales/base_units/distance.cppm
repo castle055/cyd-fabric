@@ -1,16 +1,13 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 5/11/24.
-//
 module;
 #include "cyd_fabric_modules/headers/macros/units.h"
 export module fabric.units.scales:distance;
-export import fabric.units;
+export import fabric.units.core;
 
-export namespace cyd::fabric::units {
-  SCALE(distance, {
+export namespace fabric::units {
+  SCALE(distance) {
     UNIT(meters, "m", 1,1)
 
     //! Metric
@@ -34,5 +31,5 @@ export namespace cyd::fabric::units {
 
     UNIT(fathom, "ftm", 463,250)
     UNIT(nautical_mile, "nmi", 1852,1)
-  })
+  }
 }

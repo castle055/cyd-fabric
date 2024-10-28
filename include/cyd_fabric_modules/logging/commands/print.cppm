@@ -12,13 +12,7 @@ module;
 export module fabric.logging:print;
 import :command_base;
 
-constexpr const char* normalize(const char* path, const char* path_ref) {
-  std::size_t i = 0;
-  while (path[i] == path_ref[i] && path[i] != '\0' && path_ref[i] != '\0') {
-    ++i;
-  }
-  return path + i;
-}
+import std;
 
 export namespace LOG {
   class print {
@@ -26,6 +20,7 @@ export namespace LOG {
     std::string function;
     const char* path;
     std::uint_least32_t linenum;
+    LEVEL level;
 
   public:
     NO_COPY(print);
@@ -37,10 +32,10 @@ export namespace LOG {
       const char* file_name    = normalize(__builtin_FILE(), __FILE__),
       const char* fun          = __builtin_FUNCTION(),
       const unsigned long line = __builtin_LINE()
-    ) {
-      function = fun;
-      linenum  = line;
-      path     = file_name;
+    ): level(level) {
+      function    = fun;
+      linenum     = line;
+      path        = file_name;
     }
 
     ~print() {
@@ -50,6 +45,7 @@ export namespace LOG {
         .linenum = linenum,
         .function = function,
         .message = message,
+        .level = level,
       });
     }
 

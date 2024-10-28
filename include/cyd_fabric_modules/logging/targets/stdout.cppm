@@ -11,7 +11,7 @@ import fabric.logging.target_base;
 
 export namespace LOG::TARGETS {
   class STDOUT final: public target_base {
-    entry_format_t entry_format_ {"{entry:message}"};
+    entry_format_t entry_format_ {DEFAULT_ENTRY_FORMAT};
 
     explicit STDOUT(
       entry_format_t entry_format
@@ -42,7 +42,7 @@ export namespace LOG::TARGETS {
       }
 
     private:
-      entry_format_t entry_format_ {"{entry:message}"};
+      entry_format_t entry_format_ {DEFAULT_ENTRY_FORMAT};
     };
   };
 }

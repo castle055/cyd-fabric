@@ -6,21 +6,30 @@
 //
 module;
 #include <cyd_fabric_modules/headers/macros/units.h>
-export module fabric.units:frac;
+export module fabric.units.core:frac;
 import std;
+import fabric.ts.packs;
 export import fabric.templates.ratio;
 
-namespace cyd::fabric::units {
-  export template<typename Numerator, typename Denominator>
+export namespace fabric::units {
+  template<typename Numerator, typename Denominator>
   struct frac {
+    UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")
+  };
+
+  template<typename Numerator, typename Denominator>
+  requires requires {
+    typename Numerator::scale;
+    typename Denominator::scale;
+  }
+  struct frac<Numerator, Denominator> {
     using scale  = frac<typename Numerator::scale, typename Denominator::scale>;
-    using reduce = frac<typename Numerator::reduce, typename Denominator::reduce>;
 
     template<typename T>
     using factor = ratio<
       T,
-      (long)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator),
-      (long)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator)
+      (long)(Numerator::template factor<T>::numerator * Denominator::template factor<T>::denominator),
+      (long)(Numerator::template factor<T>::denominator * Denominator::template factor<T>::numerator)
     >;
 
     UNIT_SYMBOL("(" + Numerator::symbol() + ")/(" + Denominator::symbol() + ")")

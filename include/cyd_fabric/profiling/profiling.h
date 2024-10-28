@@ -1,6 +1,5 @@
-//
-// Created by castle on 10/19/23.
-//
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CYD_UI_PROFILING_H
 #define CYD_UI_PROFILING_H

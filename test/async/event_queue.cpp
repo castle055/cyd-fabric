@@ -1,9 +1,6 @@
 // Copyright (c) 2024, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//
-// Created by castle on 4/3/24.
-//
 
 #include "async.h"
 #include <cassert>
