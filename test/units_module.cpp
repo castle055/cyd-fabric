@@ -11,6 +11,7 @@
 
 #include "cyd_fabric_modules/headers/macros/units.h"
 
+import reflect;
 import fabric.units;
 import fabric.ts.packs;
 
@@ -50,11 +51,27 @@ struct assert_unit {
     if constexpr (std::is_same_v<reduce<U1>, U2>) {
       std::cout << "[PASS] [" << U1::symbol() << "] reduces to [" << U2::symbol() << "]" << std::endl;
     } else {
+      std::cerr << clean_type_name<reduce<U1>>() << std::endl;
+      std::cerr << clean_type_name<U2>() << std::endl;
       std::cerr << "[FAIL] [" << U1::symbol() << "] reduces to [" << reduce<U1>::symbol() << "] (expected [" <<
         U2::symbol() << "])" << std::endl;
       // __assert_fail(("[" + U1::symbol() + "] reduces to [" + U2::symbol() + "]").c_str(), __FILE_NAME__, __LINE__, __ASSERT_FUNCTION);
       std::abort();
     }
+  }
+
+private:
+  template <typename T>
+  static std::string clean_type_name() {
+    std::string deleted = "fabric::units::";
+    std::string str{refl::type_name<T>};
+    auto pos = str.find(deleted);
+    while (pos != std::string::npos) {
+      str.replace(pos, deleted.size(), "");
+      pos = str.find(deleted);
+    }
+
+    return str;
   }
 };
 
@@ -108,6 +125,8 @@ TEST("Unit reduction") {
   assert_unit   <mul<frac<meters, mul<seconds, seconds>>, seconds>> ::reduces_to<frac<meters, seconds>>();
   assert_unit   <mul<frac<meters, mul<seconds, seconds, seconds>>, seconds>>
                                                                     ::reduces_to<frac<meters, mul<seconds, seconds>>>();
+  assert_unit   <mul<frac<mul<meters, meters>, mul<seconds, seconds>>, mul<meters, meters>>>
+                                                                    ::reduces_to<frac<mul<meters, meters, meters, meters>, mul<seconds, seconds>>>();
 //@formatter:on
 
   // mechanics::newton::second_law

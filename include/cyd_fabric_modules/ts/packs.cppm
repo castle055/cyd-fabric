@@ -219,14 +219,14 @@ export namespace fabric::ts::packs {
       requires(is_type<Pack, P1>::value && N > 0)
     struct flatten<Pack<P1, PRest...>, N> {
     private:
-      using appended = typename append<PRest...>::template to<P1>;
+      using appended = typename append<Pack<PRest...>>::template to<P1>;
 
     public:
       using type = typename packs::flatten<typename appended::type>::type;
     };
 
     template <template <typename...> typename Pack, typename P1, typename... PRest, std::size_t N>
-      requires(!is_type<Pack, P1>::value && N > 0)
+      requires(not is_type<Pack, P1>::value && N > 0)
     struct flatten<Pack<P1, PRest...>, N> {
       using type = typename flatten<Pack<PRest..., P1>, N - 1>::type;
     };

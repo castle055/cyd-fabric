@@ -100,6 +100,14 @@ namespace fabric::units {
       using type = typename cancel_out_many<Mul, CancelProducts...>::type;
     };
 
+    template <typename M>
+    struct normalize {
+      using type = M;
+    };
+
+    template <typename M>
+    using normalize_t = typename normalize<M>::type;
+
 
     template <typename M, typename...>
     struct normalize_impl {
@@ -111,7 +119,7 @@ namespace fabric::units {
 
     template <typename Num, typename Den, typename... Ps>
     struct normalize_impl<mul<frac<Num, Den>, Ps...>> {
-      using type = frac<normalize_impl_t<mul<Ps..., Num>>, Den>;
+      using type = frac<normalize_t<mul<Ps..., Num>>, Den>;
     };
 
     template <typename P1, typename... Ps>
@@ -120,14 +128,7 @@ namespace fabric::units {
       using type = normalize_impl_t<mul<Ps..., P1>>;
     };
 
-    template <typename M>
-    struct normalize {
-      using type = M;
-    };
-
-    template <typename M>
-    using normalize_t = typename normalize<M>::type;
-
+    
     template <typename... Ps>
     struct normalize<mul<Ps...>> {
       using type = normalize_impl_t<typename ts::packs::flatten<mul<Ps...>>::type>;

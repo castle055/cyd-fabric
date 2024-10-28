@@ -19,6 +19,9 @@ export namespace fabric::units {
   template <typename N>
   REDUCE_PATTERN(frac<N, N>) TO(no_unit);
 
+  template <typename N, typename D>
+  REDUCE_PATTERN(frac<N, D>) TO(frac<reduce<N>, reduce<D>>);
+
   template <>
   REDUCE_PATTERN(frac<no_unit, no_unit>) TO(no_unit);
 
@@ -49,7 +52,7 @@ export namespace fabric::units {
 
   template <typename N, typename ...Ds>
   requires (ts::packs::Contains<N, Ds...>)
-  REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<no_unit, reduce<cancel_out<mul<Ds...>, N>>>>);
+  REDUCE_PATTERN(frac<N, mul<Ds...>>) TO(reduce<frac<no_unit, reduce<cancel_out<reduce<mul<Ds...>>, N>>>>);
 
   // template <typename N, typename ...Ds>
   // requires (!ts::packs::Contains<N, Ds...> && !is_mul_v<N> && !is_frac_v<N>)
@@ -57,7 +60,7 @@ export namespace fabric::units {
   //
   template <typename D, typename ...Ns>
   requires (ts::packs::Contains<D, Ns...>)
-  REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<cancel_out<mul<Ns...>, D>>);
+  REDUCE_PATTERN(frac<mul<Ns...>, D>) TO(reduce<cancel_out<reduce<mul<Ns...>>, D>>);
 
   // template <typename D, typename ...Ns>
   // requires (!ts::packs::Contains<D, Ns...> && !is_mul_v<D> && !is_frac_v<D>)
