@@ -19,9 +19,6 @@ export namespace fabric::units {
   template <typename N>
   REDUCE_PATTERN(frac<N, N>) TO(no_unit);
 
-  template <typename N, typename D>
-  REDUCE_PATTERN(frac<N, D>) TO(frac<reduce<N>, reduce<D>>);
-
   template <>
   REDUCE_PATTERN(frac<no_unit, no_unit>) TO(no_unit);
 
@@ -36,6 +33,9 @@ export namespace fabric::units {
   template<typename N, typename D1, typename D2>
   requires (!is_frac_v<N>)
   REDUCE_PATTERN(frac<N, frac<D1, D2>>) TO(reduce<frac<reduce<mul<reduce<N>,reduce<D2>>>,reduce<D1>>>);
+
+  template<typename N, typename D>
+  REDUCE_PATTERN(frac<frac<N, D>, no_unit>) TO(reduce<frac<N, D>>);
 
   template<typename N, typename D>
   requires (!is_frac_v<N>)
