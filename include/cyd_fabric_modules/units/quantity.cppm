@@ -118,21 +118,71 @@ export namespace fabric::units {
     constexpr quantity_t(T value_): value(value_) {
     }
 
+    //! Copy
     quantity_t(const quantity_t &other) {
       this->value = other.value;
     }
 
-    quantity_t(quantity_t &&other) noexcept {
-      this->value = other.value;
+    //! Copy
+    template <typename U1>
+      requires(
+        not std::same_as<R(U), R(U1)> &&
+        (SameScale<U, U1> || Convertible<U, U1, T> ||
+         ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
+      )
+    quantity_t(const quantity_t<U1, T>& other) {
+      this->value = other.template as<U1>().value;
     }
 
+    //! Copy
     quantity_t &operator=(const quantity_t &rhl) {
       this->value = rhl.value;
       return *this;
     }
 
+    //! Copy
+    template <typename U1>
+      requires(
+        not std::same_as<R(U), R(U1)> &&
+        (SameScale<U, U1> || Convertible<U, U1, T> ||
+         ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
+      )
+    quantity_t &operator=(const quantity_t<U1, T> &rhl) {
+      this->value = rhl.template as<U1>().value;
+      return *this;
+    }
+
+    //! Move
+    quantity_t(quantity_t &&other) noexcept {
+      this->value = other.value;
+    }
+
+    //! Move
+    template <typename U1>
+      requires(
+        not std::same_as<R(U), R(U1)> &&
+        (SameScale<U, U1> || Convertible<U, U1, T> ||
+         ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
+      )
+    quantity_t(quantity_t<U1, T>&& other) {
+      this->value = other.template as<U1>().value;
+    }
+
+    //! Move
     quantity_t &operator=(quantity_t &&rhl) noexcept {
       this->value = rhl.value;
+      return *this;
+    }
+
+    //! Move
+    template <typename U1>
+      requires(
+        not std::same_as<R(U), R(U1)> &&
+        (SameScale<U, U1> || Convertible<U, U1, T> ||
+         ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
+      )
+    quantity_t &operator=(quantity_t<U1, T> &&rhl) {
+      this->value = rhl.template as<U1>().value;
       return *this;
     }
 
