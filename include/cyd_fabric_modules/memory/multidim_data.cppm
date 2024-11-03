@@ -111,12 +111,12 @@ struct md_buffer_t {
 
   template<typename... C>
   E &operator[](C... indices) {
-    return *get({indices...});
+    return *get({size_t(indices)...});
   }
 
   template<typename... C>
   const E &operator[](C... indices) const {
-    size_t index = compute_index({indices...});
+    size_t index = compute_index({size_t(indices)...});
     return data[index];
   }
 
