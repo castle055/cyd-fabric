@@ -13,13 +13,13 @@ import fabric.ts.packs;
 
 export template<typename T, std::size_t SIZE>
 struct vec {
-  std::array<T, SIZE> data { };
+  T data[SIZE] { };
   using scalar = T;
 
-  vec(std::initializer_list<T> values) {
+  constexpr vec(std::initializer_list<T> values) {
     std::size_t i = 0;
     for (const auto &item: values) {
-      (*this)[i] = item;
+      data[i] = item;
       ++i;
     }
   }
