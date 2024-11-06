@@ -131,7 +131,7 @@ export namespace fabric::units {
          ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
       )
     quantity_t(const quantity_t<U1, T>& other) {
-      this->value = other.template as<U1>().value;
+      this->value = other.template as<U>().value;
     }
 
     //! Copy
@@ -148,7 +148,7 @@ export namespace fabric::units {
          ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
       )
     quantity_t &operator=(const quantity_t<U1, T> &rhl) {
-      this->value = rhl.template as<U1>().value;
+      this->value = rhl.template as<U>().value;
       return *this;
     }
 
@@ -165,7 +165,7 @@ export namespace fabric::units {
          ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
       )
     quantity_t(quantity_t<U1, T>&& other) {
-      this->value = other.template as<U1>().value;
+      this->value = other.template as<U>().value;
     }
 
     //! Move
@@ -182,7 +182,7 @@ export namespace fabric::units {
          ConvertibleScales<typename U::scale, typename U1::scale, U, U1, T>)
       )
     quantity_t &operator=(quantity_t<U1, T> &&rhl) {
-      this->value = rhl.template as<U1>().value;
+      this->value = rhl.template as<U>().value;
       return *this;
     }
 
