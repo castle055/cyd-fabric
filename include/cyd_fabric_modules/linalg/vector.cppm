@@ -34,6 +34,18 @@ struct vec {
     return this->data[index];
   }
 
+  template <std::size_t I>
+  scalar& get() {
+    static_assert((I < SIZE), "Index out of bounds");
+    return this->data[I];
+  }
+
+  template <std::size_t I>
+  const scalar& get() const {
+    static_assert((I < SIZE), "Index out of bounds");
+    return this->data[I];
+  }
+
   bool operator==(const vec &rhl) const {
     for (std::size_t i = 0; i < SIZE; ++i) {
       if ((*this)[i] != rhl[i]) return false;
@@ -135,3 +147,14 @@ private:
 export template<typename... V>
 vec(V...) -> vec<fabric::ts::packs::get_first<V...>, sizeof...(V)>;
 
+export
+template <typename T, std::size_t Size>
+struct std::tuple_size<vec<T, Size>> {
+  static constexpr std::size_t value = Size;
+};
+
+export
+template <typename T, std::size_t Size, std::size_t I>
+struct std::tuple_element<I, vec<T, Size>> {
+  using type = T;
+};
