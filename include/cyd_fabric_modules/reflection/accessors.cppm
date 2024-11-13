@@ -10,7 +10,7 @@ export module reflect:accessors;
 
 import std;
 
-export import fabric.ts.packs;
+export import packtl;
 
 export import :types;
 export import :type_name;
@@ -28,7 +28,7 @@ struct representation<Type, 0> {
 
 
 export namespace refl {
-  using namespace fabric::ts::packs;
+  using namespace packtl;
 
   enum class field_access : unsigned char {
     NONE      = 0U,

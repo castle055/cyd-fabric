@@ -10,8 +10,6 @@ export module fabric.wiring.signals:auto_disconnect;
 
 import std;
 
-import fabric.ts.packs;
-
 import :types;
 import :connection;
 

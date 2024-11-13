@@ -10,7 +10,7 @@ export module fabric.wiring.signals:slot;
 
 import std;
 
-import fabric.ts.packs;
+import packtl;
 
 import :types;
 
@@ -26,7 +26,7 @@ public:
 
   template <typename F>
     requires requires(F f, Args... args) {
-      requires(not ts::packs::is_type<slot, std::remove_reference_t<F>>::value);
+      requires(not packtl::is_type<slot, std::remove_reference_t<F>>::value);
       { f.operator()(args...) } -> std::convertible_to<R>;
     }
   slot(const F& func)
@@ -34,7 +34,7 @@ public:
 
   template <typename F>
     requires requires(F f, Args... args) {
-      requires(not ts::packs::is_type<slot, std::remove_reference_t<F>>::value);
+      requires(not packtl::is_type<slot, std::remove_reference_t<F>>::value);
       { f.operator()(args...) } -> std::same_as<R>;
     }
   slot(F&& func)

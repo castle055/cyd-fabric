@@ -7,7 +7,7 @@
  */
 
 export module fabric.ts.apply;
-export import fabric.ts.packs;
+export import packtl;
 
 // import fabric.refl;
 
@@ -23,7 +23,7 @@ namespace fabric::ts::impl {
 
 namespace fabric::ts {
   template<typename... Args>
-  struct with_type: impl::with_type<packs::pack<Args...>> {
+  struct with_type: impl::with_type<packtl::pack<Args...>> {
   };
 
   template<template <typename...> typename Pack, typename... Args>
@@ -37,14 +37,14 @@ namespace fabric::ts {
 
 namespace fabric::ts::impl {
   template<typename... Args>
-  struct with_type<packs::pack<Args...>> {
+  struct with_type<packtl::pack<Args...>> {
     template<template <typename...> typename Transform>
-    using apply = with_type<packs::pack<typename Transform<Args...>::type>>;
+    using apply = with_type<packtl::pack<typename Transform<Args...>::type>>;
 
     template<template <typename...> typename Transform>
-    using apply_as_pack = with_type<typename Transform<packs::pack<Args...>>::type>;
+    using apply_as_pack = with_type<typename Transform<packtl::pack<Args...>>::type>;
 
-    using done = std::conditional_t<sizeof...(Args) == 1, typename packs::get_first<Args...>::type, packs::pack<Args...>>;
+    using done = std::conditional_t<sizeof...(Args) == 1, typename packtl::get_first<Args...>::type, packtl::pack<Args...>>;
   };
 
   template<template <typename...> typename Pack, typename... Args>

@@ -10,13 +10,13 @@ export module reflect:serializer;
 
 import std;
 
-export import fabric.ts.packs;
+export import packtl;
 
 export import :types;
 export import :accessors;
 
 export namespace refl {
-  using namespace fabric::ts::packs;
+  using namespace packtl;
 
   namespace formats {
     struct reflected {

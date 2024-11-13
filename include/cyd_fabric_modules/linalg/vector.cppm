@@ -9,7 +9,7 @@
 export module fabric.linalg:vector;
 
 import std;
-import fabric.ts.packs;
+import packtl;
 
 export template<typename T, std::size_t SIZE>
 struct vec {
@@ -145,7 +145,7 @@ private:
 };
 
 export template<typename... V>
-vec(V...) -> vec<fabric::ts::packs::get_first<V...>, sizeof...(V)>;
+vec(V...) -> vec<packtl::get_first<V...>, sizeof...(V)>;
 
 export
 template <typename T, std::size_t Size>

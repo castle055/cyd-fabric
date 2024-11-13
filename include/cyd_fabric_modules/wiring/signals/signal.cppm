@@ -11,7 +11,7 @@ export module fabric.wiring.signals:signal;
 import std;
 
 import fabric.ts.apply;
-import fabric.ts.packs;
+import packtl;
 
 export import :types;
 export import :ts;
@@ -28,7 +28,7 @@ public:
   friend class connection;
   using slot_type       = slot<void(Args...)>;
   using args_tuple_type = typename ts::with_type<std::tuple<>>::apply_as_pack<
-    ts::packs::append<signal>::template to>::done;
+    packtl::append<signal>::template to>::done;
 
 
   signal()                            = default;

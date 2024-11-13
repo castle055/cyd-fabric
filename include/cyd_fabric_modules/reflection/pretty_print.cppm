@@ -10,13 +10,13 @@ export module reflect:pretty_print;
 
 import std;
 
-export import fabric.ts.packs;
+export import packtl;
 
 import :types;
 import :accessors;
 
 export namespace refl {
-  using namespace fabric::ts::packs;
+  using namespace packtl;
 
   template <refl::Reflected T, std::size_t I>
   void print_obj_field_impl(const T& obj, std::size_t indent) {

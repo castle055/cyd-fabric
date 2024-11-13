@@ -4,7 +4,6 @@
 export module fabric.linalg;
 
 export import std;
-export import fabric.ts.packs;
 
 export import :concepts;
 export import :vector;

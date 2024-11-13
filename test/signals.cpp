@@ -7,7 +7,7 @@
 
 
 import fabric.ts.apply;
-import fabric.ts.packs;
+import packtl;
 import fabric.wiring.signals;
 
 
@@ -78,14 +78,14 @@ private:
 
 public:
   using type =
-    typename with_type<First>::template apply_as_pack<packs::append<recurse>::template to>::done;
+    typename with_type<First>::template apply_as_pack<packtl::append<recurse>::template to>::done;
 };
 
 template <typename DestTuple, typename SrcTuple, std::size_t OFFSET>
 struct copy_tuple {
 public:
   static void operator()(DestTuple dest, SrcTuple src) {
-    impl_(dest, src, std::make_index_sequence<packs::get_size<SrcTuple>::value>{});
+    impl_(dest, src, std::make_index_sequence<packtl::get_size<SrcTuple>::value>{});
   }
 
 private:
@@ -101,12 +101,12 @@ struct cumulative_sizes_impl;
 
 template <std::size_t Accumulator>
 struct cumulative_sizes_impl<Accumulator> {
-  using type = packs::integer_pack<Accumulator>;
+  using type = packtl::integer_pack<Accumulator>;
 };
 
 template <std::size_t Accumulator, typename Pack>
 struct cumulative_sizes_impl<Accumulator, Pack> {
-  using type = packs::integer_pack<Accumulator>;
+  using type = packtl::integer_pack<Accumulator>;
 };
 
 template <std::size_t Accumulator, typename First, typename... Packs>
@@ -116,8 +116,8 @@ private:
   using recurse = typename cumulative_sizes_impl<NewAccumulator, Packs...>::type;
 
 public:
-  using type = typename with_type<packs::integer_pack<Accumulator>>::template apply_as_pack<
-    packs::append<recurse<Accumulator + packs::get_size<First>::value>>::template to>::done;
+  using type = typename with_type<packtl::integer_pack<Accumulator>>::template apply_as_pack<
+    packtl::append<recurse<Accumulator + packtl::get_size<First>::value>>::template to>::done;
 };
 
 template <typename... Packs>
@@ -200,7 +200,7 @@ struct synchronizer_strategy {
 
   template <SignalConcept Signal, std::size_t ID>
   static void on_signal(state_type& state, signal_args<Signal>& args) {
-    static constexpr std::size_t signal_offset = packs::get<ID, signal_offsets>::value;
+    static constexpr std::size_t signal_offset = packtl::get<ID, signal_offsets>::value;
     copy_tuple<output_signal_args, signal_args<Signal>, signal_offset>::operator()(
       state.parameters_, args
     );

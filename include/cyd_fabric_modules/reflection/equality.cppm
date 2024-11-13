@@ -10,7 +10,7 @@ export module reflect:equality;
 
 import std;
 
-export import fabric.ts.packs;
+export import packtl;
 export import fabric.logging;
 
 export import :types;
@@ -80,7 +80,7 @@ namespace refl::deep_eq_impl {
 
   template <typename T>
   bool ref_eq(const T& lhs, const T& rhs) {
-    using fabric::ts::packs::is_type;
+    using packtl::is_type;
 
     if constexpr (is_type<std::vector, T>::value) {
       return std_iterable_eq(lhs, rhs);

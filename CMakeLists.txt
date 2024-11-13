@@ -100,30 +100,42 @@ compiler_flags(
 ################################################################################
 include(ExternalProject)
 include(FetchContent)
+
 find_package(PkgConfig)
 
 #[[                           CONFIGURE STD MODULE                           ]]#
-add_library(std)
-target_sources(std
-        PUBLIC
-        FILE_SET cxx_modules
-        #        FILE_SET "${APP_NAME}_modfiles"
-        TYPE CXX_MODULES
-        BASE_DIRS /usr/share/libc++/v1
-        FILES /usr/share/libc++/v1/std.cppm
-        /usr/share/libc++/v1/std.compat.cppm
-)
-target_compile_options(std
-    PUBLIC
-    -Wno-reserved-module-identifier
-    -Wno-deprecated-declarations
-)
+# add_library(std)
+# target_sources(std
+#         PUBLIC
+#         FILE_SET cxx_modules
+#         #        FILE_SET "${APP_NAME}_modfiles"
+#         TYPE CXX_MODULES
+#         BASE_DIRS /usr/share/libc++/v1
+#         FILES /usr/share/libc++/v1/std.cppm
+#         /usr/share/libc++/v1/std.compat.cppm
+# )
+# target_compile_options(std
+#     PUBLIC
+#     -Wno-reserved-module-identifier
+#     -Wno-deprecated-declarations
+# )
 
 #[[                          CONFIGURE CAIROMM-1.16                          ]]#
 find_package(CAIROMM)
 
+#[[                           CONFIGURE PACKTL                               ]]#
+FetchContent_Declare(packtl
+        GIT_REPOSITORY https://github.com/castle055/packtl.git
+        GIT_TAG main
+        FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(packtl)
+
 #[[                         CONFIGURE CLANG PLUGINS                          ]]#
 add_subdirectory(clang)
+
+#[[                              CONFIGURE cURL                              ]]#
+find_package(CURL REQUIRED)
 
 ################################################################################
 #[[                           CONFIGURE CYD FABRIC                           ]]#
@@ -163,6 +175,9 @@ target_link_libraries(cyd_fabric
         unwind
         libstdc++exp.a
         std
+        packtl
+        PRIVATE
+        CURL::libcurl
 )
 
 

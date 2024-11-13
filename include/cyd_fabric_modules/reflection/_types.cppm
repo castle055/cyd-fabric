@@ -8,8 +8,6 @@
 
 export module reflect:types;
 
-export import fabric.ts.packs;
-
 export {
   namespace refl {
     template <typename T>
@@ -27,7 +25,7 @@ export {
   } // namespace refl
 
   template <typename... T>
-  using refl_pack = fabric::ts::packs::pack<T...>;
-  template <std::size_t... T>
-  using refl_int_pack = fabric::ts::packs::integer_pack<T...>;
+  struct refl_pack;
+  template <unsigned long... T>
+  struct refl_int_pack;
 }

@@ -20,5 +20,3 @@ export import :auto_disconnect;
 export import :signal;
 export import :private_signal;
 export import :inout_signal;
-
-using namespace fabric::ts::packs;

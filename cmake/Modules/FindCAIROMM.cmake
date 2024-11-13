@@ -2,23 +2,29 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 FetchContent_Declare(cairo_lib
-        URL https://www.cairographics.org/releases/cairo-1.18.0.tar.xz
+        URL https://www.cairographics.org/releases/cairo-1.18.2.tar.xz
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_Declare(pixman_lib
-        URL https://www.cairographics.org/releases/pixman-0.42.2.tar.gz
+        URL https://www.cairographics.org/releases/pixman-0.44.0.tar.gz
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_Declare(cairomm_lib
         URL https://www.cairographics.org/releases/cairomm-1.18.0.tar.xz
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-FetchContent_MakeAvailable(pixman_lib cairo_lib cairomm_lib)
+message("Fetching pixman...")
+FetchContent_MakeAvailable(pixman_lib)
+message("Fetching cairo...")
+FetchContent_MakeAvailable(cairo_lib)
+message("Fetching cairomm...")
+FetchContent_MakeAvailable(cairomm_lib)
 
 find_program(MESON_EXECUTABLE meson REQUIRED)
 find_program(MAKE_EXECUTABLE make REQUIRED)
 find_program(NINJA_EXECUTABLE ninja REQUIRED)
 
+message("Configuring pixman...")
 ExternalProject_Add(
         Pixman
         SOURCE_DIR ${pixman_lib_SOURCE_DIR}
@@ -27,12 +33,18 @@ ExternalProject_Add(
         export CXXFLAGS=${CMAKE_CXX_FLAGS} &&
         "CC=${CMAKE_C_COMPILER}"
         "CXX=${CMAKE_CXX_COMPILER}"
-        ${pixman_lib_SOURCE_DIR}/configure --prefix ${pixman_lib_BINARY_DIR}
-        BUILD_COMMAND ${MAKE_EXECUTABLE}
-        INSTALL_COMMAND ${MAKE_EXECUTABLE} install
+        # Pixman use to have a `configure` script
+        # ${pixman_lib_SOURCE_DIR}/configure --prefix ${pixman_lib_BINARY_DIR}
+        ${MESON_EXECUTABLE} setup
+        --prefix ${pixman_lib_BINARY_DIR}
+        ${pixman_lib_SOURCE_DIR}
+        # BUILD_COMMAND ${MAKE_EXECUTABLE}
+        # INSTALL_COMMAND ${MAKE_EXECUTABLE} install
+        BUILD_COMMAND ${NINJA_EXECUTABLE} -C ${pixman_lib_BINARY_DIR}
+        INSTALL_COMMAND ${NINJA_EXECUTABLE} -C ${pixman_lib_BINARY_DIR} install
         BUILD_BYPRODUCTS
         ${pixman_lib_BINARY_DIR}/include/pixman
-        "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_STATIC_LIBRARY_SUFFIX}"
+        "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_SHARED_LIBRARY_SUFFIX}"
 )
 
 file(MAKE_DIRECTORY ${pixman_lib_BINARY_DIR}/include/pixman)
@@ -43,14 +55,15 @@ if (NOT TARGET cairo::pixman)
     set_target_properties(cairo::pixman PROPERTIES
             IMPORTED_LINK_INTERFACE_LANGUAGES "C"
             IMPORTED_CONFIGURATIONS "None;Debug;Release;RelWithDebInfo;MinSizeRel"
-            IMPORTED_LOCATION "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            IMPORTED_LOCATION "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_SHARED_LIBRARY_SUFFIX}"
             INTERFACE_INCLUDE_DIRECTORIES ${pixman_lib_BINARY_DIR}/include/pixman
-            INTERFACE_LINK_LIBRARIES "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_STATIC_LIBRARY_SUFFIX}"
+            INTERFACE_LINK_LIBRARIES "${pixman_lib_BINARY_DIR}/lib/${CMAKE_FIND_LIBRARY_PREFIXES}pixman-1${CMAKE_SHARED_LIBRARY_SUFFIX}"
     )
 endif ()
 
 list(APPEND CMAKE_PREFIX_PATH ${pixman_lib_BINARY_DIR})
 
+message("Configuring cairo...")
 ExternalProject_Add(
         Cairo-1.16
         SOURCE_DIR ${cairo_lib_SOURCE_DIR}
@@ -85,6 +98,7 @@ endif ()
 
 list(APPEND CMAKE_PREFIX_PATH ${cairo_lib_BINARY_DIR})
 
+message("Configuring cairomm...")
 ExternalProject_Add(
         Cairomm-1.16
         SOURCE_DIR ${cairomm_lib_SOURCE_DIR}

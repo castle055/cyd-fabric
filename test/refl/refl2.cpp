@@ -15,8 +15,7 @@ struct a {
   char wtf = 'w';
   bool yes = true;
 
-void asdf() {
-}
+  void asdf() {}
 
 private:
   T wow;
@@ -28,8 +27,15 @@ struct bb {
 };
 
 struct c {
-  bb& baby;
+  // bb& baby;
+  struct test {
+    int b;
+  } props;
+  int as;
 };
+
+namespace charts {
+}
 
 TEST("Nominal Start-up") {
   std::cout << "STARTING TEST" << std::endl;
@@ -37,7 +43,7 @@ TEST("Nominal Start-up") {
 
   a<int> obj{};
   a<int> obj1{};
-  typename a<int>::__type_info__ fdsa{};
+  // typename a<int>::__type_info__ fdsa{};
 
   // print_obj(obj);
 
@@ -45,8 +51,8 @@ TEST("Nominal Start-up") {
 
   // std::cout << str << std::endl;
 
-bb b{};
-  refl::serializer<c, refl::formats::reflected>::to_stream(std::cout, c{b});
+  bb b{};
+  refl::serializer<c, refl::formats::reflected>::to_stream(std::cout, c{});
 
   // bool eq = obj == obj1;
   // if (eq) {

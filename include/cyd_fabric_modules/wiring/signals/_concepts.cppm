@@ -10,13 +10,13 @@ export module fabric.wiring.signals:concepts;
 
 import std;
 
-import fabric.ts.packs;
+import packtl;
 
 import :types;
 
 export namespace fabric::wiring {
   template <typename Signal>
-  concept SignalConcept = ts::packs::is_type<signal, Signal>::value;
+  concept SignalConcept = packtl::is_type<signal, Signal>::value;
 
   template <template <SignalConcept...> typename Strategy>
   concept StrategyConcept = requires {
