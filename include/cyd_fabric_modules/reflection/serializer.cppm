@@ -10,14 +10,13 @@ export module reflect:serializer;
 
 import std;
 
-export import packtl;
+import packtl;
 
-export import :types;
-export import :accessors;
+import :types;
+import :accessors;
+import :type_name;
 
 export namespace refl {
-  using namespace packtl;
-
   namespace formats {
     struct reflected {
       struct args_t {
@@ -280,41 +279,41 @@ export namespace refl {
 
       template <typename O, typename T>
       void print_any(O& out, const T& it, std::size_t indent) {
-        if constexpr (is_type<std::vector, T>::value) {
+        if constexpr (packtl::is_type<std::vector, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::list, T>::value) {
+        } else if constexpr (packtl::is_type<std::list, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::deque, T>::value) {
+        } else if constexpr (packtl::is_type<std::deque, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::queue, T>::value) {
+        } else if constexpr (packtl::is_type<std::queue, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::stack, T>::value) {
+        } else if constexpr (packtl::is_type<std::stack, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::map, T>::value) {
+        } else if constexpr (packtl::is_type<std::map, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::unordered_map, T>::value) {
+        } else if constexpr (packtl::is_type<std::unordered_map, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::set, T>::value) {
+        } else if constexpr (packtl::is_type<std::set, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::unordered_set, T>::value) {
+        } else if constexpr (packtl::is_type<std::unordered_set, T>::value) {
           print_std_iterable(out, it, indent);
-        } else if constexpr (is_type<std::pair, T>::value) {
+        } else if constexpr (packtl::is_type<std::pair, T>::value) {
           print_std_pair(out, it, indent);
         } else if constexpr (std::is_same_v<T, std::atomic_flag>) {
           out << (it.test() ? "SET" : "CLEAR");
-        } else if constexpr (is_type<std::unique_ptr, T>::value) {
+        } else if constexpr (packtl::is_type<std::unique_ptr, T>::value) {
           const auto* value = it.get();
           out << " {";
           out << std::format("0x{:X}", (std::size_t)value);
           out << "} ";
           print_any(out, *value, indent);
-        } else if constexpr (is_type<std::shared_ptr, T>::value) {
+        } else if constexpr (packtl::is_type<std::shared_ptr, T>::value) {
           const auto* value = it.get();
           out << "{";
           out << std::format("0x{:X}", (std::size_t)value);
           out << "} ";
           print_any(out, *value, indent);
-        } else if constexpr (is_type<std::weak_ptr, T>::value) {
+        } else if constexpr (packtl::is_type<std::weak_ptr, T>::value) {
           const auto* value = it.get();
           out << " {";
           out << std::format("0x{:X}", (std::size_t)value);

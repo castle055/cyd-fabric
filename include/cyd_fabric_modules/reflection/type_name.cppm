@@ -21,6 +21,8 @@ export module reflect:type_name;
 
 import std;
 
+import :types;
+
 export namespace refl {
   namespace detail { // Yoinked from JDH's implementation
     // type_name adapted from:

@@ -14,6 +14,7 @@ export import packtl;
 
 import :types;
 import :accessors;
+import :type_name;
 
 export namespace refl {
   using namespace packtl;

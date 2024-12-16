@@ -10,11 +10,11 @@ export module reflect:equality;
 
 import std;
 
-export import packtl;
-export import fabric.logging;
+import packtl;
+import fabric.logging;
 
-export import :types;
-export import :accessors;
+import :types;
+import :accessors;
 
 export namespace refl {
   template <Reflected R>
@@ -80,29 +80,27 @@ namespace refl::deep_eq_impl {
 
   template <typename T>
   bool ref_eq(const T& lhs, const T& rhs) {
-    using packtl::is_type;
-
-    if constexpr (is_type<std::vector, T>::value) {
+    if constexpr (packtl::is_type<std::vector, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::list, T>::value) {
+    } else if constexpr (packtl::is_type<std::list, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::deque, T>::value) {
+    } else if constexpr (packtl::is_type<std::deque, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::queue, T>::value) {
+    } else if constexpr (packtl::is_type<std::queue, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::stack, T>::value) {
+    } else if constexpr (packtl::is_type<std::stack, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::map, T>::value) {
+    } else if constexpr (packtl::is_type<std::map, T>::value) {
       return std_map_eq(lhs, rhs);
-    } else if constexpr (is_type<std::unordered_map, T>::value) {
+    } else if constexpr (packtl::is_type<std::unordered_map, T>::value) {
       return std_map_eq(lhs, rhs);
-    } else if constexpr (is_type<std::set, T>::value) {
+    } else if constexpr (packtl::is_type<std::set, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::unordered_set, T>::value) {
+    } else if constexpr (packtl::is_type<std::unordered_set, T>::value) {
       return std_iterable_eq(lhs, rhs);
-    } else if constexpr (is_type<std::pair, T>::value) {
+    } else if constexpr (packtl::is_type<std::pair, T>::value) {
       return std_pair_eq(lhs, rhs);
-    } else if constexpr (is_type<std::function, T>::value) {
+    } else if constexpr (packtl::is_type<std::function, T>::value) {
       return std_function_eq(lhs, rhs);
     } else if constexpr (std::equality_comparable<T>) {
       return lhs == rhs;
