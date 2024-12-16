@@ -100,8 +100,7 @@ export namespace refl {
       }
 
       template <typename O, refl::Reflected R, std::size_t... I>
-      void
-      print_obj_impl(O& out, const R& obj, std::size_t indent, std::index_sequence<I...>) {
+      void print_obj_impl(O& out, const R& obj, std::size_t indent, std::index_sequence<I...>) {
         out << type_name<R> << " {" << "\n";
         ((print_obj_field_impl<O, R, I>(out, obj, indent + 1)), ...);
         for (std::size_t i = 0; i < indent; ++i) {
@@ -112,9 +111,38 @@ export namespace refl {
         out << "}";
       }
 
+      template <typename O, refl::Reflected R, std::size_t I>
+      void print_obj_method(O& out, const R& obj) {
+        using m = method<R, I>;
+
+        switch (m::access) {
+          case field_access::NONE:
+            out << " -";
+            break;
+          case field_access::PRIVATE:
+            // out << "🔒";
+            out << "🔒";
+            break;
+            //🔓
+          case field_access::PROTECTED:
+            out << " \\";
+            break;
+          case field_access::PUBLIC:
+            out << "  ";
+            break;
+        }
+
+        out << m::name;
+        out << ": " << type_name<typename m::type>;
+      }
+
       template <typename O, refl::Reflected R>
       void print_obj(O& out, const R& obj, std::size_t indent = 0) {
         print_obj_impl(out, obj, indent, std::make_index_sequence<field_count<R>>());
+
+        [&]<std::size_t ...I>(std::index_sequence<I...>) {
+          (print_obj_method<O, R, I>(out, obj), ...);
+        }(std::make_index_sequence<method_count<R>>());
       }
 
       template <typename O, typename T>

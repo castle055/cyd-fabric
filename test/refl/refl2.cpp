@@ -1,4 +1,7 @@
 
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // #include <cassert>
 #include "common.h"
 
@@ -32,6 +35,10 @@ struct c {
     int b;
   } props;
   int as;
+
+void hello(int a) {}
+private:
+void hello(std::string a, int v) {}
 };
 
 namespace charts {

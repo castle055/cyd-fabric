@@ -4,7 +4,7 @@
 #include "ASTConsumer.h"
 
 //-----------------------------------------------------------------------------
-// FrontendAction for HelloWorld
+// FrontendAction for Reflector Plugin
 //-----------------------------------------------------------------------------
 class ReflectorAction: public clang::PluginASTAction {
 public:

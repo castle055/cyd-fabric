@@ -1,4 +1,7 @@
 
+// Copyright (c) 2024, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <clang/AST/AST.h>
 #include <clang/AST/DeclCXX.h>
 #include <clang/AST/DeclTemplate.h>
@@ -50,9 +53,9 @@ public:
     }
   }
 
-  void add_types_decl(CXXRecordDecl* record, const std::list<QualType>& field_types) {
+  void add_types_decl(CXXRecordDecl* record, const std::list<QualType>& field_types, const std::string& identifier) {
     // Create the using field_types = pack<int, long, double> statement
-    IdentifierInfo&          FieldTypesID = Context->Idents.get("field_types");
+    IdentifierInfo&          FieldTypesID = Context->Idents.get(identifier);
     IdentifierInfo&          PackID       = Context->Idents.get("refl_pack");
 
     // Create Template Specialization for 'pack<int, long, double>'
@@ -61,17 +64,18 @@ public:
         Compiler->getSema().getCurScope(), {&PackID}, SourceLocation(), Sema::LookupOrdinaryName
       )))
     };
+
     TemplateArgumentListInfo TemplateArgs{SourceLocation(), SourceLocation()};
     for (const auto& type: field_types) {
-      TemplateArgs.addArgument(
-        TemplateArgumentLoc(TemplateArgument(type), Context->getTrivialTypeSourceInfo(type))
-      );
+      auto arg =
+        TemplateArgumentLoc(TemplateArgument(type), Context->getTrivialTypeSourceInfo(type));
+      TemplateArgs.addArgument(arg);
     }
 
     QualType PackSpecialization =
       Compiler->getSema().CheckTemplateIdType(PackTemplate, SourceLocation(), TemplateArgs);
 
-    // Create TypeAliasDecl for 'using field_types = pack<int, long, double>'
+    // Create TypeAliasDecl for 'using field_types = refl_pack<...>'
     TypeAliasDecl* FieldTypesAlias = TypeAliasDecl::Create(
       *Context,
       record,
@@ -80,6 +84,7 @@ public:
       &FieldTypesID,
       Context->getTrivialTypeSourceInfo(PackSpecialization)
     );
+
 
     FieldTypesAlias->setAccess(AccessSpecifier::AS_public);
 
@@ -129,8 +134,8 @@ public:
     record->addDecl(FieldTypesAlias);
   }
 
-  void add_names_decl(CXXRecordDecl* record, const std::list<std::string>& names) {
-    IdentifierInfo& FieldNamesID          = Context->Idents.get("field_names");
+  void add_names_decl(CXXRecordDecl* record, const std::list<std::string>& names, const std::string& identifier) {
+    IdentifierInfo& FieldNamesID          = Context->Idents.get(identifier);
     QualType        ConstCharPtrArrayType = Context->getConstantArrayType(
       Context->getPointerType(Context->CharTy.withConst()),
        llvm::APInt(32, names.size()),
@@ -185,14 +190,19 @@ public:
     std::list<uint64_t>    field_accesses{};
     std::list<QualType>    field_types{};
 
-    for (const auto& field: record->fields()) {
-      if (field->isTemplated() || field->isTemplateDecl()) continue;
+    std::list<std::string> method_names{};
+    std::list<uint64_t>    method_accesses{};
+    std::list<QualType>    method_types{};
 
-      auto name   = field->getNameAsString();
-      auto type   = field->getType();
-      auto size   = Context->getTypeSize(type);
-      auto offset = Context->getFieldOffset(field);
-      offset /= 8;
+    for (const auto& field: record->fields()) {
+      if (field->isTemplated() || field->isTemplateDecl())
+        continue;
+
+      auto name    = field->getNameAsString();
+      auto type    = field->getType();
+      auto size    = Context->getTypeSize(type);
+      auto offset  = Context->getFieldOffset(field);
+      offset      /= 8;
 
       uint64_t access = 0;
       switch (field->getAccess()) {
@@ -217,32 +227,64 @@ public:
       field_accesses.push_back(access);
     }
 
-    if (!field_names.empty()) {
-      IdentifierInfo& type_info_id     = Context->Idents.get("__type_info__");
-      CXXRecordDecl*  type_info_record = CXXRecordDecl::Create(
-        *Context,
-        CXXRecordDecl::TagKind::Class,
-        record,
-        record->getEndLoc(),
-        record->getEndLoc(),
-        &type_info_id
-      );
+    for (const auto& method: record->methods()) {
+      if (method->isTemplated() || method->isTemplateDecl())
+        continue;
 
-      type_info_record->startDefinition();
+      auto name    = method->getNameAsString();
+      auto type    = method->getType();
 
-      add_names_decl(type_info_record, field_names);
-      add_types_decl(type_info_record, field_types);
+      uint64_t access = 0;
+      switch (method->getAccess()) {
+        case AS_public:
+          access = 3;
+          break;
+        case AS_protected:
+          access = 2;
+          break;
+        case AS_private:
+          access = 1;
+          break;
+        case AS_none:
+          access = 0;
+          break;
+      }
+
+      method_names.push_back(name);
+      method_types.push_back(type);
+      method_accesses.push_back(access);
+    }
+
+    IdentifierInfo& type_info_id     = Context->Idents.get("__type_info__");
+    CXXRecordDecl*  type_info_record = CXXRecordDecl::Create(
+      *Context,
+      CXXRecordDecl::TagKind::Class,
+      record,
+      record->getEndLoc(),
+      record->getEndLoc(),
+      &type_info_id
+    );
+
+    type_info_record->startDefinition();
+
+//    if (!field_names.empty()) {
+      add_names_decl(type_info_record, field_names, "field_names");
+      add_types_decl(type_info_record, field_types, "field_types");
       add_integer_list(type_info_record, field_sizes, "field_sizes");
       add_integer_list(type_info_record, field_offsets, "field_offsets");
       add_integer_list(type_info_record, field_accesses, "field_access_specifiers");
+//    }
 
-      type_info_record->setAccess(AccessSpecifier::AS_public);
-      type_info_record->completeDefinition();
-      Compiler->getSema().CheckCompletedCXXClass(
-        Compiler->getSema().getCurScope(), type_info_record
-      );
-      record->addDecl(type_info_record);
-    }
+//    if (!method_names.empty()) {
+      add_names_decl(type_info_record, method_names, "method_names");
+      add_types_decl(type_info_record, method_types, "method_types");
+      add_integer_list(type_info_record, method_accesses, "method_access_specifiers");
+//    }
+
+    type_info_record->setAccess(AccessSpecifier::AS_public);
+    type_info_record->completeDefinition();
+    Compiler->getSema().CheckCompletedCXXClass(Compiler->getSema().getCurScope(), type_info_record);
+    record->addDecl(type_info_record);
   }
 
   void HandleTagDeclDefinition(TagDecl* D) override {

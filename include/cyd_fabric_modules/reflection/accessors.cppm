@@ -59,6 +59,18 @@ export namespace refl {
   template <refl::Reflected T>
   constexpr std::size_t field_count = get_size<typename T::__type_info__::field_types>::value;
 
+  template <refl::Reflected T, std::size_t I>
+  struct method {
+    static constexpr std::size_t index   = I;
+    static constexpr const char* name    = T::__type_info__::method_names[I];
+    using type                           = get<I, typename T::__type_info__::method_types>::type;
+    static constexpr field_access access =
+      field_access{get<I, typename T::__type_info__::method_access_specifiers>::value};
+  };
+
+  template <refl::Reflected T>
+  constexpr std::size_t method_count = get_size<typename T::__type_info__::method_types>::value;
+
   template <Reflected R, template <Reflected, typename> typename Fun, typename... Args>
   auto for_each_field(Args&&... args) {
     static constexpr auto count = field_count<R>;
