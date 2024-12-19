@@ -29,7 +29,7 @@ export namespace refl {
     // https://bitwizeshift.github.io/posts/2021/03/09/getting-an-unmangled-type-name-at-compile-time/
     template <std::size_t... Is>
     constexpr auto substring_as_array(std::string_view s, std::index_sequence<Is...>) {
-      return std::array{s[Is]...};
+      return std::array{s[Is]..., '\0'};
     }
 
     template <typename T>
