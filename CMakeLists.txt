@@ -126,7 +126,7 @@ find_package(CAIROMM)
 #[[                           CONFIGURE PACKTL                               ]]#
 FetchContent_Declare(packtl
         GIT_REPOSITORY https://github.com/castle055/packtl.git
-        GIT_TAG main
+        GIT_TAG v1.0.0
         FIND_PACKAGE_ARGS
 )
 FetchContent_MakeAvailable(packtl)
