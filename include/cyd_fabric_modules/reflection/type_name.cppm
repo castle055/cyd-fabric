@@ -70,7 +70,7 @@ export namespace refl {
     template <typename T>
     constexpr auto type_name_str() {
       constexpr auto& val = type_name_holder<T>::value;
-      return std::string_view{val.data(), val.size()};
+      return std::string_view{val.data(), val.size() - 1};
     }
 
 
