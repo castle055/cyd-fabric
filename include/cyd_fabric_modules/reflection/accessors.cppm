@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  accessors.cppm
@@ -29,7 +29,7 @@ struct representation<Type, 0> {
 
 export namespace refl {
 
-  enum class field_access : unsigned char {
+  enum class access_spec : unsigned char {
     NONE      = 0U,
     PRIVATE   = 1U,
     PROTECTED = 2U,
@@ -43,8 +43,8 @@ export namespace refl {
     using type                           = typename packtl::get<I, typename T::__type_info__::field_types>::type;
     static constexpr std::size_t  size   = packtl::get<I, typename T::__type_info__::field_sizes>::value;
     static constexpr std::size_t  offset = packtl::get<I, typename T::__type_info__::field_offsets>::value;
-    static constexpr field_access access =
-      field_access{packtl::get<I, typename T::__type_info__::field_access_specifiers>::value};
+    static constexpr access_spec access =
+      access_spec{packtl::get<I, typename T::__type_info__::field_access_specifiers>::value};
 
     static constexpr bool is_reference = std::is_reference_v<type>;
     static constexpr bool is_pointer   = std::is_pointer_v<type>;
@@ -63,8 +63,8 @@ export namespace refl {
     static constexpr std::size_t index   = I;
     static constexpr const char* name    = T::__type_info__::method_names[I];
     using type                           = typename packtl::get<I, typename T::__type_info__::method_types>::type;
-    static constexpr field_access access =
-      field_access{packtl::get<I, typename T::__type_info__::method_access_specifiers>::value};
+    static constexpr access_spec access =
+      access_spec{packtl::get<I, typename T::__type_info__::method_access_specifiers>::value};
   };
 
   template <refl::Reflected T>

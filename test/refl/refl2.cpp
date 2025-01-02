@@ -1,5 +1,5 @@
 
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 // #include <cassert>
@@ -7,8 +7,12 @@
 
 import reflect;
 
+import fabric.logging;
+import packtl;
 
-void setup() {}
+void setup() {
+  LOG::INIT {}.filter()["stdout"];
+}
 
 template <typename T>
 struct a {
@@ -77,6 +81,39 @@ TEST("Nominal Start-up") {
   //   std::cout << "OBJECTS ARE NOT EQUAL!" << std::endl;
   // }
 
-  return 1;
+  return 0;
 }
 
+struct hola {
+  int a = 4;
+};
+
+struct rt_test {
+  int a = 1;
+  int b = 2;
+  int c = 3;
+  // std::string b;
+  hola h;
+};
+
+TEST("Runtime Reflection") {
+  auto rti = refl::type_info::from<rt_test>();
+
+  rt_test test;
+  for (const auto& field : rti.fields()) {
+    void* f_ptr = field.get_ptr(&test);
+    if (field.type().is_type<hola>()) {
+      int& f_ref = field.get_ref<int>(&test);
+
+      LOG::print{INFO
+      }("Field: {}: [{}] [{}] = (0x{:X}) {};",
+        field.offset,
+        field.type().name(),
+        field.name,
+        (std::size_t)f_ptr,
+        f_ref);
+    }
+  }
+
+  return 1;
+}

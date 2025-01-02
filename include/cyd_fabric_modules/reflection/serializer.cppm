@@ -35,18 +35,18 @@ export namespace refl {
         }
 
         switch (f::access) {
-          case field_access::NONE:
+          case access_spec::NONE:
             out << " -";
             break;
-          case field_access::PRIVATE:
+          case access_spec::PRIVATE:
             // out << "🔒";
             out << "🔒";
             break;
             //🔓
-          case field_access::PROTECTED:
+          case access_spec::PROTECTED:
             out << " \\";
             break;
-          case field_access::PUBLIC:
+          case access_spec::PUBLIC:
             out << "  ";
             break;
         }
@@ -115,18 +115,18 @@ export namespace refl {
         using m = method<R, I>;
 
         switch (m::access) {
-          case field_access::NONE:
+          case access_spec::NONE:
             out << " -";
             break;
-          case field_access::PRIVATE:
+          case access_spec::PRIVATE:
             // out << "🔒";
             out << "🔒";
             break;
             //🔓
-          case field_access::PROTECTED:
+          case access_spec::PROTECTED:
             out << " \\";
             break;
-          case field_access::PUBLIC:
+          case access_spec::PUBLIC:
             out << "  ";
             break;
         }

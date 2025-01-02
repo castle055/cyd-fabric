@@ -31,16 +31,16 @@ export namespace refl {
     }
 
     switch (f::access) {
-      case refl::field_access::NONE:
+      case refl::access_spec::NONE:
         std::cout << "- ";
         break;
-      case refl::field_access::PRIVATE:
+      case refl::access_spec::PRIVATE:
         std::cout << "X ";
         break;
-      case refl::field_access::PROTECTED:
+      case refl::access_spec::PROTECTED:
         std::cout << "\\ ";
         break;
-      case refl::field_access::PUBLIC:
+      case refl::access_spec::PUBLIC:
         std::cout << "  ";
         break;
     }
