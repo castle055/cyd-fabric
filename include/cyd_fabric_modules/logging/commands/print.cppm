@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  print.cppm
@@ -39,6 +39,16 @@ export namespace LOG {
     }
 
     ~print() {
+
+    }
+
+    template<typename... Args>
+    constexpr void operator()(
+      const std::format_string<Args...> fmt,
+      Args &&... args
+    ) {
+      message = std::format(fmt, std::forward<Args &&>(args)...);
+
       log_entry({
         .timestamp = std::chrono::system_clock::now(),
         .path = std::filesystem::path {path},
@@ -48,11 +58,5 @@ export namespace LOG {
         .level = level,
       });
     }
-
-    template<typename... Args>
-    constexpr void operator()(
-      const std::format_string<Args...> fmt,
-      Args &&... args
-    ) { message = std::format(fmt, std::forward<Args &&>(args)...); }
   };
 }
