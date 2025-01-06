@@ -159,7 +159,7 @@ export namespace refl {
 
     template <template <typename...> typename Pack>
     bool is_pack() const {
-      static type_id_t pid = pack_type_id<Pack<>>;
+      static type_id_t pid = pack_id<Pack>;
       return pack_id_ == pid;
     }
 
