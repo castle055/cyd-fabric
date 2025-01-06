@@ -122,13 +122,18 @@ export namespace refl {
     }
 
     // constexpr FNV1a hash
-    constexpr std::uint64_t fnv1a(std::string_view s) {
-      return fnv1a_partial(14695981039346656037u, s);
+    constexpr std::uint64_t fnv1a_append(std::uint64_t partial, std::string_view s) {
+      if (s.length() >= 256) {
+        return fnv1a_append(fnv1a_partial(partial, s.substr(0, 256)), s.substr(256));
+      } else {
+        return fnv1a_partial(partial, s);
+      }
     }
 
-    constexpr std::uint64_t fnv1a_append(std::uint64_t partial, std::string_view s) {
-      return fnv1a_partial(partial, s);
+    constexpr std::uint64_t fnv1a(std::string_view s) {
+      return fnv1a_append(14695981039346656037u, s);
     }
+
   } // namespace detail
 
   template <typename T>
