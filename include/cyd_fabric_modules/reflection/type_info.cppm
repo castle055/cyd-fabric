@@ -55,6 +55,10 @@ export namespace refl {
   struct get_pack_param_ids<Pack<Args...>> {
     static std::vector<type_id_t> vector();
   };
+  template <template <typename, std::size_t> typename Pack, typename T, std::size_t I>
+  struct get_pack_param_ids<Pack<T, I>> {
+    static std::vector<type_id_t> vector();
+  };
 
   class type_info {
   public:
@@ -163,6 +167,12 @@ export namespace refl {
       return pack_id_ == pid;
     }
 
+    template <template <typename T, std::size_t S> typename Pack>
+    bool is_pack_1t1i() const {
+      static type_id_t pid = pack_1t1i_id<Pack>;
+      return pack_id_ == pid;
+    }
+
     bool is_const() const {
       return is_const_;
     }
@@ -217,6 +227,13 @@ export namespace refl {
   std::vector<type_id_t> get_pack_param_ids<Pack<Args...>>::vector() {
     std::vector<type_id_t> ids{};
     (ids.push_back(type_info::from<Args>().id()), ...);
+    return ids;
+  }
+  template <template <typename, std::size_t> typename Pack, typename T, std::size_t I>
+  std::vector<type_id_t> get_pack_param_ids<Pack<T, I>>::vector() {
+    std::vector<type_id_t> ids{};
+    ids.push_back(type_info::from<T>().id());
+    ids.push_back(I);
     return ids;
   }
 }
