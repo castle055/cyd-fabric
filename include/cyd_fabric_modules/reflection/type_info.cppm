@@ -119,13 +119,13 @@ export namespace refl {
 
       if constexpr (std::is_lvalue_reference_v<T>) {
         ti.is_lval_ref_ = true;
-        ti.indirect_type_id_ = from<std::remove_reference_t<T>>();
+        ti.indirect_type_id_ = from<std::remove_reference_t<T>>().id();
       } else if constexpr (std::is_rvalue_reference_v<T>) {
         ti.is_rval_ref_ = true;
-        ti.indirect_type_id_ = from<std::remove_reference_t<T>>();
+        ti.indirect_type_id_ = from<std::remove_reference_t<T>>().id();
       } else if constexpr (std::is_pointer_v<T>) {
         ti.is_ptr_ = true;
-        ti.indirect_type_id_ = from<std::remove_pointer_t<T>>();
+        ti.indirect_type_id_ = from<std::remove_pointer_t<T>>().id();
       }
 
       if constexpr (pid != 0) {
