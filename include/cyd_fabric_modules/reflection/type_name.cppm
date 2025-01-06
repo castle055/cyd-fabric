@@ -60,16 +60,54 @@ export namespace refl {
       // didn't help. Don't know how to silence this. It compiles fine.
       return substring_as_array(name, std::make_index_sequence<size>{});
     }
+    template <template <typename...> typename Pack>
+    constexpr auto type_name_array_pack() {
+#if defined(__clang__)
+      constexpr auto prefix = std::string_view{"[T = "};
+      constexpr auto suffix = std::string_view{"]"};
+#elif defined(__GNUC__)
+      constexpr auto prefix = std::string_view{"with T = "};
+      constexpr auto suffix = std::string_view{"]"};
+#elif defined(_MSC_VER)
+      constexpr auto prefix = std::string_view{"type_name_array<"};
+      constexpr auto suffix = std::string_view{">(void)"};
+#else
+#error "unsupported compiler (type_name_array)"
+#endif
+
+      constexpr auto function = std::string_view{REFL_PRETTY_FUNCTION};
+      constexpr auto start    = function.find(prefix) + prefix.size();
+      constexpr auto end      = function.rfind(suffix);
+
+      static_assert(start < end);
+
+      constexpr auto name = function.substr(start, (end - start));
+      constexpr auto size = name.size();
+      // As of right now, this next line shows an error in the IDE because it thinks
+      // that 'size' is maybe not known at compile time. Making this function a consteval
+      // didn't help. Don't know how to silence this. It compiles fine.
+      return substring_as_array(name, std::make_index_sequence<size>{});
+    }
+
 
     template <typename T>
     struct type_name_holder {
       static inline constexpr auto value = type_name_array<T>();
+    };
+    template <template <typename...> typename Pack>
+    struct type_name_holder_pack {
+      static inline constexpr auto value = type_name_array_pack<Pack>();
     };
 
 
     template <typename T>
     constexpr auto type_name_str() {
       constexpr auto& val = type_name_holder<T>::value;
+      return std::string_view{val.data(), val.size() - 1};
+    }
+    template <template <typename...> typename Pack>
+    constexpr auto type_name_str_pack() {
+      constexpr auto& val = type_name_holder_pack<Pack>::value;
       return std::string_view{val.data(), val.size() - 1};
     }
 
@@ -96,8 +134,14 @@ export namespace refl {
   template <typename T>
   constexpr auto type_name = detail::type_name_str<T>();
 
+  template <template <typename...> typename Pack>
+  constexpr auto pack_name = detail::type_name_str_pack<Pack>();
+
   template <typename T>
   constexpr type_id_t type_id = detail::fnv1a(type_name<T>);
+
+  template <template <typename...> typename Pack>
+  constexpr type_id_t pack_id = detail::fnv1a(pack_name<Pack>);
 
   namespace detail {
     template <typename T>
@@ -106,7 +150,7 @@ export namespace refl {
     };
     template <template <typename...> typename Pack, typename... Ts>
     struct pack_type_id<Pack<Ts...>> {
-      static constexpr type_id_t value = type_id<Pack<>>;
+      static constexpr type_id_t value = pack_id<Pack>;
     };
   }
 
