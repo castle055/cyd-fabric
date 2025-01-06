@@ -18,6 +18,7 @@ import fabric.logging;
 
 export namespace refl {
   class type_info;
+  std::map<type_id_t, type_info> type_registry {};
 
   struct field_info {
     std::size_t index;
@@ -44,10 +45,29 @@ export namespace refl {
     access_spec access_type;
   };
 
+  template <typename T>
+  struct get_pack_param_ids {
+    static std::vector<type_id_t> vector() {
+      return {};
+    }
+  };
+  template <template <typename...> typename Pack, typename... Args>
+  struct get_pack_param_ids<Pack<Args...>> {
+    static std::vector<type_id_t> vector();
+  };
+
   class type_info {
   public:
+
     template <typename T>
-    static type_info from() {
+    static const type_info& from() {
+      static constexpr type_id_t tid = type_id<T>;
+      static constexpr type_id_t pid = pack_type_id<T>;
+
+      if (type_registry.contains(tid)) {
+        return type_registry[tid];
+      }
+
       if constexpr (Reflected<T>) {
         static constexpr std::size_t f_count = field_count<T>;
         static constexpr std::size_t m_count = method_count<T>;
@@ -81,15 +101,39 @@ export namespace refl {
            ...);
         }(std::make_index_sequence<m_count>{});
 
-        ti.hash_ = typeid(T).hash_code();
+        ti.type_id_ = tid;
         ti.name_ = type_name<T>;
-        return ti;
+
+        type_registry.emplace(tid, ti);
       } else {
         type_info ti{};
-        ti.hash_ = typeid(T).hash_code();
+        ti.type_id_ = tid;
         ti.name_ = type_name<T>;
-        return ti;
+        type_registry.emplace(tid, ti);
       }
+
+      type_info& ti = type_registry[tid];
+      if constexpr (std::is_const_v<T>) {
+        ti.is_const_ = true;
+      }
+
+      if constexpr (std::is_lvalue_reference_v<T>) {
+        ti.is_lval_ref_ = true;
+        ti.indirect_type_id_ = from<std::remove_reference_t<T>>();
+      } else if constexpr (std::is_rvalue_reference_v<T>) {
+        ti.is_rval_ref_ = true;
+        ti.indirect_type_id_ = from<std::remove_reference_t<T>>();
+      } else if constexpr (std::is_pointer_v<T>) {
+        ti.is_ptr_ = true;
+        ti.indirect_type_id_ = from<std::remove_pointer_t<T>>();
+      }
+
+      if constexpr (pid != 0) {
+        ti.pack_id_ = pid;
+        ti.pack_param_ids_ = get_pack_param_ids<T>::vector();
+      }
+
+      return ti;
     }
 
     const std::string& name() const {
@@ -101,18 +145,78 @@ export namespace refl {
     }
 
     std::size_t hash_code() const {
-      return hash_;
+      return type_id_;
+    }
+    std::size_t id() const {
+      return type_id_;
     }
 
     template <typename T>
     bool is_type() const {
-      static std::size_t other = typeid(T).hash_code();
-      return hash_ == other;
+      static type_id_t tid = type_id<T>;
+      return type_id_ == tid;
     }
+
+    template <template <typename...> typename Pack>
+    bool is_pack() const {
+      static type_id_t pid = pack_type_id<Pack<>>;
+      return pack_id_ == pid;
+    }
+
+    bool is_const() const {
+      return is_const_;
+    }
+    bool is_indirect() const {
+      // return is_lval_ref() || is_rval_ref() || is_ptr();
+      return indirect_type_id_.has_value();
+    }
+    bool is_rval_ref() const {
+      return is_rval_ref_;
+    }
+    bool is_lval_ref() const {
+      return is_lval_ref_;
+    }
+    bool is_ptr() const {
+      return is_ptr_;
+    }
+
+    const type_info& indirect_type() const {
+      if (indirect_type_id_.has_value()) {
+        return type_registry[indirect_type_id_.value()];
+      } else {
+        return type_registry[0];
+      }
+    }
+
+    std::vector<const type_info*> pack_parameter_types() const {
+      std::vector<const type_info*> tis{};
+      for (const auto& tid: pack_param_ids_) {
+        tis.emplace_back(&type_registry[tid]);
+      }
+      return tis;
+    }
+
   private:
     std::string name_{};
-    std::size_t hash_{};
     std::vector<field_info> fields_{};
     std::vector<method_info> methods_{};
+
+    bool is_const_ = false;
+    bool is_lval_ref_ = false;
+    bool is_rval_ref_ = false;
+    bool is_ptr_ = false;
+
+    type_id_t type_id_{};
+    std::optional<type_id_t> indirect_type_id_{std::nullopt};
+    type_id_t pack_id_{};
+    std::vector<type_id_t> pack_param_ids_{};
   };
+
+
+  template <template <typename...> typename Pack, typename... Args>
+  std::vector<type_id_t> get_pack_param_ids<Pack<Args...>>::vector() {
+    std::vector<type_id_t> ids{};
+    (ids.push_back(type_info::from<Args>().id()), ...);
+    return ids;
+  }
 }

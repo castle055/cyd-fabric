@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  type_name.cppm
@@ -95,4 +95,21 @@ export namespace refl {
 
   template <typename T>
   constexpr auto type_name = detail::type_name_str<T>();
+
+  template <typename T>
+  constexpr type_id_t type_id = detail::fnv1a(type_name<T>);
+
+  namespace detail {
+    template <typename T>
+    struct pack_type_id {
+      static constexpr type_id_t value = type_id<T>;
+    };
+    template <template <typename...> typename Pack, typename... Ts>
+    struct pack_type_id<Pack<Ts...>> {
+      static constexpr type_id_t value = type_id<Pack<>>;
+    };
+  }
+
+  template <typename T>
+  constexpr type_id_t pack_type_id = detail::pack_type_id<T>::value;
 }

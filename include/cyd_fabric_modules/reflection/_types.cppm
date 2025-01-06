@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  _types.cppm
@@ -7,6 +7,8 @@
  */
 
 export module reflect:types;
+
+import std;
 
 export {
   namespace refl {
@@ -22,6 +24,8 @@ export {
       typename T::__type_info__;
       is_type_info<typename T::__type_info__>;
     };
+
+    using type_id_t = std::size_t;
   } // namespace refl
 
   template <typename... T>
