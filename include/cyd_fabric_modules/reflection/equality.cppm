@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  pretty_print.cppm
@@ -129,7 +129,11 @@ namespace refl::deep_eq_impl {
       }
 
       using field_type = std::remove_pointer_t<typename field_data::type>;
-      return ref_eq<field_type>(*field1, *field2);
+      if constexpr (std::is_void_v<field_type>) {
+        return false;
+      } else {
+        return ref_eq<field_type>(*field1, *field2);
+      }
     } else {
       using field_type = typename field_data::type;
       return ref_eq<field_type>(field1, field2);
