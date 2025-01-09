@@ -96,7 +96,7 @@ private:
   }
 
 private:
-  std::shared_ptr<signal_data<Args...>> signal_data_;
+  std::shared_ptr<signal_data<Args...>> signal_data_ = std::make_shared<signal_data<Args...>>();
 };
 
 // static fabric::refl::internal::module_registry __module_registry{
