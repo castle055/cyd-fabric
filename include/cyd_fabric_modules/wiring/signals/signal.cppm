@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  signal.cppm
@@ -22,7 +22,7 @@ export import :auto_disconnect;
 export import reflect;
 
 
-template <typename... Args>
+export template <typename... Args>
 class fabric::wiring::signal: auto_disconnect {
 public:
   friend class connection;
