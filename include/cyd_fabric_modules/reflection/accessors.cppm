@@ -53,6 +53,11 @@ export namespace refl {
       const auto* rep = reinterpret_cast<const representation<type, offset>*>(&instance);
       return rep->value;
     }
+
+    static std::remove_reference_t<type>& from_instance(T& instance) {
+      auto* rep = reinterpret_cast<representation<type, offset>*>(&instance);
+      return rep->value;
+    }
   };
 
   template <refl::Reflected T>
