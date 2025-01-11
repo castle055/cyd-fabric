@@ -80,6 +80,9 @@ public:
     }(std::make_index_sequence<sizeof...(Args)>{});
   }
 
+  bool operator==(const fabric::wiring::signal<Args...>& other) const {
+    return signal_data_ == other.signal_data_;
+  }
 
 private:
   bool disconnect(std::uint64_t slot_id) {
