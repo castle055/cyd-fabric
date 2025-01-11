@@ -61,9 +61,10 @@ public:
   }
 
   slot(signal<Args...>& sig)
-    : std::function<R(Args...)>([sig](Args&&... args) {
-      sig.emit(args...);
-    }) {
+      : std::function<R(Args...)>([&] {
+          signal<Args...>* sig_ptr = &sig;
+          return [sig_ptr](Args&&... args) { sig_ptr->emit(args...); };
+        }()) {
     lifetime_bound_ = &sig;
   }
 
