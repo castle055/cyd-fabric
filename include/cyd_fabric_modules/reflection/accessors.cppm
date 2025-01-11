@@ -39,12 +39,12 @@ export namespace refl {
   template <refl::Reflected T, std::size_t I>
   struct field {
     static constexpr std::size_t index   = I;
-    static constexpr const char* name    = T::__type_info__::field_names[I];
-    using type                           = typename packtl::get<I, typename T::__type_info__::field_types>::type;
-    static constexpr std::size_t  size   = packtl::get<I, typename T::__type_info__::field_sizes>::value;
-    static constexpr std::size_t  offset = packtl::get<I, typename T::__type_info__::field_offsets>::value;
+    static constexpr const char* name    = static_type_info<T>::field_names[I];
+    using type                           = typename packtl::get<I, typename static_type_info<T>::field_types>::type;
+    static constexpr std::size_t  size   = packtl::get<I, typename static_type_info<T>::field_sizes>::value;
+    static constexpr std::size_t  offset = packtl::get<I, typename static_type_info<T>::field_offsets>::value;
     static constexpr access_spec access =
-      access_spec{packtl::get<I, typename T::__type_info__::field_access_specifiers>::value};
+      access_spec{packtl::get<I, typename static_type_info<T>::field_access_specifiers>::value};
 
     static constexpr bool is_reference = std::is_reference_v<type>;
     static constexpr bool is_pointer   = std::is_pointer_v<type>;
@@ -61,19 +61,19 @@ export namespace refl {
   };
 
   template <refl::Reflected T>
-  constexpr std::size_t field_count = packtl::get_size<typename T::__type_info__::field_types>::value;
+  constexpr std::size_t field_count = packtl::get_size<typename static_type_info<T>::field_types>::value;
 
   template <refl::Reflected T, std::size_t I>
   struct method {
     static constexpr std::size_t index   = I;
-    static constexpr const char* name    = T::__type_info__::method_names[I];
-    using type                           = typename packtl::get<I, typename T::__type_info__::method_types>::type;
+    static constexpr const char* name    = static_type_info<T>::method_names[I];
+    using type                           = typename packtl::get<I, typename static_type_info<T>::method_types>::type;
     static constexpr access_spec access =
-      access_spec{packtl::get<I, typename T::__type_info__::method_access_specifiers>::value};
+      access_spec{packtl::get<I, typename static_type_info<T>::method_access_specifiers>::value};
   };
 
   template <refl::Reflected T>
-  constexpr std::size_t method_count = packtl::get_size<typename T::__type_info__::method_types>::value;
+  constexpr std::size_t method_count = packtl::get_size<typename static_type_info<T>::method_types>::value;
 
   template <Reflected R, template <Reflected, typename> typename Fun, typename... Args>
   auto for_each_field(Args&&... args) {

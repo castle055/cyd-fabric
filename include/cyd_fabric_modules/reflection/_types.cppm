@@ -13,6 +13,9 @@ import std;
 export {
   namespace refl {
     template <typename T>
+    using static_type_info = typename T::__type_info__;
+
+    template <typename T>
     concept is_type_info = requires {
       typename T::field_types;
       typename T::field_sizes;
