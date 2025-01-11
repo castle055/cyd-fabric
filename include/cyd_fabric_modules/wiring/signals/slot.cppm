@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  slot.cppm
@@ -58,6 +58,13 @@ public:
     if constexpr (std::derived_from<F, auto_disconnect>) {
       lifetime_bound_ = instance;
     }
+  }
+
+  slot(signal<Args...>& sig)
+    : std::function<R(Args...)>([sig](Args&&... args) {
+      sig.emit(args...);
+    }) {
+    lifetime_bound_ = &sig;
   }
 
 private:
