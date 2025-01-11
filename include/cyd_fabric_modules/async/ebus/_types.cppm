@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  _types.cppm
@@ -43,15 +43,14 @@ export namespace fabric::async {
     CONSUMED,
   };
 
-  // clang-format off
   template <typename F>
-  using event_type_from_handler =
-    typename ts::with_type<F>
-      ::template apply<std::remove_reference>
-      ::template apply<first_argument>
-      ::template apply<std::remove_reference>
-      ::template apply<std::remove_const>
-      ::done;
-  // clang-format on
+  using event_type_from_handler = std::remove_const_t<
+    std::remove_reference_t<typename first_argument<std::remove_reference_t<F>>::type>>;
+    // typename ts::with_type<F>
+    //   ::template apply<std::remove_reference>
+    //   ::template apply<first_argument>
+    //   ::template apply<std::remove_reference>
+    //   ::template apply<std::remove_const>
+    //   ::done;
 }
 
