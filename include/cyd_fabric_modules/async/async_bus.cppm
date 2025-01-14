@@ -23,11 +23,9 @@ export namespace fabric::async {
     public: /// @name Construction & RAII
       // ! Constructor
       async_bus_t() {
-        thread_start();
       }
       // ! Destructor
       ~async_bus_t() {
-        thread_stop();
       }
       // ! Copy
       async_bus_t(const async_bus_t &rhs) = delete;
@@ -42,6 +40,15 @@ export namespace fabric::async {
 
       void add_cleanup(const std::function<void()> &cleanup) {
         cleanup_functions_.emplace_back(cleanup);
+      }
+
+    protected:
+      void start() {
+        thread_start();
+      }
+
+      void stop() {
+        thread_stop();
       }
 
     private TEST_PUBLIC: /// @name Status
