@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 module;
@@ -9,6 +9,7 @@ export module fabric.async;
 import std;
 export import fabric.async.ebus;
 export import :coroutine_rt;
+export import :system_manager;
 
 export namespace fabric::async {
     enum class async_bus_status_e {
@@ -17,7 +18,8 @@ export namespace fabric::async {
     };
     
     class async_bus_t: public ebus,
-                       public coroutine_runtime_t {
+                       public coroutine_runtime_t,
+                       public system_manager_t {
     public: /// @name Construction & RAII
       // ! Constructor
       async_bus_t() {
@@ -57,6 +59,7 @@ export namespace fabric::async {
         auto prev_t = std::chrono::system_clock::now();
         while (status_ == async_bus_status_e::RUNNING) {
           prev_t = std::chrono::system_clock::now();
+          run_systems();
           events_process_batch();
           coroutine_run();
           std::this_thread::sleep_until(prev_t + 1ms);
