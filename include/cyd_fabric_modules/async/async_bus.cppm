@@ -35,7 +35,15 @@ export namespace fabric::async {
       // ! Move
       async_bus_t(async_bus_t &&rhs) = delete;
       async_bus_t &operator=(async_bus_t &&rhs) = delete;
-    
+
+      void add_init(const std::function<void()> &init) {
+        init_functions_.emplace_back(init);
+      }
+
+      void add_cleanup(const std::function<void()> &cleanup) {
+        cleanup_functions_.emplace_back(cleanup);
+      }
+
     private TEST_PUBLIC: /// @name Status
       std::atomic<async_bus_status_e> status_ = async_bus_status_e::STOPPED;
     private TEST_PUBLIC: /// @name Thread
@@ -56,6 +64,11 @@ export namespace fabric::async {
       
       void thread_task() {
         using namespace std::chrono_literals;
+
+        for (const auto & init_function : init_functions_) {
+          init_function();
+        }
+
         auto prev_t = std::chrono::system_clock::now();
         while (status_ == async_bus_status_e::RUNNING) {
           prev_t = std::chrono::system_clock::now();
@@ -64,6 +77,14 @@ export namespace fabric::async {
           coroutine_run();
           std::this_thread::sleep_until(prev_t + 1ms);
         }
+
+        for (const auto & cleanup_function : std::ranges::views::reverse(cleanup_functions_)) {
+          cleanup_function();
+        }
       }
+
+    private:
+      std::vector<std::function<void()>> init_functions_;
+      std::vector<std::function<void()>> cleanup_functions_;
     };
 }
