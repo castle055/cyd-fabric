@@ -14,8 +14,8 @@ export import :types;
 export import :type_name;
 export import :accessors;
 export import :type_info;
+export import :visitor;
 
 // export import :pretty_print;
 // export import :formatters;
-export import :serializer;
 export import :equality;
