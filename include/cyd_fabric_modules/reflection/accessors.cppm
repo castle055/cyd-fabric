@@ -23,7 +23,7 @@ struct representation {
 
 template <typename Type>
 struct representation<Type, 0> {
-  Type          value;
+  Type value;
 };
 
 
@@ -38,16 +38,28 @@ export namespace refl {
 
   template <refl::Reflected T, std::size_t I>
   struct field {
-    static constexpr std::size_t index   = I;
-    static constexpr const char* name    = static_type_info<T>::field_names[I];
-    using type                           = typename packtl::get<I, typename static_type_info<T>::field_types>::type;
-    static constexpr std::size_t  size   = packtl::get<I, typename static_type_info<T>::field_sizes>::value;
-    static constexpr std::size_t  offset = packtl::get<I, typename static_type_info<T>::field_offsets>::value;
+    static constexpr std::size_t index = I;
+    static constexpr const char* name  = static_type_info<T>::field_names[I];
+    using type = typename packtl::get<I, typename static_type_info<T>::field_types>::type;
+    static constexpr std::size_t size =
+      packtl::get<I, typename static_type_info<T>::field_sizes>::value;
+    static constexpr std::size_t offset =
+      packtl::get<I, typename static_type_info<T>::field_offsets>::value;
     static constexpr access_spec access =
       access_spec{packtl::get<I, typename static_type_info<T>::field_access_specifiers>::value};
 
     static constexpr bool is_reference = std::is_reference_v<type>;
     static constexpr bool is_pointer   = std::is_pointer_v<type>;
+
+    static constexpr std::size_t metadata_offset =
+      packtl::get<I, typename static_type_info<T>::field_metadata_offsets>::value;
+    static constexpr std::size_t metadata_count =
+      packtl::get<I, typename static_type_info<T>::field_metadata_counts>::value;
+
+    template <std::size_t J>
+    requires (J < metadata_count)
+    static constexpr decltype(std::get<metadata_offset + J>(static_type_info<T>::field_metadata)) metadata_item =
+      std::get<metadata_offset + J>(static_type_info<T>::field_metadata);
 
     static const std::remove_reference_t<type>& from_instance(const T& instance) {
       const auto* rep = reinterpret_cast<const representation<type, offset>*>(&instance);
@@ -85,4 +97,4 @@ export namespace refl {
 
     return impl(std::make_index_sequence<count>{});
   }
-}
+} // namespace refl

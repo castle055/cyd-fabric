@@ -1,5 +1,5 @@
 
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <clang/AST/AST.h>
@@ -49,23 +49,24 @@ public:
         Context(Ctx) {
 
     if (Context->getCurrentNamedModule() && checkModuleUsable(Context->getCurrentNamedModule())) {
-      llvm::outs() << "[INFO] Adding static type information to module." << "\n";
+      // llvm::outs() << "[INFO] Adding static type information to module." << "\n";
     }
   }
 
-  void add_types_decl(CXXRecordDecl* record, const std::list<QualType>& field_types, const std::string& identifier) {
+  void add_types_decl(
+    CXXRecordDecl* record, const std::list<QualType>& field_types, const std::string& identifier
+  ) {
     // Create the using field_types = pack<int, long, double> statement
-    IdentifierInfo&          FieldTypesID = Context->Idents.get(identifier);
-    IdentifierInfo&          PackID       = Context->Idents.get("refl_pack");
+    IdentifierInfo& FieldTypesID = Context->Idents.get(identifier);
+    IdentifierInfo& PackID       = Context->Idents.get("refl_pack");
 
     // Create Template Specialization for 'pack<int, long, double>'
-    TemplateName             PackTemplate{dyn_cast<TemplateDecl>(
-      Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
-        Compiler->getSema().getCurScope(), {&PackID}, SourceLocation(), Sema::LookupOrdinaryName
-      )))
-    };
+    TemplateName PackTemplate{dyn_cast<
+      TemplateDecl>(Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
+      Compiler->getSema().getCurScope(), {&PackID}, record->getBeginLoc(), Sema::LookupOrdinaryName
+    )))};
 
-    TemplateArgumentListInfo TemplateArgs{SourceLocation(), SourceLocation()};
+    TemplateArgumentListInfo TemplateArgs{record->getBeginLoc(), record->getEndLoc()};
     for (const auto& type: field_types) {
       auto arg =
         TemplateArgumentLoc(TemplateArgument(type), Context->getTrivialTypeSourceInfo(type));
@@ -73,14 +74,14 @@ public:
     }
 
     QualType PackSpecialization =
-      Compiler->getSema().CheckTemplateIdType(PackTemplate, SourceLocation(), TemplateArgs);
+      Compiler->getSema().CheckTemplateIdType(PackTemplate, record->getBeginLoc(), TemplateArgs);
 
     // Create TypeAliasDecl for 'using field_types = refl_pack<...>'
     TypeAliasDecl* FieldTypesAlias = TypeAliasDecl::Create(
       *Context,
       record,
-      SourceLocation(),
-      SourceLocation(),
+      record->getBeginLoc(),
+      record->getBeginLoc(),
       &FieldTypesID,
       Context->getTrivialTypeSourceInfo(PackSpecialization)
     );
@@ -92,38 +93,38 @@ public:
     record->addDecl(FieldTypesAlias);
   }
 
-  void add_integer_list(CXXRecordDecl* record, const std::list<uint64_t>& items, const std::string& identifier) {
+  void add_integer_list(
+    CXXRecordDecl* record, const std::list<uint64_t>& items, const std::string& identifier
+  ) {
     // Create the using field_types = pack<int, long, double> statement
-    IdentifierInfo&          FieldTypesID = Context->Idents.get(identifier);
-    IdentifierInfo&          PackID       = Context->Idents.get("refl_int_pack");
+    IdentifierInfo& FieldTypesID = Context->Idents.get(identifier);
+    IdentifierInfo& PackID       = Context->Idents.get("refl_int_pack");
 
-    QualType                 type         = Context->UnsignedLongTy;
+    QualType type = Context->UnsignedLongTy;
 
     // Create Template Specialization for 'pack<int, long, double>'
-    TemplateName             PackTemplate{dyn_cast<TemplateDecl>(
-      Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
-        Compiler->getSema().getCurScope(), {&PackID}, SourceLocation(), Sema::LookupOrdinaryName
-      ))
-    )};
-    TemplateArgumentListInfo TemplateArgs{SourceLocation(), SourceLocation()};
+    TemplateName             PackTemplate{dyn_cast<
+                  TemplateDecl>(Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
+      Compiler->getSema().getCurScope(), {&PackID}, record->getBeginLoc(), Sema::LookupOrdinaryName
+    )))};
+    TemplateArgumentListInfo TemplateArgs{record->getBeginLoc(), record->getEndLoc()};
     for (const auto& item: items) {
-      auto value = llvm::APSInt(std::to_string(item));
-      auto* item_expr = IntegerLiteral::Create(*Context, value, type, SourceLocation());
-      TemplateArgs.addArgument(TemplateArgumentLoc(
-        TemplateArgument(*Context, value, type),
-        item_expr
-      ));
+      auto  value     = llvm::APInt(64, std::to_string(item), 10);
+      auto* item_expr = IntegerLiteral::Create(*Context, value, type, record->getBeginLoc());
+      TemplateArgs.addArgument(
+        TemplateArgumentLoc(TemplateArgument(*Context, type, APValue(llvm::APSInt(value))), item_expr)
+      );
     }
 
     QualType PackSpecialization =
-      Compiler->getSema().CheckTemplateIdType(PackTemplate, SourceLocation(), TemplateArgs);
+      Compiler->getSema().CheckTemplateIdType(PackTemplate, record->getBeginLoc(), TemplateArgs);
 
     // Create TypeAliasDecl for 'using field_types = pack<int, long, double>'
     TypeAliasDecl* FieldTypesAlias = TypeAliasDecl::Create(
       *Context,
       record,
-      SourceLocation(),
-      SourceLocation(),
+      record->getBeginLoc(),
+      record->getLocation(),
       &FieldTypesID,
       Context->getTrivialTypeSourceInfo(PackSpecialization)
     );
@@ -134,22 +135,24 @@ public:
     record->addDecl(FieldTypesAlias);
   }
 
-  void add_names_decl(CXXRecordDecl* record, const std::list<std::string>& names, const std::string& identifier) {
+  void add_names_decl(
+    CXXRecordDecl* record, const std::list<std::string>& names, const std::string& identifier
+  ) {
     IdentifierInfo& FieldNamesID          = Context->Idents.get(identifier);
     QualType        ConstCharPtrArrayType = Context->getConstantArrayType(
       Context->getPointerType(Context->CharTy.withConst()),
-       llvm::APInt(32, names.size()),
-       nullptr,
-        ArraySizeModifier::Normal,
-         0
+      llvm::APInt(32, names.size()),
+      nullptr,
+      ArraySizeModifier::Normal,
+      0
     );
-    TypeSourceInfo* TSI           = Context->getTrivialTypeSourceInfo(ConstCharPtrArrayType);
+    TypeSourceInfo* TSI = Context->getTrivialTypeSourceInfo(ConstCharPtrArrayType);
 
     VarDecl* FieldNamesVar = VarDecl::Create(
       *Context,
       record,
-      SourceLocation(),
-      SourceLocation(),
+      record->getBeginLoc(),
+      record->getBeginLoc(),
       &FieldNamesID,
       ConstCharPtrArrayType,
       nullptr,
@@ -167,12 +170,13 @@ public:
         StringLiteralKind::Ordinary,
         false,
         Context->getStringLiteralArrayType(Context->CharTy.withConst(), name.size()),
-        SourceLocation()
+        record->getBeginLoc()
       ));
     }
 
 
-    auto* FieldNamesInitList = new (Context) InitListExpr(*Context, SourceLocation(), init_exprs, SourceLocation());
+    auto* FieldNamesInitList =
+      new (Context) InitListExpr(*Context, record->getBeginLoc(), init_exprs, record->getEndLoc());
 
     FieldNamesInitList->setType(ConstCharPtrArrayType);
     FieldNamesVar->setConstexpr(true);
@@ -181,6 +185,83 @@ public:
 
     // // Add field_names to the struct
     record->addDecl(FieldNamesVar);
+  }
+
+  void add_metadata_decl(
+    CXXRecordDecl*                     record,
+    const std::list<std::list<Expr*>>& metadata_exprs,
+    const std::string&                 identifier
+  ) {
+    IdentifierInfo& MetadataID = Context->Idents.get(identifier);
+    IdentifierInfo& TupleID    = Context->Idents.get("refl_tuple");
+
+    // Create Template Specialization for 'tuple<T...>'
+    auto lookup_res = Compiler->getSema().LookupSingleName(
+      Compiler->getSema().getCurScope(), {&TupleID}, record->getBeginLoc(), Sema::LookupOrdinaryName
+    );
+    if (nullptr == lookup_res) {
+      return;
+    }
+    TemplateName TupleTemplate{
+      dyn_cast<TemplateDecl>(Compiler->getSema().getAsTemplateNameDecl(lookup_res))
+    };
+
+    TemplateArgumentListInfo TemplateArgs{record->getBeginLoc(), record->getEndLoc()};
+    std::vector<Expr*>       init_expr_lists{};
+    for (const auto& metadata_expr_list: metadata_exprs) {
+      for (const auto& expr: metadata_expr_list) {
+        auto et = expr->getType();
+        if (et->isArrayType()) {
+          et = Context->getPointerType(et->getAsArrayTypeUnsafe()->getElementType());
+        }
+        auto arg = TemplateArgumentLoc(TemplateArgument(et), Context->getTrivialTypeSourceInfo(et));
+        TemplateArgs.addArgument(arg);
+        init_expr_lists.push_back(expr);
+      }
+    }
+
+    Expr* initializer = new (Context)
+      InitListExpr(*Context, record->getBeginLoc(), init_expr_lists, record->getEndLoc());
+
+    QualType TupleSpecialization =
+      Compiler->getSema()
+        .CheckTemplateIdType(TupleTemplate, record->getBeginLoc(), TemplateArgs)
+        .withConst();
+    TypeSourceInfo* TSI = Context->getTrivialTypeSourceInfo(TupleSpecialization);
+
+    //=====
+
+    VarDecl* MetadataVar = VarDecl::Create(
+      *Context,
+      record,
+      record->getBeginLoc(),
+      record->getBeginLoc(),
+      &MetadataID,
+      TupleSpecialization,
+      nullptr,
+      SC_Static
+    );
+    MetadataVar->setInitStyle(VarDecl::CInit);
+    MetadataVar->setTypeSourceInfo(TSI);
+    MetadataVar->setImplicitlyInline();
+    initializer->setType(TupleSpecialization);
+    MetadataVar->setConstexpr(true);
+    MetadataVar->setAccess(AccessSpecifier::AS_public);
+
+    Compiler->getSema().AddInitializerToDecl(MetadataVar, initializer, false);
+
+    // if (init_expr_lists.size() > 0) {
+    //   auto* ewc = dyn_cast<ExprWithCleanups>(MetadataVar->getInit());
+    //   ewc->getSourceRange();
+    //   initializer->dumpColor();
+    //   MetadataVar->getInit()->dumpColor();
+    //   // MetadataVar->dumpColor();
+    //   // for (auto lookup_constructor :
+    //   // Compiler->getSema().LookupConstructors(TupleSpecialization->getAsCXXRecordDecl()))
+    //   // lookup_constructor->dumpColor();
+    // }
+    MetadataVar->ensureEvaluatedStmt();
+    record->addDecl(MetadataVar);
   }
 
   void add_type_info(CXXRecordDecl* record) {
@@ -194,15 +275,19 @@ public:
     std::list<uint64_t>    method_accesses{};
     std::list<QualType>    method_types{};
 
+    uint64_t                    last_metadata_offset = 0;
+    std::list<uint64_t>         field_metadata_offsets{};
+    std::list<uint64_t>         field_metadata_counts{};
+    std::list<std::list<Expr*>> field_metadata_exprs{};
+
     for (const auto& field: record->fields()) {
       if (field->isTemplated() || field->isTemplateDecl())
         continue;
 
-      auto name    = field->getNameAsString();
-      auto type    = field->getType();
-      auto size    = Context->getTypeSize(type);
-      auto offset  = Context->getFieldOffset(field);
-      offset      /= 8;
+      auto name   = field->getNameAsString();
+      auto type   = field->getType();
+      auto size   = Context->getTypeSize(type);
+      auto offset = Context->getFieldOffset(field) >> 3;
 
       uint64_t access = 0;
       switch (field->getAccess()) {
@@ -220,19 +305,53 @@ public:
           break;
       }
 
+      std::list<Expr*> metadata_exprs{};
+      bool             ignored         = false;
+      bool             has_annotations = false;
+      for (const auto& attr: field->attrs()) {
+        // llvm::outs() << "Field has attr: ";
+        // attr->printPretty(llvm::outs(), Context->getPrintingPolicy());
+        // llvm::outs() << "\n";
+        if (isa<AnnotateAttr>(attr)) {
+          has_annotations         = true;
+          AnnotateAttr* AnnotAttr = dyn_cast<AnnotateAttr>(attr);
+          // llvm::outs() << "Field has annotation: " << AnnotAttr->getAnnotation();
+
+          if (AnnotAttr->getAnnotation() == "refl::ignore") {
+            ignored = true;
+          } else if (AnnotAttr->getAnnotation() == "meta") {
+            for (auto& arg: AnnotAttr->args()) {
+              metadata_exprs.push_back(arg);
+              // arg = nullptr;
+            }
+          }
+        }
+      }
+      if (has_annotations) {
+        field->dropAttr<AnnotateAttr>();
+      }
+
+      if (ignored) {
+        continue;
+      }
+
       field_names.push_back(name);
       field_sizes.push_back(size);
       field_offsets.push_back(offset);
       field_types.push_back(type);
       field_accesses.push_back(access);
+      field_metadata_offsets.push_back(last_metadata_offset);
+      field_metadata_counts.push_back(metadata_exprs.size());
+      last_metadata_offset += metadata_exprs.size();
+      field_metadata_exprs.push_back(metadata_exprs);
     }
 
     for (const auto& method: record->methods()) {
       if (method->isTemplated() || method->isTemplateDecl())
         continue;
 
-      auto name    = method->getNameAsString();
-      auto type    = method->getType();
+      auto name = method->getNameAsString();
+      auto type = method->getType();
 
       uint64_t access = 0;
       switch (method->getAccess()) {
@@ -260,26 +379,29 @@ public:
       *Context,
       CXXRecordDecl::TagKind::Class,
       record,
-      record->getEndLoc(),
-      record->getEndLoc(),
+      record->getBeginLoc(),
+      record->getLocation(),
       &type_info_id
     );
 
     type_info_record->startDefinition();
 
-//    if (!field_names.empty()) {
-      add_names_decl(type_info_record, field_names, "field_names");
-      add_types_decl(type_info_record, field_types, "field_types");
-      add_integer_list(type_info_record, field_sizes, "field_sizes");
-      add_integer_list(type_info_record, field_offsets, "field_offsets");
-      add_integer_list(type_info_record, field_accesses, "field_access_specifiers");
-//    }
+    //    if (!field_names.empty()) {
+    add_names_decl(type_info_record, field_names, "field_names");
+    add_types_decl(type_info_record, field_types, "field_types");
+    add_integer_list(type_info_record, field_sizes, "field_sizes");
+    add_integer_list(type_info_record, field_offsets, "field_offsets");
+    add_integer_list(type_info_record, field_accesses, "field_access_specifiers");
+    add_metadata_decl(type_info_record, field_metadata_exprs, "field_metadata");
+    add_integer_list(type_info_record, field_metadata_offsets, "field_metadata_offsets");
+    add_integer_list(type_info_record, field_metadata_counts, "field_metadata_counts");
+    //    }
 
-//    if (!method_names.empty()) {
-      add_names_decl(type_info_record, method_names, "method_names");
-      add_types_decl(type_info_record, method_types, "method_types");
-      add_integer_list(type_info_record, method_accesses, "method_access_specifiers");
-//    }
+    //    if (!method_names.empty()) {
+    add_names_decl(type_info_record, method_names, "method_names");
+    add_types_decl(type_info_record, method_types, "method_types");
+    add_integer_list(type_info_record, method_accesses, "method_access_specifiers");
+    //    }
 
     type_info_record->setAccess(AccessSpecifier::AS_public);
     type_info_record->completeDefinition();
@@ -287,19 +409,25 @@ public:
     record->addDecl(type_info_record);
   }
 
+
   void HandleTagDeclDefinition(TagDecl* D) override {
-    if (!module_usable &&
-        ((D->getOwningModule() == nullptr) ||
-         D->getOwningModule()->getPrimaryModuleInterfaceName() != "reflect")) {
+    if (!module_usable && ((D->getOwningModule() == nullptr) ||
+                           D->getOwningModule()->getPrimaryModuleInterfaceName() != "reflect")) {
       return;
     }
-    
+
     if ((D->isStruct() || D->isClass()) && (D->getDefinition() == D) && !D->isEnum()
     /* &&
         !D->isInAnotherModuleUnit() &&
         (D->hasOwningModule() && !D->getOwningModule()->isGlobalModule())*/) {
-      auto*        record = dyn_cast<CXXRecordDecl>(D);
+      auto* record = dyn_cast<CXXRecordDecl>(D);
       add_type_info(record);
+      // if (record->getName() == "annotate_me") {
+      // record->dumpColor();
+      //   for (auto d: record->decls()) {
+      //     d->dumpColor();
+      //   }
+      // }
     }
   }
 

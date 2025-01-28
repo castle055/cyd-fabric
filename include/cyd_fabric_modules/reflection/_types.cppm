@@ -35,4 +35,7 @@ export {
   struct refl_pack;
   template <unsigned long... T>
   struct refl_int_pack;
+
+  template <typename... T>
+  using refl_tuple = std::tuple<T...>;
 }
