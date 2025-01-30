@@ -17,6 +17,12 @@ import :accessors;
 import :type_name;
 
 export namespace refl {
+  template <typename T>
+  struct is_std_array: std::false_type {};
+
+  template <typename T, std::size_t N>
+  struct is_std_array<std::array<T, N>>: std::true_type {};
+
   template <typename Derived>
   struct visitor {
     visitor() = default;
@@ -49,8 +55,23 @@ export namespace refl {
     }
 
     template <typename T>
+    void handle_iterable_element(const T& iterable) {
+      visit_iterable_element(iterable);
+    }
+
+    template <typename T>
     void handle_iterable(const T& iterable) {
       visit_iterable(iterable);
+    }
+
+    template <typename T>
+    void handle_tuple_element(const T& iterable) {
+      visit_tuple_element(iterable);
+    }
+
+    template <typename T>
+    void handle_tuple(const T& iterable) {
+      visit_tuple(iterable);
     }
 
     template <typename T>
@@ -107,16 +128,44 @@ export namespace refl {
     void visit_iterable(const T& iterable) {
       using item_type = typename T::value_type;
       for (auto item = iterable.begin(); item != iterable.end(); ++item) {
-        if constexpr (std::is_reference_v<item_type>) {
-          const auto& it = *item;
-          self().handle_reference(it);
-        } else if constexpr (std::is_pointer_v<item_type>) {
-          const auto* it = *item;
-          self().handle_pointer(it);
-        } else {
-          const auto& it = *item;
-          self().handle_value(it);
-        }
+        self().handle_iterable_element(*item);
+      }
+    }
+
+    template <typename T>
+    void visit_iterable_element(const T& item) {
+      using item_type = T;
+      if constexpr (std::is_reference_v<item_type>) {
+        const auto& it = item;
+        self().handle_reference(it);
+      } else if constexpr (std::is_pointer_v<item_type>) {
+        const auto* it = item;
+        self().handle_pointer(it);
+      } else {
+        const auto& it = item;
+        self().handle_value(it);
+      }
+    }
+
+    template <typename T>
+    void visit_tuple(const T& it) {
+      [&]<std::size_t... I>(std::index_sequence<I...>) {
+        (self().handle_tuple_element(std::get<I>(it)), ...);
+      }(std::make_index_sequence<std::tuple_size_v<T>>{});
+    }
+
+    template <typename T>
+    void visit_tuple_element(const T& item) {
+      using item_type = T;
+      if constexpr (std::is_reference_v<item_type>) {
+        const auto& it = item;
+        self().handle_reference(it);
+      } else if constexpr (std::is_pointer_v<item_type>) {
+        const auto* it = item;
+        self().handle_pointer(it);
+      } else {
+        const auto& it = item;
+        self().handle_value(it);
       }
     }
 
@@ -124,9 +173,6 @@ export namespace refl {
     auto& self() {
       return *static_cast<Derived*>(this);
     }
-
-    template <typename T>
-    void visit_std_pair(const T& it) {}
 
     template <refl::Reflected R, std::size_t I>
     void visit_obj_method(const R& obj) {
@@ -136,19 +182,21 @@ export namespace refl {
   protected:
     template <typename T>
     void visit_any(const T& it) {
-      if constexpr (std::is_reference_v<T>) {
+      if constexpr (std::same_as<T, char*>) {
+        return;
+      } else if constexpr (std::same_as<T, const char*>) {
+        return;
+      } else if constexpr (std::is_reference_v<T>) {
         self().handle_reference(it);
       } else if constexpr (std::is_pointer_v<T>) {
         self().handle_pointer(it);
       }  else if constexpr (packtl::is_type<std::vector, T>::value) {
         self().handle_iterable(it);
+      }  else if constexpr (is_std_array<T>::value) {
+        self().handle_iterable(it);
       } else if constexpr (packtl::is_type<std::list, T>::value) {
         self().handle_iterable(it);
       } else if constexpr (packtl::is_type<std::deque, T>::value) {
-        self().handle_iterable(it);
-      } else if constexpr (packtl::is_type<std::queue, T>::value) {
-        self().handle_iterable(it);
-      } else if constexpr (packtl::is_type<std::stack, T>::value) {
         self().handle_iterable(it);
       } else if constexpr (packtl::is_type<std::map, T>::value) {
         self().handle_iterable(it);
@@ -159,13 +207,13 @@ export namespace refl {
       } else if constexpr (packtl::is_type<std::unordered_set, T>::value) {
         self().handle_iterable(it);
       } else if constexpr (packtl::is_type<std::pair, T>::value) {
-        self().visit_std_pair(it);
-      } else if constexpr (packtl::is_type<std::unique_ptr, T>::value) {
-        const auto* value = it.get();
-        self().handle_value(*value);
-      } else if constexpr (packtl::is_type<std::shared_ptr, T>::value) {
-        const auto* value = it.get();
-        self().handle_value(*value);
+        self().handle_tuple(it);
+      // } else if constexpr (packtl::is_type<std::unique_ptr, T>::value) {
+      //   const auto* value = it.get();
+      //   self().handle_value(*value);
+      // } else if constexpr (packtl::is_type<std::shared_ptr, T>::value) {
+      //   const auto* value = it.get();
+      //   self().handle_value(*value);
       } else if constexpr (packtl::is_type<std::weak_ptr, T>::value) {
         if (not it.expired()) {
           const auto* value = it.lock().get();

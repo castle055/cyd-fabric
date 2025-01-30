@@ -13,6 +13,7 @@ import std;
 import packtl;
 
 export import reflect;
+export import reflect.marshal.formats.base;
 export import reflect.marshal.formats.default_fmt;
 export import reflect.marshal.formats.json;
 

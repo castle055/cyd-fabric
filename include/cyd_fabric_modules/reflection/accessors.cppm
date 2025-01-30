@@ -57,9 +57,42 @@ export namespace refl {
       packtl::get<I, typename static_type_info<T>::field_metadata_counts>::value;
 
     template <std::size_t J>
-    requires (J < metadata_count)
-    static constexpr decltype(std::get<metadata_offset + J>(static_type_info<T>::field_metadata)) metadata_item =
-      std::get<metadata_offset + J>(static_type_info<T>::field_metadata);
+      requires(J < metadata_count)
+    using metadata_type = typename std::
+      tuple_element<metadata_offset + J, decltype(static_type_info<T>::field_metadata)>::type;
+
+    template <std::size_t J>
+      requires(J < metadata_count)
+    static constexpr decltype(std::get<metadata_offset + J>(static_type_info<T>::field_metadata)
+    ) metadata_item = std::get<metadata_offset + J>(static_type_info<T>::field_metadata);
+
+    template <typename MetadataType>
+    static constexpr bool has_metadata = []<std::size_t... J>(std::index_sequence<J...>) -> bool {
+      if constexpr ((std::same_as<const MetadataType, metadata_type<J>> or ...)) {
+        return true;
+      } else {
+        return false;
+      }
+    }(std::make_index_sequence<metadata_count>{});
+
+    template <typename MetadataType, std::size_t StartFrom>
+      requires(not has_metadata<MetadataType>)
+    static int find_metadata() {
+      return 0;
+    }
+
+    template <typename MetadataType, std::size_t StartFrom>
+      requires(has_metadata<MetadataType> and StartFrom < metadata_count)
+    static consteval MetadataType find_metadata() {
+      if constexpr (std::same_as<const MetadataType, metadata_type<StartFrom>>) {
+        return metadata_item<StartFrom>;
+      } else {
+        return find_metadata<MetadataType, StartFrom + 1>();
+      }
+    }
+
+    template <typename MetadataType>
+    static constexpr MetadataType get_metadata = find_metadata<MetadataType, 0>();
 
     static const std::remove_reference_t<type>& from_instance(const T& instance) {
       const auto* rep = reinterpret_cast<const representation<type, offset>*>(&instance);
@@ -73,19 +106,25 @@ export namespace refl {
   };
 
   template <refl::Reflected T>
-  constexpr std::size_t field_count = packtl::get_size<typename static_type_info<T>::field_types>::value;
+  constexpr std::size_t field_count =
+    packtl::get_size<typename static_type_info<T>::field_types>::value;
+
+  template <refl::Reflected T, std::size_t I>
+  constexpr decltype(std::get<I>(static_type_info<T>::field_metadata)) field_meta =
+    std::get<I>(static_type_info<T>::field_metadata);
 
   template <refl::Reflected T, std::size_t I>
   struct method {
-    static constexpr std::size_t index   = I;
-    static constexpr const char* name    = static_type_info<T>::method_names[I];
-    using type                           = typename packtl::get<I, typename static_type_info<T>::method_types>::type;
+    static constexpr std::size_t index = I;
+    static constexpr const char* name  = static_type_info<T>::method_names[I];
+    using type = typename packtl::get<I, typename static_type_info<T>::method_types>::type;
     static constexpr access_spec access =
       access_spec{packtl::get<I, typename static_type_info<T>::method_access_specifiers>::value};
   };
 
   template <refl::Reflected T>
-  constexpr std::size_t method_count = packtl::get_size<typename static_type_info<T>::method_types>::value;
+  constexpr std::size_t method_count =
+    packtl::get_size<typename static_type_info<T>::method_types>::value;
 
   template <Reflected R, template <Reflected, typename> typename Fun, typename... Args>
   auto for_each_field(Args&&... args) {

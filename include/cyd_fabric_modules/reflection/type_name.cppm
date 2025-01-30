@@ -63,7 +63,7 @@ export namespace refl {
     template <template <typename...> typename Pack>
     constexpr auto type_name_array_pack() {
 #if defined(__clang__)
-      constexpr auto prefix = std::string_view{"[T = "};
+      constexpr auto prefix = std::string_view{"[Pack = "};
       constexpr auto suffix = std::string_view{"]"};
 #elif defined(__GNUC__)
       constexpr auto prefix = std::string_view{"with T = "};

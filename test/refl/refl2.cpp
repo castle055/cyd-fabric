@@ -115,24 +115,6 @@ TEST("Runtime Reflection") {
   return 0;
 }
 
-struct serialize_me {
-  int           a    = 5;
-  std::string   str  = "hello there!";
-  serialize_me* next = nullptr;
-};
-TEST("Serialization") {
-  serialize_me sm1{};
-  serialize_me sm{};
-  sm.next = &sm1;
-
-  refl::serializer<formats::json_fmt>::to_stream(std::cout, sm);
-
-  std::cout << refl::to_string<formats::json_fmt>(sm);
-
-  return 0;
-}
-
-
 struct [[refl::annotation]] ignore {};
 
 struct [[refl::annotation]] json_name {
@@ -140,30 +122,32 @@ struct [[refl::annotation]] json_name {
   std::string name;
 };
 
+template <typename F>
+struct [[refl::annotation]] lambda {
+  // consteval explicit json_name(std::string&& name_): name(name_) {}
+  F func;
+  // int n;
+};
+
 struct annotate_me {
-  [[meta(ignore {})]]
+  [[meta(ignore{})]]
   int a = 5;
-  [[meta("asdf")]]
-  [[meta(json_name {"hello"})]]
+
+  [[meta("asdf")]] [[meta(json_name{"hello"})]] [[meta(lambda{[](int i) { return 2 * i + 123; }})]]
   std::string str = "hello there!";
 
   [[refl::ignore]]
   std::tuple<const char*> tt = {"asdf"};
 };
+
 TEST("Annotations") {
   annotate_me am{};
-  // auto ann0 = std::get<0>(annotate_me::anns);
-  // auto ann1 = std::get<1>(annotate_me::anns);
 
-  // using info = refl::static_type_info<annotate_me>;
-  // std::get<0>(ann1).name.c_str();
-  std::cout << "WHAT?: " << refl::serializer<>::to_string(am) << std::endl;
-  std::cout << "WHAT?: " << refl::serializer<formats::json_fmt>::to_string(refl::field<annotate_me, 1>::metadata<1>) << std::endl;
-  // std::cout << "WHAT?: " << std::get<0>(refl::field<annotate_me, 1>::metadata) << std::endl;
-  // std::cout << "WHAT?: " << refl::field_meta<annotate_me, 0>.name << std::endl;
-  // std::cout << "WHAT?: " << info::field_names[0] << std::endl;
-  // std::cout << "WHAT?: " << std::get<0>(std::get<2>(info::field_metadata)).name << std::endl;
-  // refl::serializer<formats::json_fmt>::to_stream(std::cout, am);
+  refl::serializer<>::to_stream(std::cout, am);
+  refl::serializer<
+    formats::json_fmt>::to_stream(std::cout, refl::field<annotate_me, 1>::metadata_item<1>);
+  std::cout << std::format("{}", refl::field<annotate_me, 1>::metadata_item<2>.func(2))
+            << std::endl;
 
   constexpr std::tuple<const char*> t = {"asdf"};
   return 0;

@@ -13,6 +13,24 @@ import std;
 import packtl;
 import reflect;
 
+export namespace serialize::policy {
+  enum policy_e {
+    shallow,
+    deep,
+    skip
+  };
+  template <typename F>
+  struct handle {
+    F func;
+  };
+}
+export namespace serialize {
+  struct name {
+    std::string value;
+  };
+}
+
+
 export namespace formats {
   template <typename Format, typename Args>
   struct base {

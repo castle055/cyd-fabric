@@ -93,21 +93,27 @@ public:
     record->addDecl(FieldTypesAlias);
   }
 
+  TemplateName find_template(const std::string& identifier) {
+    IdentifierInfo& PackID = Context->Idents.get(identifier);
+    TemplateName    PackTemplate{dyn_cast<TemplateDecl>(
+      Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
+        Compiler->getSema().getCurScope(), {&PackID}, SourceLocation(), Sema::LookupOrdinaryName
+      ))
+    )};
+    return PackTemplate;
+  }
+
+  QualType specialize_template(const std::string& template_name, TemplateArgumentListInfo& args) {
+    TemplateName template_ = find_template(template_name);
+    return Compiler->getSema().CheckTemplateIdType(template_, SourceLocation{}, args);
+  }
+
   void add_integer_list(
     CXXRecordDecl* record, const std::list<uint64_t>& items, const std::string& identifier
   ) {
-    // Create the using field_types = pack<int, long, double> statement
-    IdentifierInfo& FieldTypesID = Context->Idents.get(identifier);
-    IdentifierInfo& PackID       = Context->Idents.get("refl_int_pack");
-
-    QualType type = Context->UnsignedLongTy;
-
     // Create Template Specialization for 'pack<int, long, double>'
-    TemplateName             PackTemplate{dyn_cast<
-                  TemplateDecl>(Compiler->getSema().getAsTemplateNameDecl(Compiler->getSema().LookupSingleName(
-      Compiler->getSema().getCurScope(), {&PackID}, record->getBeginLoc(), Sema::LookupOrdinaryName
-    )))};
     TemplateArgumentListInfo TemplateArgs{record->getBeginLoc(), record->getEndLoc()};
+    QualType type = Context->UnsignedLongTy;
     for (const auto& item: items) {
       auto  value     = llvm::APInt(64, std::to_string(item), 10);
       auto* item_expr = IntegerLiteral::Create(*Context, value, type, record->getBeginLoc());
@@ -116,10 +122,10 @@ public:
       );
     }
 
-    QualType PackSpecialization =
-      Compiler->getSema().CheckTemplateIdType(PackTemplate, record->getBeginLoc(), TemplateArgs);
+    QualType PackSpecialization = specialize_template("refl_int_pack", TemplateArgs);
 
     // Create TypeAliasDecl for 'using field_types = pack<int, long, double>'
+    IdentifierInfo& FieldTypesID = Context->Idents.get(identifier);
     TypeAliasDecl* FieldTypesAlias = TypeAliasDecl::Create(
       *Context,
       record,
