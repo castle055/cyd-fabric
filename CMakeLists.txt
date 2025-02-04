@@ -131,8 +131,13 @@ FetchContent_Declare(packtl
 )
 FetchContent_MakeAvailable(packtl)
 
-#[[                         CONFIGURE CLANG PLUGINS                          ]]#
-add_subdirectory(clang)
+#[[                         CONFIGURE CPP REFLECT                            ]]#
+FetchContent_Declare(cpp_reflect
+        GIT_REPOSITORY https://github.com/castle055/cpp-reflect.git
+        GIT_TAG dev
+        FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(cpp_reflect)
 
 #[[                              CONFIGURE cURL                              ]]#
 find_package(CURL REQUIRED)
