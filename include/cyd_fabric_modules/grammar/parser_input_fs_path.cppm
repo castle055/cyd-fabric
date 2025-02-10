@@ -1,3 +1,6 @@
+// Copyright (c) 2025, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*! \file  parser_input_fs_path.cppm
  *! \brief 
  *!
@@ -51,17 +54,17 @@ export namespace fabric {
 
     [[nodiscard]]
     bool is_at_end() {
-      return fd_.tellg() == file_size_;
+      return static_cast<std::size_t>(fd_.tellg()) == file_size_;
     }
 
     void seek(const long relative_offset) {
       if (relative_offset > 0) {
         fd_.seekg(relative_offset, std::ios::cur);
-        if (fd_.tellg() > file_size_) {
+        if (static_cast<std::size_t>(fd_.tellg()) > file_size_) {
           fd_.seekg(0, std::ios::end);
         }
       } else {
-        if (-relative_offset > fd_.tellg()) {
+        if (static_cast<std::size_t>(-relative_offset) > static_cast<std::size_t>(fd_.tellg())) {
           fd_.seekg(0, std::ios::beg);
         } else {
           fd_.seekg(relative_offset, std::ios::cur);

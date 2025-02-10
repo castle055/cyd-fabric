@@ -63,7 +63,7 @@ export namespace fabric {
           // offset_ = size_;
         // }
       } else {
-        if (-relative_offset > offset_) {
+        if (static_cast<std::size_t>(-relative_offset) > offset_) {
           offset_ = 0;
         } else {
           offset_ -= relative_offset;
