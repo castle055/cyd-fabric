@@ -1,3 +1,6 @@
+// Copyright (c) 2025, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*! \file  parser.cppm
  *! \brief 
  *!
@@ -57,7 +60,8 @@ export namespace fabric {
           // std::cout << std::format("    Result of parse rule at ({}): {} ", in.get_current_offset(), Rule::name);
           int progress = (100 * in.get_current_offset()) / in.get_size();
           if (progress != parser_log.progress) {
-            std::cout << "[" << std::to_string(progress) << " %]" << std::endl;
+            // TODO - Make this available as an option
+            // std::cout << "[" << std::to_string(progress) << " %]" << std::endl;
             parser_log.progress = progress;
           }
           return true;
