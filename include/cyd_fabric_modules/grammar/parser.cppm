@@ -56,9 +56,8 @@ export namespace fabric {
         auto child_node  = std::make_shared<Rule>();
         child_node->text = Rule::name;
         if (parser<typename Rule::rule>::operator()(in, child_node, parser_log, config)) {
-          using rule_t = typename Rule::rule;
-          if constexpr (requires { rule_t::action(child_node); }) {
-            rule_t::action(child_node);
+          if constexpr (requires { Rule::action(std::declval<typename Rule::sptr>()); }) {
+            Rule::action(child_node);
           }
           node->children.push_back(child_node);
           // std::cout << std::format("    Result of parse rule at ({}): {} ", in.get_current_offset(), Rule::name);
