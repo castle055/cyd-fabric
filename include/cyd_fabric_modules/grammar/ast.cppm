@@ -9,7 +9,7 @@
 export module fabric.grammar:ast;
 
 import std;
-import reflect;
+export import reflect;
 
 export namespace fabric {
   struct node_t {
