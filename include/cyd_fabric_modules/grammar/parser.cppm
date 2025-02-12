@@ -199,7 +199,7 @@ export namespace fabric {
     static inline bool operator()(parser_input_t<Input>& in, std::shared_ptr<Node> node, parser_log_t& parser_log, const parser_config_t& config) {
       if (!in.is_at_end() && C == in.get_current_char()) {
         if (node->children.empty()) {
-          auto text_child     = std::make_shared<node_t>();
+          auto text_child     = std::make_shared<node_t>(refl::type_id<node_t>);
           text_child->is_text = true;
           text_child->text.push_back(in.get_current_char());
           node->children.push_back(text_child);
@@ -208,7 +208,7 @@ export namespace fabric {
           if (possible_text_child->is_text) {
             possible_text_child->text.push_back(in.get_current_char());
           } else {
-            auto text_child     = std::make_shared<node_t>();
+            auto text_child     = std::make_shared<node_t>(refl::type_id<node_t>);
             text_child->is_text = true;
             text_child->text.push_back(in.get_current_char());
             node->children.push_back(text_child);
@@ -232,7 +232,7 @@ export namespace fabric {
       char current_char = in.get_current_char();
       if (((current_char == Chars) || ...)) {
         if (node->children.empty()) {
-          auto text_child     = std::make_shared<node_t>();
+          auto text_child     = std::make_shared<node_t>(refl::type_id<node_t>);
           text_child->is_text = true;
           text_child->text.push_back(current_char);
           node->children.push_back(text_child);
@@ -241,7 +241,7 @@ export namespace fabric {
           if (possible_text_child->is_text) {
             possible_text_child->text.push_back(current_char);
           } else {
-            auto text_child     = std::make_shared<node_t>();
+            auto text_child     = std::make_shared<node_t>(refl::type_id<node_t>);
             text_child->is_text = true;
             text_child->text.push_back(current_char);
             node->children.push_back(text_child);
