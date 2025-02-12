@@ -29,8 +29,13 @@ export namespace fabric {
     }
 
     template <typename T>
-    T* as() const {
+    T* as() {
       return is_type<T>()? dynamic_cast<T*>(this): nullptr;
+    }
+
+    template <typename T>
+    const T* as() const {
+      return is_type<T>()? dynamic_cast<const T*>(this): nullptr;
     }
 
     const refl::type_id_t type_id;
