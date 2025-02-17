@@ -1,9 +1,12 @@
+// Copyright (c) 2025, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*! \file  rule_expressions.cppm
  *! \brief 
  *!
  */
 
-export module fabric.grammar:rule_expressions;
+export module fabric.grammar.rules:expressions;
 
 import std;
 

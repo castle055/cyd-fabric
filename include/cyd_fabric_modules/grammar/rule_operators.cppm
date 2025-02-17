@@ -1,11 +1,14 @@
+// Copyright (c) 2025, Víctor Castillo Agüero.
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /*! \file  rule_operators.cppm
  *! \brief 
  *!
  */
 
-export module fabric.grammar:rule_operators;
+export module fabric.grammar.rules;
 
-import :rule_expressions;
+import :expressions;
 
 export
 {
