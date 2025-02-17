@@ -8,7 +8,7 @@
 
 export module fabric.grammar.rules;
 
-import :expressions;
+export import :expressions;
 
 export
 {
