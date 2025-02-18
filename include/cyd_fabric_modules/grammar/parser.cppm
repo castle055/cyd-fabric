@@ -10,9 +10,9 @@ export module fabric.grammar:parser;
 
 import std;
 
+export import fabric.grammar.expressions;
 import :concepts;
 import :ast;
-import :rule_expressions;
 
 export import :parser_input_string;
 export import :parser_input_fs_path;

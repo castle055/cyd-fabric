@@ -6,9 +6,9 @@
  *!
  */
 
-export module fabric.grammar.rules;
+export module fabric.grammar.operators;
 
-export import :expressions;
+export import fabric.grammar.expressions;
 
 export
 {

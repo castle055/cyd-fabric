@@ -6,7 +6,7 @@
  *!
  */
 
-export module fabric.grammar.rules:expressions;
+export module fabric.grammar.expressions;
 
 import std;
 
