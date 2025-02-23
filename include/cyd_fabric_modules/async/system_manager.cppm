@@ -60,8 +60,12 @@ export namespace fabric::async {
       for (auto& [type_id, sys]: systems_) {
         if (sys.ptr->options.enabled and sys.next_exec < now) {
           sys.next_exec = now + sys.ptr->options.period;
-          this->set_next_wakeup(sys.next_exec);
           sys.ptr->run();
+
+          // If system didn't self-disable reschedule it
+          if (sys.ptr->options.enabled) {
+            this->set_next_wakeup(sys.next_exec);
+          }
         }
       }
     }
