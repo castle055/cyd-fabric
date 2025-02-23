@@ -67,6 +67,17 @@ export namespace fabric::async {
       return *dynamic_cast<T*>(it->second.ptr.get());
     }
 
+    template <typename T>
+      requires std::derived_from<T, system_base_t>
+    system_options_t& get_system_options() {
+      static constexpr refl::type_id_t type_id = refl::type_id<T>();
+      auto it = systems_.find(type_id);
+      if (it == systems_.end()) {
+        throw std::runtime_error(std::format("No such system type in bus: {}", refl::type_name<T>));
+      }
+      return it->second.options;
+    }
+    
   public: /// @name Getter
     system_manager_t& get_system_manager() {
         return *this;
