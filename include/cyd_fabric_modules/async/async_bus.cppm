@@ -64,7 +64,10 @@ export namespace fabric::async {
       void thread_stop() {
         if (thread_) {
           status_ = async_bus_status_e::STOPPED;
-          thread_->join();
+          this->cv.notify_all();
+          if (thread_->joinable()) {
+            thread_->join();
+          }
           thread_.reset(nullptr);
         }
       }
