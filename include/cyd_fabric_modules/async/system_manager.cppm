@@ -61,11 +61,10 @@ export namespace fabric::async {
         if (sys.ptr->options.enabled and sys.next_exec < now) {
           sys.next_exec = now + sys.ptr->options.period;
           sys.ptr->run();
-
-          // If system didn't self-disable reschedule it
-          if (sys.ptr->options.enabled) {
-            this->set_next_wakeup(sys.next_exec);
-          }
+        }
+        // If system didn't self-disable reschedule it
+        if (sys.ptr->options.enabled) {
+          this->set_next_wakeup(sys.next_exec);
         }
       }
     }
