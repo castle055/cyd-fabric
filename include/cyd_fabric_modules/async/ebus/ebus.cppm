@@ -46,15 +46,16 @@ export namespace fabric::async {
 
   private TEST_PUBLIC: /// @name Raw Event Handling
     // ? This function creates a copy of the event, thus increasing its ref count.
-    void push_event(const fabric::async::event::sptr &ev) { {
-        std::scoped_lock lk {event_mutex};
+    void push_event(const fabric::async::event::sptr &ev) {
+      {
+        std::scoped_lock lk{event_mutex};
         front_ebus.push(ev);
       }
       // log_task.debug("NEW EVENT: %s", ev->type.c_str());
-    this->cv.notify_all();
+      this->notify();
     }
 
-    event::sptr &emit_raw(event::sptr &ev) {
+    event::sptr& emit_raw(event::sptr& ev) {
       push_event(ev);
       return ev;
     }

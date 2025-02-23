@@ -41,7 +41,7 @@ export namespace fabric::async {
       async<R> &coroutine_enqueue(async<R> &handle) {
         std::scoped_lock lk {queue_mtx};
         coroutine_queue.push(handle.h_);
-        this->cv.notify_all();
+        this->notify();
         return handle;
       }
       

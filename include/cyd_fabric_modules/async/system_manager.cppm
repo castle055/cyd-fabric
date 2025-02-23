@@ -52,7 +52,7 @@ export namespace fabric::async {
       std::shared_ptr<system_base_t> obj = std::make_shared<T>(std::forward<Args>(args)...);
       obj->options                       = opts;
       systems_[refl::type_id<T>]         = {obj, now};
-      this->cv.notify_all();
+      this->notify();
     }
 
     void run_systems() {
@@ -86,7 +86,7 @@ export namespace fabric::async {
       requires std::derived_from<T, system_base_t>
     void enable_system() {
       get_system_instance<T>().ptr->enable();
-      this->cv.notify_all();
+      this->notify();
     }
 
     template <typename T>

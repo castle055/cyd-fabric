@@ -19,6 +19,11 @@ export namespace fabric::async {
     std::condition_variable cv{};
     std::mutex mtx{};
 
+    void notify() {
+      set_next_wakeup(clock::now());
+      cv.notify_all();
+    }
+
     time_point next_wake_up = clock::now();
     void set_next_wakeup(time_point tp) {
       if (tp < next_wake_up) {
