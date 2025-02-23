@@ -76,14 +76,25 @@ export namespace fabric::async {
           init_function();
         }
 
-        auto prev_t = std::chrono::system_clock::now();
+        auto now = clock::now();
+        this->set_next_wakeup(now);
+        std::unique_lock<std::mutex> lock(mtx);
         while (status_ == async_bus_status_e::RUNNING) {
-          prev_t = std::chrono::system_clock::now();
+          this->cv.wait_until(lock, this->next_wake_up);
+          now = clock::now();
+          this->set_next_wakeup(now + 60s); // If needed before this, notify `this->cv`
+
+          lock.unlock();
+
           run_systems();
+
           events_process_batch();
+
           coroutine_run();
-          std::this_thread::sleep_until(prev_t + 1ms);
+
+          lock.lock();
         }
+        lock.unlock();
 
         for (const auto & cleanup_function : std::ranges::views::reverse(cleanup_functions_)) {
           cleanup_function();

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  ebus_impl.cppm
@@ -17,9 +17,10 @@ import :types;
 export import :event;
 export import :raw_listener;
 export import :typed_listener;
+export import fabric.async.scheduler;
 
 export namespace fabric::async {
-  class ebus {
+  class ebus: public virtual scheduler_t {
   public:
     using wptr = std::weak_ptr<ebus>;
     struct sptr: std::shared_ptr<ebus> {
@@ -44,12 +45,13 @@ export namespace fabric::async {
     ebus() = default;
 
   private TEST_PUBLIC: /// @name Raw Event Handling
-    // ? This function creates a copy of the eve, thus increasing its ref count.
+    // ? This function creates a copy of the event, thus increasing its ref count.
     void push_event(const fabric::async::event::sptr &ev) { {
         std::scoped_lock lk {event_mutex};
         front_ebus.push(ev);
       }
       // log_task.debug("NEW EVENT: %s", ev->type.c_str());
+    this->cv.notify_all();
     }
 
     event::sptr &emit_raw(event::sptr &ev) {

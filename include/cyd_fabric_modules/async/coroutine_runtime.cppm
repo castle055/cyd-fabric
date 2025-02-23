@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 module;
@@ -9,9 +9,10 @@ export module fabric.async:coroutine_rt;
 import std;
 
 export import :coroutines;
+export import fabric.async.scheduler;
 
 export namespace fabric::async {
-    class coroutine_runtime_t {
+    class coroutine_runtime_t: public virtual scheduler_t {
     private TEST_PUBLIC:
       std::queue<async_handle<>> coroutine_queue {};
       std::mutex queue_mtx {};
@@ -40,6 +41,7 @@ export namespace fabric::async {
       async<R> &coroutine_enqueue(async<R> &handle) {
         std::scoped_lock lk {queue_mtx};
         coroutine_queue.push(handle.h_);
+        this->cv.notify_all();
         return handle;
       }
       
