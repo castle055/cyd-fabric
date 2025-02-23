@@ -28,6 +28,9 @@ export namespace fabric::async {
             current_handle = coroutine_queue.front();
             coroutine_queue.pop();
           }
+          if (not coroutine_queue.empty()) {
+            this->notify();
+          }
         }
         
         current_handle.transform([](auto &&it) {

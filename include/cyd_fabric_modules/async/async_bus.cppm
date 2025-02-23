@@ -82,12 +82,10 @@ export namespace fabric::async {
         this->next_wake_up = now;
         std::unique_lock<std::mutex> lock(mtx);
         while (status_ == async_bus_status_e::RUNNING) {
-          time_point next = this->next_wake_up;
-          this->cv.wait_until(lock, next);
+          lock.unlock();
           now = clock::now();
           this->next_wake_up = now + 60s; // If needed before this, notify `this->cv`
 
-          lock.unlock();
 
           run_systems();
 
@@ -96,6 +94,8 @@ export namespace fabric::async {
           coroutine_run();
 
           lock.lock();
+          time_point next = this->next_wake_up;
+          this->cv.wait_until(lock, next);
         }
         lock.unlock();
 
