@@ -85,7 +85,7 @@ export namespace fabric::async {
           time_point next = this->next_wake_up;
           this->cv.wait_until(lock, next, [=]{return clock::now() > next;});
           now = clock::now();
-          this->set_next_wakeup(now + 60s); // If needed before this, notify `this->cv`
+          this->next_wake_up = now + 60s; // If needed before this, notify `this->cv`
 
           lock.unlock();
 
