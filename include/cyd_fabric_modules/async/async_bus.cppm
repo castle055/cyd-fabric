@@ -14,6 +14,7 @@ export import :system_manager;
 export namespace fabric::async {
     enum class async_bus_status_e {
       RUNNING,
+      STOPPING,
       STOPPED,
     };
     
@@ -63,11 +64,9 @@ export namespace fabric::async {
       }
       void thread_stop() {
         if (thread_) {
-          status_ = async_bus_status_e::STOPPED;
+          status_ = async_bus_status_e::STOPPING;
           this->cv.notify_all();
-          if (thread_->joinable()) {
-            thread_->join();
-          }
+          status_.wait(async_bus_status_e::STOPPING);
           thread_.reset(nullptr);
         }
       }
@@ -102,6 +101,9 @@ export namespace fabric::async {
         for (const auto & cleanup_function : std::ranges::views::reverse(cleanup_functions_)) {
           cleanup_function();
         }
+
+        status_ = async_bus_status_e::STOPPED;
+        status_.notify_all();
       }
 
     private:
