@@ -30,7 +30,11 @@ export namespace fabric::async {
             notify();
           })) {}
     // ! Destructor
-    ~async_bus_t() {}
+    ~async_bus_t() {
+      if (thread_) {
+        thread_->join();
+      }
+    }
     // ! Copy
     async_bus_t(const async_bus_t& rhs)            = delete;
     async_bus_t& operator=(const async_bus_t& rhs) = delete;
@@ -91,7 +95,6 @@ export namespace fabric::async {
         lock.unlock();
         now                = clock::now();
         this->next_wake_up = now + 60s; // If needed before this, notify `this->cv`
-
 
         run_systems();
 
