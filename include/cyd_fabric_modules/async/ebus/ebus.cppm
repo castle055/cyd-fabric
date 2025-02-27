@@ -184,10 +184,16 @@ export namespace fabric::async {
       const std::string &event_type = listener.event_type();
       std::scoped_lock lk {listeners_mutex};
       if (event_listeners.contains(event_type)) {
-        for (auto l = event_listeners[event_type].begin(); l != event_listeners[event_type].end(); ++l) {
+        for (auto l = event_listeners[event_type].begin(); l != event_listeners[event_type].end();) {
+          if (l->expired()) {
+            l = event_listeners[event_type].erase(l);
+            continue;
+          }
           if (l->lock()->get_id() == listener.get_id()) {
-            event_listeners[event_type].erase(l);
+            l = event_listeners[event_type].erase(l);
             return;
+          } else {
+            ++l;
           }
         }
       }
@@ -222,7 +228,7 @@ export namespace fabric::async {
 
     std::unordered_map<
       std::string,
-      std::deque<raw_listener::wptr>
+      std::list<raw_listener::wptr>
     > event_listeners { };
 
   private TEST_PUBLIC:
