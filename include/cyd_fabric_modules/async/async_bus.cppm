@@ -24,12 +24,12 @@ export namespace fabric::async {
   class async_bus_t: public ebus, public coroutine_runtime_t, public system_manager_t {
   public: /// @name Construction & RAII
     // ! Constructor
-    async_bus_t() {
-      on_event([&](const StopBusEvent& ev) {
-        status_ = async_bus_status_e::STOPPING;
-        notify();
-      });
-    }
+    listener<StopBusEvent> stop_bus_listener;
+    async_bus_t()
+        : stop_bus_listener(on_event([&](const StopBusEvent& ev) {
+            status_ = async_bus_status_e::STOPPING;
+            notify();
+          })) {}
     // ! Destructor
     ~async_bus_t() {}
     // ! Copy
