@@ -64,17 +64,16 @@ export namespace fabric::async {
                  std::unique_ptr<std::thread>
                    thread_ = nullptr;
     void           thread_start() {
-      if (!thread_) {
+      if (status_ != async_bus_status_e::RUNNING) {
         status_ = async_bus_status_e::RUNNING;
         thread_ = std::make_unique<std::thread>([](async_bus_t* bus) { bus->thread_task(); }, this);
       }
     }
     void thread_stop() {
-      if (thread_) {
+      if (thread_ and status_ == async_bus_status_e::RUNNING) {
         status_ = async_bus_status_e::STOPPING;
         this->cv.notify_all();
         status_.wait(async_bus_status_e::STOPPING);
-        thread_.reset(nullptr);
       }
     }
 
