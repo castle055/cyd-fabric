@@ -4,6 +4,8 @@
 macro(target_configure_test_directory TEST_TARGET TEST_DIR)
     enable_testing()
 
+    add_custom_target(TEST_SUITE_${TEST_TARGET})
+
     get_filename_component(TEST_DIR ${TEST_DIR} REALPATH)
 
     FILE(GLOB_RECURSE TEST_LIST
@@ -24,6 +26,8 @@ macro(target_configure_test_directory TEST_TARGET TEST_DIR)
         reflect_target(TEST_${TName})
         target_link_libraries(TEST_${TName} PRIVATE ${TEST_TARGET})
         target_include_directories(TEST_${TName} PRIVATE ${TEST_DIR}/common)
+
+        add_dependencies(TEST_SUITE_${TEST_TARGET} TEST_${TName})
 
         set(TFullName ${TName})
         if (NOT "${TDir}" STREQUAL "")

@@ -52,16 +52,13 @@ set(CMAKE_BUILD_TYPE "Release" CACHE STRING "")
 
 cmake_minimum_required(VERSION 3.29.20240518 FATAL_ERROR)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-project(cyd_fabric LANGUAGES CXX C)
-
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "0e5b6991-d74f-4b3d-a41c-cf096e0b2508")
+set(CMAKE_CXX_MODULE_STD ON)
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
-set(CMAKE_CXX_EXTENSIONS OFF)
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fmodules-ts -std=c++23")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -pthread")
 
-message("CMAKE VERSION: " ${CMAKE_VERSION})
-message("COMPILER: " ${CMAKE_CXX_COMPILER})
+project(cyd_fabric LANGUAGES CXX C)
 
 SET(FABRIC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(FABRIC_TEST_DIR ${FABRIC_DIR}/test)
@@ -69,30 +66,6 @@ SET(FABRIC_INCLUDE_DIR ${FABRIC_DIR}/include)
 SET(FABRIC_SOURCE_DIR ${FABRIC_DIR}/src)
 SET(FABRIC_CMAKE_DIR ${FABRIC_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${FABRIC_CMAKE_DIR}/Modules)
-
-
-include(cmake/compiler_flags.cmake)
-compiler_flags(
-        "-stdlib=libc++"
-        "-Wall"
-        "-Wextra"
-        "-pedantic"
-        "-Werror"
-
-#        "-Wliteral-suffix"
-
-        "-Wno-unused-function"
-        "-Wno-unused-parameter"
-        "-Wno-unused-variable"
-        "-Wno-unused-value"
-        "-Wno-unused-but-set-variable"
-        "-Wno-missing-field-initializers"
-        "-Wno-error=unused"
-        "-Wno-unused-local-typedefs"
-
-        "-Wno-unknown-pragmas"
-#        "-freport-bug"
-)
 
 
 ################################################################################
@@ -179,7 +152,6 @@ target_link_libraries(cyd_fabric
         jpeg
         unwind
         libstdc++exp.a
-        std
         packtl
         PRIVATE
         CURL::libcurl
