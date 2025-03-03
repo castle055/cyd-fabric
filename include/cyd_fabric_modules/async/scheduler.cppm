@@ -9,6 +9,8 @@ export module fabric.async.scheduler;
 
 import std;
 
+using namespace std::chrono_literals;
+
 export namespace fabric::async {
   using clock = std::chrono::steady_clock;
   using time_point = std::chrono::time_point<clock>;
@@ -24,10 +26,12 @@ export namespace fabric::async {
       cv.notify_all();
     }
 
-    time_point next_wake_up = clock::now();
+    std::mutex next_wakeup_mutex{};
+    time_point next_wakeup = clock::now();
     void set_next_wakeup(time_point tp) {
-      if (tp < next_wake_up) {
-        next_wake_up = tp;
+      std::scoped_lock lock(next_wakeup_mutex);
+      if (tp < next_wakeup) {
+        next_wakeup = tp;
       }
     }
   };

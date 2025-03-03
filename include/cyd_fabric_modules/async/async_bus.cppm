@@ -11,6 +11,7 @@ import std;
 export import fabric.async.ebus;
 export import :coroutine_rt;
 export import :system_manager;
+export import :timer_manager;
 
 export namespace fabric::async {
   EVENT(StopBusEvent) {};
@@ -21,7 +22,11 @@ export namespace fabric::async {
     STOPPED,
   };
 
-  class async_bus_t: public ebus, public coroutine_runtime_t, public system_manager_t {
+  class async_bus_t: //
+                     public ebus,
+                     public coroutine_runtime_t,
+                     public system_manager_t,
+                     public timer_manager_t {
   public: /// @name Construction & RAII
     // ! Constructor
     async_bus_t()
@@ -89,21 +94,23 @@ export namespace fabric::async {
       }
 
       auto now           = clock::now();
-      this->next_wake_up = now;
+      this->next_wakeup = now;
       std::unique_lock<std::mutex> lock(mtx);
       while (status_ == async_bus_status_e::RUNNING) {
         lock.unlock();
         now                = clock::now();
-        this->next_wake_up = now + 60s; // If needed before this, notify `this->cv`
+        this->next_wakeup = now + 60s; // If needed before this, notify `this->cv`
 
         run_systems();
 
         events_process_batch();
 
+        run_timers();
+
         coroutine_run();
 
         lock.lock();
-        time_point next = this->next_wake_up;
+        time_point next = this->next_wakeup;
         this->cv.wait_until(lock, next);
       }
       lock.unlock();
