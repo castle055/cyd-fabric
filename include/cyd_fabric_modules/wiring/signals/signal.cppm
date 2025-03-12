@@ -26,6 +26,19 @@ struct signal_data {
   std::forward_list<std::pair<fabric::wiring::slot_id_t, fabric::wiring::slot<void(Args...)>>>
                             connected_slots_{};
   fabric::wiring::slot_id_t next_id_ = 0;
+
+  bool disconnect(std::uint64_t slot_id) {
+    auto prev = connected_slots_.before_begin();
+    for (auto it = connected_slots_.begin(); it != connected_slots_.end(); ++it) {
+      auto& [id, _] = *it;
+      if (slot_id == id) {
+        connected_slots_.erase_after(prev);
+        return true;
+      }
+      prev = it;
+    }
+    return false;
+  }
 };
 
 export template <typename... Args>
@@ -49,7 +62,7 @@ public:
   connection connect(const slot<void(Args...)>& slot) {
     auto id = signal_data_->next_id_++;
     signal_data_->connected_slots_.emplace_front(id, slot);
-    auto c = connection{this, id};
+    auto c = connection{signal_data_, id};
     if (slot.lifetime_bound()) {
       slot.get_auto_disconnect_object()->add_connection(c);
     }
@@ -59,7 +72,7 @@ public:
   connection connect(slot<void(Args...)>&& slot) {
     auto id = signal_data_->next_id_++;
     signal_data_->connected_slots_.emplace_front(id, slot);
-    auto c = connection{this, id};
+    auto c = connection{signal_data_, id};
     if (slot.lifetime_bound()) {
       slot.get_auto_disconnect_object()->add_connection(c);
     }
@@ -86,16 +99,7 @@ public:
 
 private:
   bool disconnect(std::uint64_t slot_id) {
-    auto prev = signal_data_->connected_slots_.before_begin();
-    for (auto it = signal_data_->connected_slots_.begin(); it != signal_data_->connected_slots_.end(); ++it) {
-      auto& [id, _] = *it;
-      if (slot_id == id) {
-        signal_data_->connected_slots_.erase_after(prev);
-        return true;
-      }
-      prev = it;
-    }
-    return false;
+    return signal_data_->disconnect(slot_id);
   }
 
 private:
