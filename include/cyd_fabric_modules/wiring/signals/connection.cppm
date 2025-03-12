@@ -15,7 +15,7 @@ import :concepts;
 
 
 class fabric::wiring::connection {
-  template <SignalConcept Signal>
+  template <typename Signal>
   static bool disconnect_hook(void* signal, slot_id_t slot_id) {
     return static_cast<Signal*>(signal)->disconnect(slot_id);
   }
@@ -41,7 +41,7 @@ private:
   //     : disconnect_function_([signal, slot_id] -> bool { return signal->disconnect(slot_id); })
   //     {}
 
-  template <SignalConcept S>
+  template <typename S>
   connection(const std::shared_ptr<S>& signal, slot_id_t slot_id)
       : disconnect_function_(&disconnect_hook<S>),
         signal_(signal),
@@ -52,6 +52,4 @@ private:
   std::weak_ptr<void> signal_;
   slot_id_t           slot_id_;
   bool                connected_ = true;
-
-  char padding_[3];
 };
