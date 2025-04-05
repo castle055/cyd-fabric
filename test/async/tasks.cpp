@@ -5,13 +5,16 @@
 #include "common.h"
 
 import fabric.async;
+import fabric.logging;
 using namespace fabric::async;
 using namespace fabric::tasks;
 using namespace fabric;
 
 executor::sptr exec = executor::make();
 
-void setup() {}
+void setup() {
+  LOG::INIT{}.filter()["stdout"];
+}
 
 
 task<int> test_coroutine(const int n = 0) {
@@ -107,10 +110,10 @@ TEST("Basic LRef Parameter") {
     val
   );
 
-  t.wait();
+  auto res = t.get();
   assert(1234 == val);
-  assert(1234 == t.get());
-  assert(val == t.get());
+  assert(1234 == res);
+  assert(val == res);
   return 0;
 }
 

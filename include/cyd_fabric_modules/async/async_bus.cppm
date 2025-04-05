@@ -12,6 +12,8 @@ export import fabric.async.ebus;
 export import fabric.tasks;
 export import :timers;
 
+using namespace std::chrono_literals;
+
 export namespace fabric::async {
   EVENT(StopBusEvent){};
 
@@ -27,7 +29,12 @@ export namespace fabric::async {
             get()->request_stop();
             LOG::print{DEBUG}("Stop Bus Event received. Executor stop requested.");
             co_return;
-          })) {}
+          })) {
+      get()->schedule([] -> task<> {
+        LOG::print{DEBUG}("Bus Ready");
+        co_return;
+      });
+    }
     // ! Copy
     async_bus_t(const async_bus_t& rhs)            = delete;
     async_bus_t& operator=(const async_bus_t& rhs) = delete;
@@ -35,12 +42,8 @@ export namespace fabric::async {
     async_bus_t(async_bus_t&& rhs)                 = delete;
     async_bus_t& operator=(async_bus_t&& rhs)      = delete;
 
-    ~async_bus_t() {
-      get()->join();
-    }
-
-    timer_t create_timer(timer_options_t opts, std::function<task<>()> callback) {
-      auto data = std::make_shared<timer_data_t>(opts.interval, opts.repeat, callback);
+    timer_t create_timer(timer_options_t opts, auto callback) {
+      const auto data = std::make_shared<timer_data_t>(opts.interval, opts.repeat, callback);
 
       if (opts.run_now) {
         get()->schedule(timer_task, data);
@@ -51,24 +54,34 @@ export namespace fabric::async {
       return timer_t{data};
     }
 
-    timer_t create_timer(timer_options_t opts, std::function<void()> callback) {
-      const auto data = std::make_shared<timer_data_t>(
-        opts.interval,
-        opts.repeat,
-        [callback = std::move(callback)] -> task<> {
-          callback();
-          co_return;
-        }
-      );
-
-      if (opts.run_now) {
-        get()->schedule(timer_task, data);
-      } else {
-        get()->schedule(tasks::clock::now() + opts.interval, timer_task, data);
-      }
-
-      return timer_t{data};
-    }
+    // private:
+    //   struct timer_function_wraper_task {
+    //     std::function<void()> callback;
+    //     task<>                operator()() {
+    //       LOG::print{INFO}("TIMER HERE!!! AYEE");
+    //       callback();
+    //       co_return;
+    //     }
+    //   };
+    //
+    // public:
+    //   timer_t create_timer(timer_options_t opts, std::function<void()> callback) {
+    //     const auto data = std::make_shared<timer_data_t>(
+    //       opts.interval,
+    //       opts.repeat,
+    //       std::function<task<>()>{timer_function_wraper_task{std::move(callback)}}
+    //     );
+    //
+    //     if (opts.run_now) {
+    //       get()->schedule(timer_task, data);
+    //       LOG::print{DEBUG}("Timer scheduled immediately");
+    //     } else {
+    //       get()->schedule(tasks::clock::now() + opts.interval, timer_task, data);
+    //       LOG::print{DEBUG}("Timer scheduled with delay");
+    //     }
+    //
+    //     return timer_t{data};
+    //   }
 
     tasks::executor::sptr operator->() {
       return *static_cast<tasks::executor::sptr*>(this);

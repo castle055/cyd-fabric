@@ -125,19 +125,11 @@ export namespace fabric::tasks {
   };
 
   template <typename Ret>
-  struct task_promise_t: task_promise_base<Ret> {
-    task<Ret> get_return_object() {
-      return task<Ret>(
-        task_handle<task_promise_t>::from_promise(*this), this->value_promise_.get_future()
-      );
-    }
-    void return_value(Ret&& value) {
-      this->value_promise_.set_value(std::move(value));
-    }
-  };
+  class task_promise_t;
 
   template <>
-  struct task_promise_t<void>: task_promise_base<void> {
+  class task_promise_t<void>: public task_promise_base<void> {
+  public:
     task<> get_return_object() {
       return task<>(
         task_handle<task_promise_t>::from_promise(*this), this->value_promise_.get_future()
@@ -148,105 +140,118 @@ export namespace fabric::tasks {
     }
   };
 
+  template <typename Ret>
+  class task_promise_t: public task_promise_base<Ret> {
+  public:
+    task<Ret> get_return_object() {
+      return task<Ret>(
+        task_handle<task_promise_t>::from_promise(*this), this->value_promise_.get_future()
+      );
+    }
+    void return_value(Ret value) {
+      this->value_promise_.set_value(std::move(value));
+    }
+  };
+
 } // namespace fabric::tasks
 
-  struct awaitable_get_executor {
-    std::weak_ptr<fabric::tasks::executor> val;
+struct awaitable_get_executor {
+  std::weak_ptr<fabric::tasks::executor> val;
 
-    bool await_ready() const noexcept {
-      return false;
-    }
-    template <typename P>
-    bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-      val = h.promise().get_executor();
-      return false;
-    }
-    std::weak_ptr<fabric::tasks::executor> await_resume() const noexcept {
-      return val;
-    }
-  };
+  bool await_ready() const noexcept {
+    return false;
+  }
+  template <typename P>
+  bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    val = h.promise().get_executor();
+    return false;
+  }
+  std::weak_ptr<fabric::tasks::executor> await_resume() const noexcept {
+    return val;
+  }
+};
 
-  template <typename ResourceType>
-  struct awaitable_get_resource {
-    std::shared_ptr<ResourceType>         val;
-    fabric::tasks::task_resource_id<ResourceType> id;
+template <typename ResourceType>
+struct awaitable_get_resource {
+  std::shared_ptr<ResourceType>                 val;
+  fabric::tasks::task_resource_id<ResourceType> id;
 
-    explicit awaitable_get_resource(fabric::tasks::task_resource_id<ResourceType> id_ = {})
-        : id(id_) {}
+  explicit awaitable_get_resource(fabric::tasks::task_resource_id<ResourceType> id_ = {})
+      : id(id_) {}
 
-    bool await_ready() const noexcept {
-      return false;
-    }
-    template <typename P>
-    bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-      val = h.promise().get_resource(id);
-      return false;
-    }
-    std::shared_ptr<ResourceType> await_resume() const noexcept {
-      return val;
-    }
-  };
+  bool await_ready() const noexcept {
+    return false;
+  }
+  template <typename P>
+  bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    val = h.promise().get_resource(id);
+    return false;
+  }
+  std::shared_ptr<ResourceType> await_resume() const noexcept {
+    return val;
+  }
+};
 
-  template <typename ResourceType>
-  struct awaitable_set_resource {
-    std::shared_ptr<ResourceType>         val;
-    fabric::tasks::task_resource_id<ResourceType> id;
+template <typename ResourceType>
+struct awaitable_set_resource {
+  std::shared_ptr<ResourceType>                 val;
+  fabric::tasks::task_resource_id<ResourceType> id;
 
-    explicit awaitable_set_resource(
-      const std::shared_ptr<ResourceType>& ptr_, fabric::tasks::task_resource_id<ResourceType> id_ = {}
-    )
-        : val(ptr_),
-          id(id_) {}
+  explicit awaitable_set_resource(
+    const std::shared_ptr<ResourceType>&          ptr_,
+    fabric::tasks::task_resource_id<ResourceType> id_ = {}
+  )
+      : val(ptr_),
+        id(id_) {}
 
-    bool await_ready() const noexcept {
-      return false;
-    }
-    template <typename P>
-    bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-      h.promise().set_resource(val, id);
-      return false;
-    }
-    void await_resume() const noexcept {}
-  };
+  bool await_ready() const noexcept {
+    return false;
+  }
+  template <typename P>
+  bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    h.promise().set_resource(val, id);
+    return false;
+  }
+  void await_resume() const noexcept {}
+};
 
-  template <typename ResourceType>
-  struct awaitable_has_resource {
-    bool                                  val;
-    fabric::tasks::task_resource_id<ResourceType> id;
+template <typename ResourceType>
+struct awaitable_has_resource {
+  bool                                          val;
+  fabric::tasks::task_resource_id<ResourceType> id;
 
-    explicit awaitable_has_resource(fabric::tasks::task_resource_id<ResourceType> id_ = {})
-        : id(id_) {}
+  explicit awaitable_has_resource(fabric::tasks::task_resource_id<ResourceType> id_ = {})
+      : id(id_) {}
 
-    bool await_ready() const noexcept {
-      return false;
-    }
-    template <typename P>
-    bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-      val = h.promise().has_resource(id);
-      return false;
-    }
-    bool await_resume() const noexcept {
-      return val;
-    }
-  };
+  bool await_ready() const noexcept {
+    return false;
+  }
+  template <typename P>
+  bool await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    val = h.promise().has_resource(id);
+    return false;
+  }
+  bool await_resume() const noexcept {
+    return val;
+  }
+};
 
-  struct awaitable_sleep {
-    fabric::tasks::duration       delay;
-    fabric::tasks::executor::sptr exec;
+struct awaitable_sleep {
+  fabric::tasks::duration       delay;
+  fabric::tasks::executor::sptr exec;
 
-    bool await_ready() const noexcept {
-      return delay == std::chrono::nanoseconds::zero();
-    } /// Always suspend!
+  bool await_ready() const noexcept {
+    return delay == std::chrono::nanoseconds::zero();
+  } /// Always suspend!
 
-    template <typename P>
-    void await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-      exec = h.promise().get_executor().lock();
-      h.promise().reschedule(delay);
-    }
+  template <typename P>
+  void await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    exec = h.promise().get_executor().lock();
+    h.promise().reschedule(delay);
+  }
 
-    void await_resume() const noexcept {
-    }
-  };
+  void await_resume() const noexcept {}
+};
 
 export namespace fabric::this_task {
   task<const tasks::executor&> get_executor() {

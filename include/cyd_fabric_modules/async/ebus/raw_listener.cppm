@@ -2,16 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  raw_listener.cppm
- *! \brief 
+ *! \brief
  *!
  */
-
-module;
-#include <cyd_fabric_modules/headers/macros/test_enabled.h>
 
 export module fabric.async.ebus:raw_listener;
 
 import std;
+import reflect;
 
 import :types;
 import :event;
@@ -22,15 +20,16 @@ export namespace fabric::async {
     using sptr = std::shared_ptr<raw_listener>;
     using wptr = std::weak_ptr<raw_listener>;
 
-    raw_listener(): ebus_(nullptr) {
+    raw_listener()
+        : ebus_(nullptr) {
       ID     = 0;
       active = false;
     }
 
-    explicit raw_listener(ebus* event_queue_, std::string type, raw_event_handler c)
-      : ebus_(event_queue_),
-        event_type_(std::move(type)),
-        func_(new raw_event_handler {std::move(c)}) {
+    explicit raw_listener(ebus* event_queue_, const std::string& type, auto c)
+        : ebus_(event_queue_),
+          event_type_(type),
+          func_(new raw_event_handler{c}) {
       ID = std::unique_ptr<std::uint8_t>(new std::uint8_t);
     }
 
@@ -38,7 +37,7 @@ export namespace fabric::async {
       remove();
     }
     //
-    //listener_t(const listener_t &other) {
+    // listener_t(const listener_t &other) {
     //  ID = other.get_id();
     //}
 
@@ -54,7 +53,10 @@ export namespace fabric::async {
 
     task<> operator()(const tasks::executor& exec, const event::sptr& ev) const {
       if (nullptr != func_ && active) {
-        exec.schedule(func_->operator()(*ev.get()));
+        exec.schedule([=,this] -> task<> {
+          co_await func_->operator()(*ev);
+          co_return;
+        });
       }
       co_return;
     }
@@ -62,13 +64,14 @@ export namespace fabric::async {
     const std::string& event_type() const {
       return event_type_;
     }
+
   private:
     std::unique_ptr<std::uint8_t> ID;
-    bool active = true;
+    bool                          active = true;
 
-    ebus* const ebus_;
-    std::string event_type_;
+    ebus* const        ebus_;
+    std::string        event_type_;
     raw_event_handler* func_ = nullptr;
   };
 
-}
+} // namespace fabric::async

@@ -19,8 +19,8 @@ export namespace fabric::tasks {
       time_point    due;
       task_handle<> task;
 
-      auto operator<=>(const delayed_task_t& other) const {
-        return due <=> other.due;
+      auto operator<(const delayed_task_t& other) const {
+        return due > other.due;
       }
     };
     concurrent_queue<delayed_task_t, std::priority_queue> delayed_task_queue_{};
@@ -89,8 +89,6 @@ export namespace fabric::tasks {
             return;
           }
         }
-      } else {
-        reset_next_wakeup();
       }
     }
 
@@ -98,6 +96,7 @@ export namespace fabric::tasks {
       if (tp < next_wakeup.load()) {
         next_wakeup.store(tp);
       }
+      cv.notify_all();
     }
 
     void reset_next_wakeup() {

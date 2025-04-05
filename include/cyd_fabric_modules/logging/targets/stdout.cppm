@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  stdout.cppm
@@ -22,6 +22,8 @@ export namespace LOG::TARGETS {
     ~STDOUT() noexcept override = default;
 
     void append(const entry_t &entry) override {
+      static std::mutex mtx;
+      std::unique_lock lock(mtx);
       std::cout << entry_format_.format(entry) << std::endl;
     }
 

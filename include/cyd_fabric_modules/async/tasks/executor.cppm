@@ -25,6 +25,7 @@ export namespace fabric::tasks {
     std::jthread                thread_;
     std::latch                  join_wait_{1};
     std::atomic_int             keep_alive_{0};
+    std::atomic_flag            dead_{false}; // thread has stopped and has been joined
 
   public:
     explicit executor_thread_t(const std::shared_ptr<schedule_t>& schedule)
@@ -45,10 +46,16 @@ export namespace fabric::tasks {
           ) {}
 
     ~executor_thread_t() {
-      join();
+      if (not dead_.test()) {
+        join();
+      }
     }
 
     void join() {
+      if (dead_.test_and_set()) {
+        LOG::print{WARN}("Thread already stopped, can't join again.");
+        return;
+      }
       LOG::print{DEBUG}("Joining thread...");
 
       thread_.request_stop();
@@ -99,10 +106,6 @@ export namespace fabric::tasks {
       return ptr;
     }
 
-    ~executor() {
-      thread_->join();
-    }
-
     void join() {
       thread_->join();
     }
@@ -144,8 +147,29 @@ export namespace fabric::tasks {
     }
     //! \brief Enqueue an already instantiated task
     template <typename R>
-    task<R> schedule(task<R> handle, time_point due = clock::now() + 0ms) const {
+    task<R> schedule(task<R>&& handle, time_point due = clock::now() + 0ms) const {
       schedule_handle(handle.get_handle(), due);
+      return std::move(handle);
+    }
+
+    //! \brief Enqueue an already instantiated task
+    template <typename R>
+    task<R>& schedule(task<R>& handle, time_point due = clock::now() + 0ms) const {
+      schedule_handle(handle.get_handle(), due);
+      return handle;
+    }
+
+    //! \brief Enqueue an already instantiated task
+    template <typename R>
+    task<R> schedule(task<R>&& handle, duration delay) const {
+      schedule_handle(handle.get_handle(), clock::now() + delay);
+      return std::move(handle);
+    }
+
+    //! \brief Enqueue an already instantiated task
+    template <typename R>
+    task<R>& schedule(task<R>& handle, duration delay) const {
+      schedule_handle(handle.get_handle(), clock::now() + delay);
       return handle;
     }
 
@@ -170,6 +194,17 @@ export namespace fabric::tasks {
       requires requires(const C& c, Args&&... args) {
         { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
       }
+    task<R> schedule(duration delay, C& coroutine, Args&&... args) const {
+      return schedule(clock::now() + delay, coroutine, std::forward<Args>(args)...);
+    }
+
+    template <
+      typename C,
+      typename... Args,
+      typename R = typename std::invoke_result_t<C, Args...>::return_type>
+      requires requires(const C& c, Args&&... args) {
+        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+      }
     task<R> schedule(C& coroutine, Args&&... args) const {
       return schedule(clock::now(), coroutine, std::forward<Args>(args)...);
     }
@@ -180,7 +215,12 @@ export namespace fabric::tasks {
       typename... Args,
       typename R = typename std::invoke_result_t<C, Args...>::return_type>
     static task<R> schedule_helper(C coro, Args&&... args) {
-      co_return co_await coro(std::forward<Args>(args)...);
+      if constexpr (std::is_void_v<R>) {
+        co_await coro(std::forward<Args>(args)...);
+        co_return;
+      } else {
+        co_return co_await coro(std::forward<Args>(args)...);
+      }
     }
 
   public:
@@ -195,6 +235,17 @@ export namespace fabric::tasks {
       auto t = schedule_helper(std::move(coroutine), std::forward<Args>(args)...);
       schedule_handle(t.get_handle(), due);
       return t;
+    }
+
+    template <
+      typename C,
+      typename... Args,
+      typename R = typename std::invoke_result_t<C, Args...>::return_type>
+      requires requires(C&& c, Args&&... args) {
+        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+      } and (not(std::is_lvalue_reference_v<C>))
+    task<R> schedule(duration delay, C&& coroutine, Args&&... args) const {
+      return schedule(clock::now() + delay, std::move(coroutine), std::forward<Args>(args)...);
     }
 
     template <

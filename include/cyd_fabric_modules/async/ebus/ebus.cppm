@@ -12,6 +12,8 @@ module;
 export module fabric.async.ebus:impl;
 
 import std;
+export import reflect;
+import reflect.serialize;
 
 import :types;
 export import :event;
@@ -19,6 +21,7 @@ export import :raw_listener;
 export import :typed_listener;
 export import fabric.async.scheduler;
 export import fabric.tasks;
+export import fabric.logging;
 
 namespace fabric::async {
   class awaitable_events {
@@ -28,15 +31,19 @@ namespace fabric::async {
 
   public:
     bool await_ready() const noexcept {
+      // LOG::print{DEBUG}("EBus ready: {}", pending_events_.test());
       return pending_events_.test();
     } /// Always suspend!
 
     void await_suspend(task<>::handle_type h) noexcept {
       awaiting_events_.test_and_set();
       handle_ = h;
+      // LOG::print{DEBUG}("EBus suspended");
     }
 
-    void await_resume() noexcept {}
+    void await_resume() noexcept {
+      pending_events_.clear();
+    }
 
     void notify() noexcept {
       if (awaiting_events_.test()) {
@@ -45,6 +52,7 @@ namespace fabric::async {
       } else {
         pending_events_.test_and_set();
       }
+      // LOG::print{DEBUG}("EBus notified");
     }
   };
 } // namespace fabric::async
@@ -96,13 +104,11 @@ export namespace fabric::async {
       return ev;
     }
 
-    raw_listener::sptr on_event_raw(const std::string& event_type, raw_event_handler l_) {
+    raw_listener::sptr on_event_raw(const std::string& event_type, auto l_) {
+      LOG::print{DEBUG}("Adding event listener: {}", event_type);
       std::unique_lock lk{listeners_mutex};
-      if (!event_listeners.contains(event_type))
-        event_listeners.insert({event_type, {}});
-
-      auto l = std::make_shared<raw_listener>(this, event_type, l_);
-      event_listeners[event_type].emplace_back(l);
+      auto             l = std::make_shared<raw_listener>(this, event_type, l_);
+      event_listeners[event_type].push_back(l);
 
       return l;
     }
@@ -117,7 +123,7 @@ export namespace fabric::async {
       std::vector<std::shared_ptr<raw_listener>> listeners{};
 
       if (event_listeners.contains(ev_type)) {
-        const auto& ev_listeners = event_listeners[ev_type];
+        const auto& ev_listeners = event_listeners.at(ev_type);
         listeners.reserve(ev_listeners.size());
         for (const auto& item: ev_listeners) {
           listeners.emplace_back(item);
@@ -134,6 +140,7 @@ export namespace fabric::async {
         std::unique_lock lk{listeners_mutex};
         listeners = get_listeners_for_event(ev->type);
       }
+      LOG::print{DEBUG}("Calling ({}) listeners for {}", listeners.size(), ev->type);
 
       // Iterate over copy of listeners list. This should allow any listener to modify the listeners
       // list (ie: removing themselves)
@@ -147,6 +154,7 @@ export namespace fabric::async {
     }
 
     task<> process_all_events_task(const tasks::executor& exec, std::queue<event::sptr>& ev_queue) {
+      LOG::print{DEBUG}("Processing ({}) events", ev_queue.size());
       while (!ev_queue.empty()) {
         co_await process_event_task(exec, ev_queue.front());
         ev_queue.pop();
@@ -156,6 +164,7 @@ export namespace fabric::async {
 
   protected: /// @name Bus Interface
     task<> event_processing_task() {
+      LOG::print{DEBUG}("Event processing started");
       const auto& exec = co_await this_task::get_executor();
       while (true) {
         co_await events_awaitable;
@@ -165,28 +174,39 @@ export namespace fabric::async {
       co_return;
     }
 
+  private:
+    template <EventType T>
+    void log_event(const T& it) {
+      LOG::print{DEBUG
+      }("<EVENT> {}: {}", refl::type_name<T>, refl::serializer<formats::json_fmt>::to_string(it));
+    }
+
   public: /// @name Public Interface
     template <EventType T>
     inline event::sptr emit() {
       auto* data_ptr = new T();
+      log_event(*data_ptr);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
     template <EventType T>
     inline event::sptr emit(const T& event) {
       auto* data_ptr = new T(event);
+      log_event(*data_ptr);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
     template <EventType T>
     inline event::sptr emit(T&& event) {
       auto* data_ptr = new T(std::forward<T&&>(event));
+      log_event(*data_ptr);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
     template <EventType T, typename... EVFields>
     inline event::sptr emit(EVFields&&... fields) {
       auto* data_ptr = new T(std::forward<EVFields&&>(fields)...);
+      log_event(*data_ptr);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
@@ -214,7 +234,8 @@ export namespace fabric::async {
       if (listener.get_id() == 0)
         return;
       const std::string& event_type = listener.event_type();
-      std::scoped_lock   lk{listeners_mutex};
+      LOG::print{DEBUG}("Removing listener for event: {}", event_type);
+      std::unique_lock lk{listeners_mutex};
       if (event_listeners.contains(event_type)) {
         for (auto l = event_listeners[event_type].begin();
              l != event_listeners[event_type].end();) {

@@ -1,15 +1,15 @@
 // Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-module;
-#include <cyd_fabric_modules/headers/macros/test_enabled.h>
-
 export module fabric.async:timers;
 
 import std;
 import reflect;
 
+export import fabric.logging;
 export import fabric.tasks;
+
+using namespace std::chrono_literals;
 
 namespace fabric::async {
   export class timer_manager_t;
@@ -19,8 +19,14 @@ namespace fabric::async {
     bool            repeat  = false;
     bool            run_now = false;
 
-    timer_options_t(const tasks::duration interval_): interval(interval_) {}
-    timer_options_t(const tasks::time_point when): interval(when - tasks::clock::now()) {}
+    timer_options_t(const tasks::duration interval_, bool repeat_ = false, bool run_now_ = false)
+        : interval(interval_),
+          repeat(repeat_),
+          run_now(run_now_) {}
+    timer_options_t(const tasks::time_point when, bool repeat_ = false, bool run_now_ = false)
+        : interval(when - tasks::clock::now()),
+          repeat(repeat_),
+          run_now(run_now_) {}
   };
 
   export struct timer_data_t {
@@ -53,19 +59,29 @@ namespace fabric::async {
     std::weak_ptr<timer_data_t> ref_;
   };
 
-  task<> timer_task(const std::shared_ptr<timer_data_t>& timer_data) {
+  task<> timer_task(std::shared_ptr<timer_data_t> timer_data) {
+    LOG::print{DEBUG}("Starting timer");
+
+    if (timer_data->stop_flag.test()) {
+      co_return;
+    }
+
     auto previous_run = tasks::clock::now();
     co_await timer_data->callback();
     auto runtime = tasks::clock::now() - previous_run;
 
-    co_await (timer_data->interval - runtime);
+      if ((timer_data->interval - runtime) > 0s) {
+        co_await (timer_data->interval - runtime);
+      }
 
     while (timer_data->repeat and not timer_data->stop_flag.test()) {
       previous_run = tasks::clock::now();
       co_await timer_data->callback();
       runtime = tasks::clock::now() - previous_run;
 
-      co_await (timer_data->interval - runtime);
+      if ((timer_data->interval - runtime) > 0s) {
+        co_await (timer_data->interval - runtime);
+      }
     }
 
     co_return;
