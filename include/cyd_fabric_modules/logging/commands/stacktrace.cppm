@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  print.cppm
@@ -50,6 +50,7 @@ export namespace LOG {
       unw_getcontext(&context);
       unw_init_local(&cursor, &context);
 
+      std::size_t frame_index = 0;
       backtrace_items.emplace_back("Stack backtrace:");
       while (unw_step(&cursor) > 0) {
         unw_word_t offset, pc;
@@ -64,7 +65,7 @@ export namespace LOG {
         }
 
         std::stringstream ss;
-        ss << std::format("[{}]     at [0x{:X}] ", level.name, pc);
+        ss << std::format("*{}*{:>3}| 0x{:X}", level.name, (frame_index++), pc);
         // std::sprintf("0x%lx:", pc);
 
         char sym[256];
@@ -73,15 +74,15 @@ export namespace LOG {
           char* real_name = abi::__cxa_demangle(sym, nullptr, nullptr, &status);
 
           if (status == 0) {
-            ss << std::format("{} +0x{:X}", std::string {real_name}, offset);
+            ss << std::format("+0x{:<3X}: {}", offset, std::string {real_name});
           } else {
-            ss << std::format("{} +0x{:X}", std::string {sym}, offset);
+            ss << std::format("+0x{:<3X}: {}", offset, std::string {sym});
           }
 
           free(real_name);
           // printf(" (%s+0x%lx)\n", sym, offset);
         } else {
-          ss << " -- error: unable to obtain symbol name for this frame";
+          ss << "      :  -- error: unable to obtain symbol name for this frame";
           // printf(" -- error: unable to obtain symbol name for this frame\n");
         }
         backtrace_items.emplace_back(ss.str());

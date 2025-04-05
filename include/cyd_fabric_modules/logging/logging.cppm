@@ -9,6 +9,7 @@ export module fabric.logging;
 export import std;
 
 export import :initializer;
+export import :command_base;
 //! Commands
 export import :print;
 export import :print_stacktrace;

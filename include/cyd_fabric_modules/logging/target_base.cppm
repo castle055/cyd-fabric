@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  target_base.cppm
@@ -11,7 +11,7 @@ import std;
 export import fabric.logging.entry;
 
 export namespace LOG {
-  constexpr const char* DEFAULT_ENTRY_FORMAT {"[{entry:level}] {entry:timestamp} | [{entry:path}:{entry:line}] [{entry:function}] {entry:message}"};
+  constexpr const char* DEFAULT_ENTRY_FORMAT {"{entry:timestamp} [{entry:level}] ~{entry:thread_name}~ [{entry:path}:{entry:line}] [{entry:function}] {entry:message}"};
 
   struct target_id {
     using hash_type = std::size_t;

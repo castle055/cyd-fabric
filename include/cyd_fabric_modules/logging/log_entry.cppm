@@ -1,18 +1,24 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  log_entry.cppm
- *! \brief 
+ *! \brief
  *!
  */
+
 export module fabric.logging.entry;
+
 export import std;
 
+import fabric.thread_name;
 export import fabric.logging.levels;
 
 export namespace LOG {
   enum class entry_field_e {
     NONE,
+    THREAD_NAME,
+    THREAD_ID,
+    THREAD_NAME_OR_ID,
     TIMESTAMP,
     LEVEL,
     PATH,
@@ -23,55 +29,60 @@ export namespace LOG {
 
   struct entry_t {
     std::chrono::system_clock::time_point timestamp;
-    std::filesystem::path path { };
-    unsigned int linenum = 0;
-    std::string_view function {""};
-    std::string_view message {""};
-    LEVEL level {INFO};
+    std::filesystem::path                 path{};
+    unsigned int                          linenum = 0;
+    std::string_view                      function{""};
+    std::string_view                      message{""};
+    LEVEL                                 level{INFO};
+    std::thread::id                       thread_id{std::this_thread::get_id()};
+    std::string                           thread_name{fabric::get_thread_name()};
   };
 
   struct entry_format_t {
-    explicit entry_format_t(const std::string &fmt)
-      : format_(std::regex_replace(fmt, std::regex {"\\{entry:"}, "{0:")) {
-    }
+    explicit entry_format_t(const std::string& fmt)
+        : format_(std::regex_replace(fmt, std::regex{"\\{entry:"}, "{0:")) {}
 
     [[nodiscard]]
-    std::string format(const entry_t &entry) const {
+    std::string format(const entry_t& entry) const {
       if (entry.message.contains('\n')) {
         std::string format_before_message = format_.substr(0, format_.find("{0:message}"));
-        std::string format_after_message = format_.substr(format_.find("{0:message}") + sizeof("{0:message}") - 1);
-        std::string line_header = std::vformat(std::string_view {format_before_message}, std::make_format_args(entry));
-        std::string line_footer = std::vformat(std::string_view {format_after_message}, std::make_format_args(entry));
+        std::string format_after_message =
+          format_.substr(format_.find("{0:message}") + sizeof("{0:message}") - 1);
+        std::string line_header =
+          std::vformat(std::string_view{format_before_message}, std::make_format_args(entry));
+        std::string line_footer =
+          std::vformat(std::string_view{format_after_message}, std::make_format_args(entry));
 
         std::stringstream ss;
         ss << line_header;
-        for (std::size_t i = 0; i != std::string::npos; i = entry.message.find_first_of('\n', i + 1)) {
-          std::size_t next = entry.message.find_first_of('\n', i+1);
+        for (std::size_t i = 0; i != std::string::npos;
+             i             = entry.message.find_first_of('\n', i + 1)) {
+          std::size_t next = entry.message.find_first_of('\n', i + 1);
           if (next == std::string::npos) {
-            ss << entry.message.substr(i==0?i:i+1);
+            ss << entry.message.substr(i == 0 ? i : i + 1);
           } else {
-            ss << entry.message.substr(i==0?i:i+1, next - (i+1)) << std::endl;
+            ss << entry.message.substr(i == 0 ? i : i + 1, next - (i + 1)) << std::endl;
           }
         }
         ss << line_footer;
         return ss.str();
       }
 
-      return std::vformat(std::string_view {format_}, std::make_format_args(entry));
+      return std::vformat(std::string_view{format_}, std::make_format_args(entry));
     }
 
   private:
     std::string format_;
   };
-}
+} // namespace LOG
 
-template<typename CharT>
+template <typename CharT>
 struct std::formatter<LOG::entry_t, CharT> {
-// private:
+  // private:
   static constexpr bool parse_field_fmt(
-    format_parse_context::iterator &first,
-    format_parse_context::iterator last,
-    const std::string_view field_name
+    format_parse_context::iterator& first,
+    format_parse_context::iterator  last,
+    const std::string_view          field_name
   ) {
     const auto start = first;
 
@@ -88,10 +99,8 @@ struct std::formatter<LOG::entry_t, CharT> {
     return true;
   }
 
-// public:
-  constexpr auto parse(
-    format_parse_context &parse_ctx
-  ) {
+  // public:
+  constexpr auto parse(format_parse_context& parse_ctx) {
     if (parse_ctx.begin() == parse_ctx.end() || *parse_ctx.begin() == '}') {
       return parse_ctx.begin();
     }
@@ -121,18 +130,24 @@ struct std::formatter<LOG::entry_t, CharT> {
     } else if (parse_field_fmt(first, last, "message")) {
       entry_field = LOG::entry_field_e::MESSAGE;
       return (first);
+    } else if (parse_field_fmt(first, last, "thread_id")) {
+      entry_field = LOG::entry_field_e::THREAD_ID;
+      return (first);
+    } else if (parse_field_fmt(first, last, "thread_name")) {
+      entry_field = LOG::entry_field_e::THREAD_NAME;
+      return (first);
+    } else if (parse_field_fmt(first, last, "thread")) {
+      entry_field = LOG::entry_field_e::THREAD_NAME_OR_ID;
+      return (first);
     } else {
       // throw std::format_error {"format error: invalid format-spec for log entry"};
       return (last);
     }
   }
 
-  template<typename FC>
-  typename FC::iterator format(
-    const LOG::entry_t &entry,
-    FC &fmt_ctx
-  ) const {
-    std::ostringstream ss { };
+  template <typename FC>
+  typename FC::iterator format(const LOG::entry_t& entry, FC& fmt_ctx) const {
+    std::ostringstream ss{};
     switch (entry_field) {
       case LOG::entry_field_e::NONE:
         break;
@@ -154,13 +169,23 @@ struct std::formatter<LOG::entry_t, CharT> {
       case LOG::entry_field_e::MESSAGE:
         ss << entry.message;
         break;
+      case LOG::entry_field_e::THREAD_ID: {
+        std::size_t id = std::stoul(std::format("{}", entry.thread_id));
+        ss << std::format("{}", std::format("0x{:X}", id));
+      } break;
+      case LOG::entry_field_e::THREAD_NAME:
+        ss << std::format("{}", entry.thread_name);
+        break;
+      case LOG::entry_field_e::THREAD_NAME_OR_ID:
+        ss << std::format("{}", entry.thread_name);
+        break;
     }
-    for (const char &c: ss.view()) {
+    for (const char& c: ss.view()) {
       *fmt_ctx.out()++ = c;
     }
     return fmt_ctx.out();
   }
 
-// private:
+  // private:
   LOG::entry_field_e entry_field = LOG::entry_field_e::NONE;
 };

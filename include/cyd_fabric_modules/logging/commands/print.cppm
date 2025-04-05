@@ -10,7 +10,7 @@ module;
 #define NO_MOVE(TYPE) TYPE(TYPE&& rhl) = delete; TYPE& operator=(TYPE&& rhl) = delete
 
 export module fabric.logging:print;
-import :command_base;
+export import :command_base;
 
 import std;
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  initializer.cppm
@@ -35,6 +35,10 @@ export namespace LOG {
       }
     }
   public:
+    INIT& log_everything() {
+      this->filter()["stdout"];
+      return *this;
+    }
     filter_builder_t<INIT>& filter() {
       flush_pending_filter_builder();
 
