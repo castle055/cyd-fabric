@@ -83,10 +83,3 @@ export namespace fabric::async {
     listener<StopBusEvent> stop_bus_listener;
   };
 } // namespace fabric::async
-
-void asdfasdf() {
-  using namespace fabric;
-  async::async_bus_t bus{};
-
-  bus->schedule();
-}
