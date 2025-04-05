@@ -2,44 +2,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 module;
-#include <cyd_fabric_modules/headers/macros/test_enabled.h>
 #include <cyd_fabric_modules/headers/macros/async_events.h>
 
 export module fabric.async;
 
 import std;
+import fabric.logging;
 export import fabric.async.ebus;
-export import :coroutine_rt;
-export import :system_manager;
-export import :timer_manager;
+export import fabric.tasks;
+export import :timers;
 
 export namespace fabric::async {
-  EVENT(StopBusEvent) {};
-
-  enum class async_bus_status_e {
-    RUNNING,
-    STOPPING,
-    STOPPED,
-  };
+  EVENT(StopBusEvent){};
 
   class async_bus_t: //
-                     public ebus,
-                     public coroutine_runtime_t,
-                     public system_manager_t,
-                     public timer_manager_t {
+                     public tasks::executor::sptr,
+                     public ebus {
   public: /// @name Construction & RAII
     // ! Constructor
     async_bus_t()
-        : stop_bus_listener(on_event([&](const StopBusEvent& ev) {
-            status_ = async_bus_status_e::STOPPING;
-            notify();
+        : tasks::executor::sptr(tasks::executor::make()),
+          event_processing_task_(get()->schedule(ebus::event_processing_task())),
+          stop_bus_listener(on_event([&](const StopBusEvent& ev) -> task<> {
+            get()->request_stop();
+            LOG::print {DEBUG}("Stop Bus Event received. Executor stop requested.");
+            co_return;
           })) {}
-    // ! Destructor
-    ~async_bus_t() {
-      if (thread_) {
-        thread_->join();
-      }
-    }
     // ! Copy
     async_bus_t(const async_bus_t& rhs)            = delete;
     async_bus_t& operator=(const async_bus_t& rhs) = delete;
@@ -47,85 +35,43 @@ export namespace fabric::async {
     async_bus_t(async_bus_t&& rhs)                 = delete;
     async_bus_t& operator=(async_bus_t&& rhs)      = delete;
 
-    void add_init(const std::function<void()>& init) {
-      init_functions_.emplace_back(init);
+    ~async_bus_t() {
+      get()->join();
     }
 
-    void add_cleanup(const std::function<void()>& cleanup) {
-      cleanup_functions_.emplace_back(cleanup);
-    }
+    timer_t create_timer(timer_options_t opts, std::function<task<>()> callback) {
+      auto data = std::make_shared<timer_data_t>(opts.interval, opts.repeat, callback);
 
-  protected:
-    void start() {
-      thread_start();
-    }
-
-    void stop() {
-      thread_stop();
-    }
-
-  private
-    TEST_PUBLIC: /// @name Status
-                 std::atomic<async_bus_status_e>
-                   status_ = async_bus_status_e::STOPPED;
-  private
-    TEST_PUBLIC: /// @name Thread
-                 std::unique_ptr<std::thread>
-                   thread_ = nullptr;
-    void           thread_start() {
-      if (status_ != async_bus_status_e::RUNNING) {
-        status_ = async_bus_status_e::RUNNING;
-        thread_ = std::make_unique<std::thread>([](async_bus_t* bus) { bus->thread_task(); }, this);
-      }
-    }
-    void thread_stop() {
-      if (thread_ and status_ == async_bus_status_e::RUNNING) {
-        status_ = async_bus_status_e::STOPPING;
-        this->cv.notify_all();
-        status_.wait(async_bus_status_e::STOPPING);
-      }
-    }
-
-    void thread_task() {
-      using namespace std::chrono_literals;
-
-      for (const auto& init_function: init_functions_) {
-        init_function();
+      if (opts.run_now) {
+        get()->schedule(timer_task, data);
+      } else {
+        get()->schedule(tasks::clock::now() + opts.interval, timer_task, data);
       }
 
-      auto now           = clock::now();
-      this->next_wakeup = now;
-      std::unique_lock<std::mutex> lock(mtx);
-      while (status_ == async_bus_status_e::RUNNING) {
-        lock.unlock();
-        now                = clock::now();
-        this->next_wakeup = now + 60s; // If needed before this, notify `this->cv`
+      return timer_t{data};
+    }
 
-        run_systems();
+    timer_t create_timer(timer_options_t opts, std::function<void()> callback) {
+      const auto data = std::make_shared<timer_data_t>(
+        opts.interval,
+        opts.repeat,
+        [callback = std::move(callback)] -> task<> {
+          callback();
+          co_return;
+        }
+      );
 
-        events_process_batch();
-
-        run_timers();
-
-        coroutine_run();
-
-        lock.lock();
-        time_point next = this->next_wakeup;
-        this->cv.wait_until(lock, next);
-      }
-      lock.unlock();
-
-      for (const auto& cleanup_function: std::ranges::views::reverse(cleanup_functions_)) {
-        cleanup_function();
+      if (opts.run_now) {
+        get()->schedule(timer_task, data);
+      } else {
+        get()->schedule(tasks::clock::now() + opts.interval, timer_task, data);
       }
 
-      status_ = async_bus_status_e::STOPPED;
-      status_.notify_all();
+      return timer_t{data};
     }
 
   private:
-    std::vector<std::function<void()>> init_functions_;
-    std::vector<std::function<void()>> cleanup_functions_;
+    task<>                 event_processing_task_;
     listener<StopBusEvent> stop_bus_listener;
   };
-}
+} // namespace fabric::async

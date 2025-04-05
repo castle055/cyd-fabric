@@ -1,8 +1,8 @@
 // Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/*! \file  ebus_impl.cppm
- *! \brief 
+/*! \file  ebus.cppm
+ *! \brief
  *!
  */
 
@@ -18,14 +18,44 @@ export import :event;
 export import :raw_listener;
 export import :typed_listener;
 export import fabric.async.scheduler;
+export import fabric.tasks;
+
+namespace fabric::async {
+  class awaitable_events {
+    std::atomic_flag            awaiting_events_{false};
+    std::atomic_flag            pending_events_{false};
+    fabric::task<>::handle_type handle_;
+
+  public:
+    bool await_ready() const noexcept {
+      return pending_events_.test();
+    } /// Always suspend!
+
+    void await_suspend(task<>::handle_type h) noexcept {
+      awaiting_events_.test_and_set();
+      handle_ = h;
+    }
+
+    void await_resume() noexcept {}
+
+    void notify() noexcept {
+      if (awaiting_events_.test()) {
+        awaiting_events_.clear();
+        handle_.promise().reschedule();
+      } else {
+        pending_events_.test_and_set();
+      }
+    }
+  };
+} // namespace fabric::async
 
 export namespace fabric::async {
-  class ebus: public virtual scheduler_t {
+  class ebus {
   public:
     using wptr = std::weak_ptr<ebus>;
     struct sptr: std::shared_ptr<ebus> {
-      explicit sptr(ebus* ev_queue): shared_ptr<fabric::async::ebus>(ev_queue) {
-      }
+      explicit sptr(ebus* ev_queue)
+          : shared_ptr<fabric::async::ebus>(ev_queue) {}
 
       ebus_producer make_producer() const;
 
@@ -41,18 +71,16 @@ export namespace fabric::async {
     friend class ebus_consumer;
     friend class ebus_actor;
     friend class ebus_runner;
-  protected TEST_PUBLIC:
+
+  protected:
     ebus() = default;
 
-  private TEST_PUBLIC: /// @name Raw Event Handling
+  private: /// @name Raw Event Handling
     // ? This function creates a copy of the event, thus increasing its ref count.
-    void push_event(const fabric::async::event::sptr &ev) {
-      {
-        std::scoped_lock lk{event_mutex};
-        front_ebus.push(ev);
-      }
-      // log_task.debug("NEW EVENT: %s", ev->type.c_str());
-      this->notify();
+    void push_event(const fabric::async::event::sptr& ev) {
+      std::unique_lock lk{event_mutex};
+      front_ebus.push(ev);
+      events_awaitable.notify();
     }
 
     event::sptr& emit_raw(event::sptr& ev) {
@@ -60,38 +88,38 @@ export namespace fabric::async {
       return ev;
     }
 
-    event::sptr emit_raw(const std::string &event_type, void* data, std::function<void()> &&data_destructor) {
-      event::sptr ev = make_event(event_type, data, std::forward<std::function<void()> &&>(data_destructor));
+    event::sptr
+    emit_raw(const std::string& event_type, void* data, std::function<void()>&& data_destructor) {
+      event::sptr ev =
+        make_event(event_type, data, std::forward<std::function<void()>&&>(data_destructor));
       push_event(ev);
       return ev;
     }
 
-    raw_listener::sptr on_event_raw(const std::string &event_type, const raw_event_handler &l_) {
-      std::scoped_lock lk {listeners_mutex};
+    raw_listener::sptr on_event_raw(const std::string& event_type, raw_event_handler l_) {
+      std::unique_lock lk{listeners_mutex};
       if (!event_listeners.contains(event_type))
-        event_listeners.insert({event_type, { }});
+        event_listeners.insert({event_type, {}});
+
       auto l = std::make_shared<raw_listener>(this, event_type, l_);
       event_listeners[event_type].emplace_back(l);
+
       return l;
     }
 
-    raw_listener::sptr on_event_raw(const std::string &event_type, raw_event_handler &&l_) {
-      return on_event_raw(event_type, std::forward<const raw_event_handler&>(l_));
-    }
-
-  private TEST_PUBLIC: /// @name Event Processing
+  private: /// @name Event Processing
     void swap_ebuss() {
-      std::scoped_lock lk {event_mutex};
+      std::scoped_lock lk{event_mutex};
       std::swap(front_ebus, back_ebus);
     }
 
-    std::vector<std::shared_ptr<raw_listener>> get_listeners_for_event(const std::string &ev_type) {
-      std::vector<std::shared_ptr<raw_listener>> listeners { };
+    std::vector<std::shared_ptr<raw_listener>> get_listeners_for_event(const std::string& ev_type) {
+      std::vector<std::shared_ptr<raw_listener>> listeners{};
 
       if (event_listeners.contains(ev_type)) {
-        const auto &ev_listeners = event_listeners[ev_type];
+        const auto& ev_listeners = event_listeners[ev_type];
         listeners.reserve(ev_listeners.size());
-        for (const auto &item: ev_listeners) {
+        for (const auto& item: ev_listeners) {
           listeners.emplace_back(item);
         }
       }
@@ -99,92 +127,97 @@ export namespace fabric::async {
       return listeners;
     }
 
-    void process_event(const event::sptr&ev) {
+    task<> process_event_task(const tasks::executor& exec, const event::sptr& ev) {
       ev->status = EventStatus::PROCESSING;
-      //{ // Make copy of listeners with the mutex
-      //  std::scoped_lock lk {listeners_mutex};
-      listeners_mutex.lock();
-      std::vector<std::shared_ptr<raw_listener>> listeners = get_listeners_for_event(ev->type);
-      listeners_mutex.unlock();
-      //}
+      std::vector<std::shared_ptr<raw_listener>> listeners;
+      { // Make copy of listeners with the mutex
+        std::unique_lock lk{listeners_mutex};
+        listeners = get_listeners_for_event(ev->type);
+      }
 
-      // Iterate over copy of listeners list. This should allow any listener to modify the listeners list (ie: removing themselves)
-      for (const auto &listener: listeners) {
-        listener->operator()(ev);
+      // Iterate over copy of listeners list. This should allow any listener to modify the listeners
+      // list (ie: removing themselves)
+      for (const auto& listener: listeners) {
+        co_await listener->operator()(exec, ev);
       }
 
       // Clean up event
       ev->status = EventStatus::CONSUMED;
+      co_return;
     }
 
-    void process_all_events(std::queue<event::sptr> &ev_queue) {
+    task<> process_all_events_task(const tasks::executor& exec, std::queue<event::sptr>& ev_queue) {
       while (!ev_queue.empty()) {
-        process_event(ev_queue.front());
+        co_await process_event_task(exec, ev_queue.front());
         ev_queue.pop();
       }
+      co_return;
     }
 
-  protected TEST_PUBLIC: /// @name Bus Interface
-    void events_process_batch() {
-      swap_ebuss();
-      process_all_events(back_ebus);
+  protected: /// @name Bus Interface
+    task<> event_processing_task() {
+      const auto& exec = co_await this_task::get_executor();
+      while (true) {
+        co_await events_awaitable;
+        swap_ebuss();
+        co_await process_all_events_task(exec, back_ebus);
+      }
+      co_return;
     }
 
   public: /// @name Public Interface
-    template<EventType T>
+    template <EventType T>
     inline event::sptr emit() {
       auto* data_ptr = new T();
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
-    template<EventType T>
-    inline event::sptr emit(const T &event) {
+    template <EventType T>
+    inline event::sptr emit(const T& event) {
       auto* data_ptr = new T(event);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
-    template<EventType T>
-    inline event::sptr emit(T &&event) {
-      auto* data_ptr = new T(std::forward<T &&>(event));
+    template <EventType T>
+    inline event::sptr emit(T&& event) {
+      auto* data_ptr = new T(std::forward<T&&>(event));
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
-    template<EventType T, typename... EVFields>
-    inline event::sptr emit(EVFields &&... fields) {
-      auto* data_ptr = new T(std::forward<EVFields &&>(fields)...);
+    template <EventType T, typename... EVFields>
+    inline event::sptr emit(EVFields&&... fields) {
+      auto* data_ptr = new T(std::forward<EVFields&&>(fields)...);
       return emit_raw(T::type, data_ptr, [data_ptr]() { delete data_ptr; });
     }
 
-    inline auto on_event(
-      auto &&c
-    ) -> listener<event_type_from_handler<decltype(c)>> requires (
-      EventType<event_type_from_handler<decltype(c)>>
-    ) {
+    inline auto on_event(auto&& c) -> listener<event_type_from_handler<decltype(c)>>
+      requires(EventType<event_type_from_handler<decltype(c)>>)
+    {
       using EventT = event_type_from_handler<decltype(c)>;
-      return listener<EventT> {
-        on_event_raw(EventT::type, [&, c](const event &ev) {
-          c(ev.as<EventT>());
-        })
-      };
+      return listener<EventT>{on_event_raw(
+        EventT::type,
+        [c = std::move(c)](const event& ev) -> task<> {
+          co_await c(ev.as<EventT>());
+          co_return;
+        }
+      )};
     }
 
-    template<typename T>
-    inline auto on_event(
-      auto &&c
-    ) -> listener<event_type_from_handler<decltype(c)>> requires (
-      EventType<event_type_from_handler<decltype(c)>> &&
-      std::same_as<T, event_type_from_handler<decltype(c)>
-      >
-    ) {
+    template <typename T>
+    inline auto on_event(auto&& c) -> listener<event_type_from_handler<decltype(c)>>
+      requires(EventType<event_type_from_handler<decltype(c)>> and std::same_as<T, event_type_from_handler<decltype(c)>>)
+    {
       return on_event(c);
     }
 
-    void remove_listener(const raw_listener &listener) {
-      if (listener.get_id() == 0) return;
-      const std::string &event_type = listener.event_type();
-      std::scoped_lock lk {listeners_mutex};
+    void remove_listener(const raw_listener& listener) {
+      if (listener.get_id() == 0)
+        return;
+      const std::string& event_type = listener.event_type();
+      std::scoped_lock   lk{listeners_mutex};
       if (event_listeners.contains(event_type)) {
-        for (auto l = event_listeners[event_type].begin(); l != event_listeners[event_type].end();) {
+        for (auto l = event_listeners[event_type].begin();
+             l != event_listeners[event_type].end();) {
           if (l->expired()) {
             l = event_listeners[event_type].erase(l);
             continue;
@@ -208,39 +241,38 @@ export namespace fabric::async {
     }
 
   public: /// @name Getter
-    ebus &get_ebus() {
+    ebus& get_ebus() {
       return *this;
     }
 
   public: /// @name Destructor
     ~ebus() {
-      for (auto &item: event_listeners) {
+      for (auto& item: event_listeners) {
         auto listeners = get_listeners_for_event(item.first);
-        for (auto &l: listeners) {
+        for (auto& l: listeners) {
           l->remove();
         }
       }
     }
 
-  private TEST_PUBLIC:
-    std::queue<event::sptr> front_ebus { };
-    std::queue<event::sptr> back_ebus { };
+  private
+    TEST_PUBLIC: std::queue<event::sptr> front_ebus{};
+    std::queue<event::sptr>              back_ebus{};
 
-    std::unordered_map<
-      std::string,
-      std::list<raw_listener::wptr>
-    > event_listeners { };
+    std::unordered_map<std::string, std::list<raw_listener::wptr>> event_listeners{};
 
-  private TEST_PUBLIC:
-    std::mutex event_mutex;
-    std::mutex listeners_mutex;
+  private
+    TEST_PUBLIC: std::mutex event_mutex;
+    std::mutex              listeners_mutex;
 
-  private TEST_PUBLIC:
-    ebus_runner* runner_claimed_ = nullptr;
+    awaitable_events events_awaitable{};
+  private
+    TEST_PUBLIC: ebus_runner* runner_claimed_ = nullptr;
   };
 
   void raw_listener::remove() {
-    if (nullptr != ebus_) ebus_->remove_listener(*this);
+    if (nullptr != ebus_)
+      ebus_->remove_listener(*this);
     delete func_;
     func_  = nullptr;
     active = false;
@@ -249,4 +281,4 @@ export namespace fabric::async {
   ebus::sptr make_ebus() {
     return ebus::sptr(new ebus());
   }
-}
+} // namespace fabric::async

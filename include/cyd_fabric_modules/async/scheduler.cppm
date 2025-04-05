@@ -9,30 +9,33 @@ export module fabric.async.scheduler;
 
 import std;
 
+import fabric.tasks;
+
 using namespace std::chrono_literals;
 
 export namespace fabric::async {
-  using clock = std::chrono::steady_clock;
-  using time_point = std::chrono::time_point<clock>;
-  using duration = typename clock::duration;
+  using clock = tasks::clock;
+  using time_point = tasks::time_point;
+  using duration = tasks::duration;
 
   class scheduler_t {
   protected:
-    std::condition_variable cv{};
-    std::mutex mtx{};
+    std::shared_ptr<tasks::schedule_t> schedule_{std::make_shared<tasks::schedule_t>()};
 
     void notify() {
-      set_next_wakeup(clock::now());
-      cv.notify_all();
+      schedule_->notify();
     }
 
-    std::mutex next_wakeup_mutex{};
-    time_point next_wakeup = clock::now();
     void set_next_wakeup(time_point tp) {
-      std::scoped_lock lock(next_wakeup_mutex);
-      if (tp < next_wakeup) {
-        next_wakeup = tp;
-      }
+      schedule_->set_next_wakeup(tp);
+    }
+
+    void reset_next_wakeup() {
+      schedule_->reset_next_wakeup();
+    }
+
+    void wait() {
+      schedule_->wait();
     }
   };
 }

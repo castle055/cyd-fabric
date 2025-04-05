@@ -12,13 +12,14 @@ import std;
 
 export import fabric.templates.functor_arguments;
 export import fabric.ts.apply;
+export import fabric.tasks;
 
 export import :concepts;
 
 export namespace fabric::async {
   class event;
 
-  using raw_event_handler = std::function<void(const event&)>;
+  using raw_event_handler = std::function<task<>(const event&)>;
 
 
   class ebus;

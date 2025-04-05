@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CYD_UI_ASYNC_H
@@ -6,18 +6,14 @@
 
 #include "common.h"
 
-#include "cyd_fabric/async/async_bus.h"
-using namespace cyd::fabric::async;
+import fabric.async;
 
 namespace test::async {
-    inline std::unique_ptr<cyd::fabric::async::async_bus_t> make_async_bus() {
-      return std::make_unique<cyd::fabric::async::async_bus_t>();
+    inline std::unique_ptr<fabric::async::async_bus_t> make_async_bus() {
+      return std::unique_ptr<fabric::async::async_bus_t>(new fabric::async::async_bus_t{});
     }
-    inline std::unique_ptr<cyd::fabric::async::event_queue_t> make_event_queue() {
-      return std::make_unique<cyd::fabric::async::event_queue_t>();
-    }
-    inline std::unique_ptr<cyd::fabric::async::coroutine_runtime_t> make_coroutine_runtime() {
-      return std::make_unique<cyd::fabric::async::coroutine_runtime_t>();
+    inline std::shared_ptr<fabric::async::ebus> make_event_queue() {
+      return fabric::async::make_ebus();
     }
 }
 

@@ -1,16 +1,12 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #ifndef CYD_UI_TESTS_STRUCTURE_H
 #define CYD_UI_TESTS_STRUCTURE_H
 
-#include <source_location>
-#include <unordered_map>
-#include <string>
-#include <functional>
-#include <utility>
-#include <iostream>
-#include <cassert>
+import std;
+
+using namespace std::chrono_literals;
 
 class test_case_t;
 
@@ -52,7 +48,7 @@ int CONCAT(TEST_BLOCK_ID,ID)(); \
 test_case_t CONCAT(TEST_ID, ID) { \
   NAME, \
   std::source_location::current(), \
-  []() { return CONCAT(TEST_BLOCK_ID,ID)(); } \
+  CONCAT(TEST_BLOCK_ID,ID) \
 }; \
 int CONCAT(TEST_BLOCK_ID,ID)()
 

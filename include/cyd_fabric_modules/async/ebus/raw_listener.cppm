@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  raw_listener.cppm
@@ -18,10 +18,6 @@ import :event;
 
 export namespace fabric::async {
   class raw_listener {
-  private TEST_PUBLIC:
-    std::unique_ptr<std::uint8_t> ID;
-    bool active = true;
-
   public:
     using sptr = std::shared_ptr<raw_listener>;
     using wptr = std::weak_ptr<raw_listener>;
@@ -56,16 +52,20 @@ export namespace fabric::async {
       return active;
     }
 
-    void operator()(const event::sptr& ev) const {
+    task<> operator()(const tasks::executor& exec, const event::sptr& ev) const {
       if (nullptr != func_ && active) {
-        func_->operator()(*ev.get());
+        exec.schedule(func_->operator()(*ev.get()));
       }
+      co_return;
     }
 
     const std::string& event_type() const {
       return event_type_;
     }
   private:
+    std::unique_ptr<std::uint8_t> ID;
+    bool active = true;
+
     ebus* const ebus_;
     std::string event_type_;
     raw_event_handler* func_ = nullptr;

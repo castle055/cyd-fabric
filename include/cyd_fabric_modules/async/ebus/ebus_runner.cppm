@@ -55,14 +55,14 @@ export namespace fabric::async {
       return *this;
     };
 
-    void events_process_batch() const {
-      if (operator bool()) {
-        ebus_.value().lock()->events_process_batch();
-      } else {
-        LOG::print {ERROR}("ebus runner is invalid or was evicted");
-      }
-    }
-
+    // void events_process_batch() const {
+    //   if (operator bool()) {
+    //     ebus_.value().lock()->();
+    //   } else {
+    //     LOG::print {ERROR}("ebus runner is invalid or was evicted");
+    //   }
+    // }
+    //
     operator bool() const {
       return ebus_.has_value()
              && (not ebus_.value().expired())
