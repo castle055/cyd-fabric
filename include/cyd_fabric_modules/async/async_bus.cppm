@@ -25,7 +25,7 @@ export namespace fabric::async {
           event_processing_task_(get()->schedule(ebus::event_processing_task())),
           stop_bus_listener(on_event([&](const StopBusEvent& ev) -> task<> {
             get()->request_stop();
-            LOG::print {DEBUG}("Stop Bus Event received. Executor stop requested.");
+            LOG::print{DEBUG}("Stop Bus Event received. Executor stop requested.");
             co_return;
           })) {}
     // ! Copy
@@ -70,8 +70,23 @@ export namespace fabric::async {
       return timer_t{data};
     }
 
+    tasks::executor::sptr operator->() {
+      return *static_cast<tasks::executor::sptr*>(this);
+    }
+
+    tasks::executor::sptr get_executor() {
+      return *static_cast<tasks::executor::sptr*>(this);
+    }
+
   private:
     task<>                 event_processing_task_;
     listener<StopBusEvent> stop_bus_listener;
   };
 } // namespace fabric::async
+
+void asdfasdf() {
+  using namespace fabric;
+  async::async_bus_t bus{};
+
+  bus->schedule();
+}

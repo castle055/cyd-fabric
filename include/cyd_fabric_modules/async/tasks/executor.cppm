@@ -116,6 +116,10 @@ export namespace fabric::tasks {
       thread_->keep_alive(ka);
     }
 
+    sptr as_sptr() const {
+      return self_.lock();
+    }
+
     std::shared_ptr<schedule_t> get_schedule() const {
       return schedule_;
     }
