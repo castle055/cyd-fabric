@@ -210,16 +210,15 @@ export namespace fabric::tasks {
     }
 
   private:
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-    static task<R> schedule_helper(C coro, Args... args) {
-      if constexpr (std::is_void_v<R>) {
-        co_await coro(std::forward<Args>(args)...);
+    template <typename C, typename... Args>
+    static auto schedule_helper(C coro, Args... args)
+      -> task<typename decltype(coro(args...))::return_type> {
+      if constexpr (std::is_void_v<typename decltype(coro(args...)
+                    )::return_type>) {
+        co_await coro(args...);
         co_return;
       } else {
-        co_return co_await coro(std::forward<Args>(args)...);
+        co_return co_await coro(args...);
       }
     }
 
@@ -232,7 +231,7 @@ export namespace fabric::tasks {
         { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
       } and (not(std::is_lvalue_reference_v<C>))
     task<R> schedule(time_point due, C&& coroutine, Args&&... args) const {
-      auto t = schedule_helper(std::move(coroutine), std::forward<Args>(args)...);
+      auto t = schedule_helper(std::forward<C>(coroutine), std::forward<Args>(args)...);
       schedule_handle(t.get_handle(), due);
       return t;
     }
