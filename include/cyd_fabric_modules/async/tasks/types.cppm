@@ -21,7 +21,7 @@ export namespace fabric::tasks {
   using task_handle = std::coroutine_handle<T>;
 
   template <typename>
-  struct task_promise_t;
+  class task_promise_t;
 
   class executor;
 } // namespace fabric::tasks

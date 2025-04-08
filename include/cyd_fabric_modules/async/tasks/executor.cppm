@@ -214,7 +214,7 @@ export namespace fabric::tasks {
       typename C,
       typename... Args,
       typename R = typename std::invoke_result_t<C, Args...>::return_type>
-    static task<R> schedule_helper(C coro, Args&&... args) {
+    static task<R> schedule_helper(C coro, Args... args) {
       if constexpr (std::is_void_v<R>) {
         co_await coro(std::forward<Args>(args)...);
         co_return;
