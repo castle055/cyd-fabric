@@ -116,6 +116,14 @@ struct vec {
     return m2;
   }
 
+  decltype(std::declval<scalar>() * std::declval<scalar>()) dot(const vec& other) const {
+    decltype(std::declval<scalar>() * std::declval<scalar>()) acc = 0;
+    for (std::size_t i = 0; i < SIZE; ++i) {
+      acc = acc + ((*this)[i] * other[i]);
+    }
+    return acc;
+  }
+
   std::size_t size() const {
     return SIZE;
   }
