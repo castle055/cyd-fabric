@@ -94,7 +94,11 @@ export namespace fabric::io {
     }
 
     io_task<int> read(std::string& str, unsigned int size) {
-      co_return co_await read(str, size, data->current_offset);
+      auto res =  co_await read(str, size, data->current_offset);
+      if (res.ok()) {
+        data->current_offset += res.value();
+      }
+      co_return res;
     }
 
     io_task<bool> get_line(std::string& str) {

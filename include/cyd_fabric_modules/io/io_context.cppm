@@ -22,6 +22,7 @@ export namespace fabric::io {
   };
 
   class io_context {
+    [[refl::ignore]]
     std::variant<std::monostate, io_worker::sptr> io_handler_;
     io_context_type                               type_;
 
@@ -41,6 +42,9 @@ export namespace fabric::io {
       }
       return nullptr;
     }
+
+    io_context(const io_context&) = delete;
+    io_context& operator=(const io_context&) = delete;
 
     template <typename RequestType>
     task<int> make_request(const RequestType& request) {

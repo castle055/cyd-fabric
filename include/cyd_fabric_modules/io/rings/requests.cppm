@@ -7,6 +7,8 @@
  */
 module;
 #include <liburing.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 export module fabric.io.rings.requests;
 
@@ -16,8 +18,23 @@ import reflect;
 export import fabric.tasks;
 
 export namespace fabric::io {
-  using file_decriptor = int;
-}
+  using file_decriptor   = int;
+  using socket_decriptor = int;
+
+  struct socket_address {
+    sockaddr*  address;
+    socklen_t length;
+
+    socket_address()
+        : address(),
+          length(sizeof(address)) {}
+
+    socket_address(sockaddr* address, socklen_t length)
+        : address(address),
+          length(length) {}
+  };
+
+} // namespace fabric::io
 export namespace fabric::io::request_types {
   using sockaddr  = ::sockaddr;
   using socklen_t = ::socklen_t;

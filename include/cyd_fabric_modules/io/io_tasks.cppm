@@ -62,4 +62,86 @@ export namespace fabric::io {
     );
   }
 
+  io_task<int> socket(int domain, int type, int protocol) {
+    co_return co_await make_request(
+      request_types::socket{.domain = domain, .type = type, .protocol = protocol}
+    );
+  }
+
+  io_task<int> bind(file_decriptor sockfd, socket_address& addr) {
+    co_return co_await make_request(
+      request_types::bind{.sockfd = sockfd, .addr = addr.address, .addrlen = addr.length}
+    );
+  }
+
+  io_task<int> listen(file_decriptor sockfd, int backlog) {
+    co_return co_await make_request(request_types::listen{.sockfd = sockfd, .backlog = backlog});
+  }
+
+  io_task<int> accept(file_decriptor sockfd, socket_address& addr, int flags) {
+    co_return co_await make_request(request_types::accept{
+      .sockfd = sockfd, .addr = addr.address, .addrlen = &addr.length, .flags = flags
+    });
+  }
+
+  io_task<int> connect(file_decriptor sockfd, const socket_address& addr) {
+    co_return co_await make_request(request_types::connect{
+      .sockfd = sockfd, .addr = addr.address, .addrlen = addr.length
+    });
+  }
+
+  io_task<int> send(file_decriptor sockfd, const void* buffer, std::size_t length, int flags) {
+    co_return co_await make_request(request_types::send{
+      .sockfd = sockfd,
+      .buf = buffer,
+      .len = length,
+      .flags = flags
+    });
+  }
+
+  io_task<int> send_zc(file_decriptor sockfd, const void* buffer, std::size_t length, int flags, unsigned int zc_flags) {
+    co_return co_await make_request(request_types::send_zc{
+      .sockfd = sockfd,
+      .buf = buffer,
+      .len = length,
+      .flags = flags,
+      .zc_flags = zc_flags
+    });
+  }
+
+  io_task<int> sendto(file_decriptor sockfd, const void* buffer, std::size_t length, int flags, const socket_address& addr) {
+    co_return co_await make_request(request_types::sendto{
+      .sockfd = sockfd,
+      .buf = buffer,
+      .len = length,
+      .flags = flags,
+      .addr = addr.address,
+      .addrlen = static_cast<std::uint16_t>(addr.length)
+    });
+  }
+
+  io_task<int> send_bundle(file_decriptor sockfd, std::size_t length, int flags) {
+    co_return co_await make_request(request_types::send_bundle{
+      .sockfd = sockfd,
+      .len = length,
+      .flags = flags
+    });
+  }
+
+  io_task<int> send_set_addr(const socket_address& addr) {
+    co_return co_await make_request(request_types::send_set_addr{
+      .dest_addr = addr.address,
+      .addr_len = static_cast<std::uint16_t>(addr.length)
+    });
+  }
+
+  io_task<int> recv(file_decriptor sockfd, void* buffer, std::size_t length, int flags) {
+    co_return co_await make_request(request_types::recv{
+      .sockfd = sockfd,
+      .buf = buffer,
+      .len = length,
+      .flags = flags
+    });
+  }
+
 } // namespace fabric::io
