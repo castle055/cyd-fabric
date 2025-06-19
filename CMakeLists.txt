@@ -154,6 +154,7 @@ target_link_libraries(cyd_fabric
         libstdc++exp.a
         packtl
         PRIVATE
+        uring
         CURL::libcurl
 )
 
