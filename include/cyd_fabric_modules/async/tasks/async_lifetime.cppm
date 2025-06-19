@@ -18,12 +18,12 @@ namespace fabric::tasks {
   template <typename Data>
   struct async_lifetime_data: public Data {
     tasks::executor::sptr       owner_executor;
-    this_task::keep_alive_token ka_token; // keep executor alive until request is done
+    keep_alive_token ka_token; // keep executor alive until request is done
 
     template <typename... Args>
-    explicit async_lifetime_data(
+    async_lifetime_data(
       const tasks::executor::sptr&  owner_executor,
-      this_task::keep_alive_token&& ka_token,
+      keep_alive_token&& ka_token,
       Args&&... args
     )
         : Data(std::forward<Args>(args)...),

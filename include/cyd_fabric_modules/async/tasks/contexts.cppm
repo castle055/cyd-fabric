@@ -101,7 +101,7 @@ export namespace fabric::tasks {
 
     template <typename T>
     void set_resource(const std::shared_ptr<T>& ptr, task_resource_id<T> id = task_resource_id<T>{}) {
-      resource_map_.emplace(id.get_id(), ptr);
+      resource_map_.emplace(id.get_id(), task_resource{ptr});
     }
     template <typename T>
     std::shared_ptr<T> get_resource(task_resource_id<T> id = task_resource_id<T>{}) const {

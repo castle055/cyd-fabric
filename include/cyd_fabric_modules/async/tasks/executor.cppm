@@ -19,7 +19,19 @@ using namespace std::chrono_literals;
 std::size_t executor_id{0};
 
 export namespace fabric::tasks {
-  class executor_thread_t {
+  class executor_thread_base {
+  public:
+    virtual ~executor_thread_base() = default;
+
+    virtual void                        join()              = 0;
+    virtual void                        request_stop()      = 0;
+    virtual void                        keep_alive(bool ka) = 0;
+    virtual std::thread::id             id() const          = 0;
+    virtual std::shared_ptr<schedule_t> get_schedule()      = 0;
+    virtual bool                        is_running() const  = 0;
+  };
+
+  class executor_thread_t: public executor_thread_base {
     const std::size_t           id_{executor_id++};
     std::shared_ptr<schedule_t> schedule_{std::make_shared<tasks::schedule_t>()};
     std::jthread                thread_;
@@ -28,9 +40,8 @@ export namespace fabric::tasks {
     std::atomic_flag            dead_{false}; // thread has stopped and has been joined
 
   public:
-    explicit executor_thread_t(const std::shared_ptr<schedule_t>& schedule)
-        : schedule_(schedule),
-          thread_(
+    explicit executor_thread_t()
+        : thread_(
             [this](std::stop_token stop_token, const std::shared_ptr<schedule_t>& sched) {
               fabric::set_thread_name(std::format("executor-{}", id_));
               while (true) {
@@ -42,16 +53,16 @@ export namespace fabric::tasks {
               }
               join_wait_.count_down();
             },
-            schedule
+            schedule_
           ) {}
 
-    ~executor_thread_t() {
+    ~executor_thread_t() override {
       if (not dead_.test()) {
         join();
       }
     }
 
-    void join() {
+    void join() override {
       if (dead_.test_and_set()) {
         LOG::print{WARN}("Thread already stopped, can't join again.");
         return;
@@ -66,12 +77,12 @@ export namespace fabric::tasks {
       LOG::print{DEBUG}("Thread joined");
     }
 
-    void request_stop() {
+    void request_stop() override {
       thread_.request_stop();
       schedule_->notify();
     }
 
-    void keep_alive(bool ka) {
+    void keep_alive(bool ka) override {
       if (ka) {
         keep_alive_.fetch_add(1);
         LOG::print{DEBUG}("keep_alive (+1): {}", keep_alive_.load());
@@ -83,25 +94,121 @@ export namespace fabric::tasks {
       }
     }
 
-    std::thread::id id() const {
+    std::thread::id id() const override {
       return thread_.get_id();
+    }
+
+    std::shared_ptr<schedule_t> get_schedule() override {
+      return schedule_;
+    }
+
+    bool is_running() const override {
+      return not dead_.test();
+    }
+  };
+
+
+  class main_executor_thread_t: public executor_thread_base {
+    const std::size_t           id_{executor_id++};
+    std::shared_ptr<schedule_t> schedule_{std::make_shared<schedule_t>()};
+    std::latch                  join_wait_{1};
+    std::atomic_int             keep_alive_{0};
+    std::atomic_flag            dead_{false}; // thread has stopped and has been joined
+    std::stop_source            stop_source_{};
+    std::thread::id             thread_id_{};
+
+  public:
+    explicit main_executor_thread_t() = default;
+
+    void run() {
+      thread_id_                 = std::this_thread::get_id();
+      std::stop_token stop_token = stop_source_.get_token();
+      while (true) {
+        if ((stop_token.stop_requested() or schedule_->empty()) and keep_alive_.load() == 0) {
+          break;
+        }
+        schedule_->wait();
+        schedule_->run_all();
+      }
+      join_wait_.count_down();
+    }
+
+    ~main_executor_thread_t() override {
+      if (not dead_.test()) {
+        join();
+      }
+    }
+
+    void join() override {
+      if (dead_.test_and_set()) {
+        LOG::print{WARN}("Thread already stopped, can't join again.");
+        return;
+      }
+      LOG::print{DEBUG}("Joining executor thread...");
+
+      stop_source_.request_stop();
+      schedule_->notify();
+      join_wait_.wait();
+
+      LOG::print{DEBUG}("Thread joined");
+    }
+
+    void request_stop() override {
+      stop_source_.request_stop();
+      schedule_->notify();
+    }
+
+    void keep_alive(bool ka) override {
+      if (ka) {
+        keep_alive_.fetch_add(1);
+        LOG::print{DEBUG}("(+1): {}", keep_alive_.load());
+      } else {
+        keep_alive_.fetch_sub(1);
+        keep_alive_.notify_all();
+        schedule_->notify();
+        LOG::print{DEBUG}("(-1): {}", keep_alive_.load());
+      }
+    }
+
+    std::thread::id id() const override {
+      return thread_id_;
+    }
+
+    std::shared_ptr<schedule_t> get_schedule() override {
+      return schedule_;
+    }
+
+    bool is_running() const override {
+      return not dead_.test();
     }
   };
 
   class executor {
     std::weak_ptr<executor> self_;
 
-    std::shared_ptr<task_context>      spawn_context_{task_context::make()};
-    std::shared_ptr<schedule_t>        schedule_{std::make_shared<schedule_t>()};
-    std::unique_ptr<executor_thread_t> thread_{std::make_unique<executor_thread_t>(schedule_)};
+    std::shared_ptr<task_context>         spawn_context_{task_context::make()};
+    std::shared_ptr<executor_thread_base> thread_;
+    std::shared_ptr<schedule_t>           schedule_;
 
-    executor() = default;
+    executor()
+        : thread_(std::make_shared<executor_thread_t>()),
+          schedule_(thread_->get_schedule()) {}
+
+    explicit executor(const std::shared_ptr<executor_thread_base>& thread)
+        : thread_(thread),
+          schedule_(thread_->get_schedule()) {}
 
   public:
     using sptr = std::shared_ptr<executor>;
 
     static sptr make() {
       auto ptr   = std::shared_ptr<executor>(new executor());
+      ptr->self_ = ptr;
+      return ptr;
+    }
+
+    static sptr make(const std::shared_ptr<executor_thread_base>& thread) {
+      auto ptr   = std::shared_ptr<executor>(new executor(thread));
       ptr->self_ = ptr;
       return ptr;
     }
@@ -121,6 +228,10 @@ export namespace fabric::tasks {
 
     sptr as_sptr() const {
       return self_.lock();
+    }
+
+    bool is_running() const {
+      return thread_->is_running();
     }
 
     std::shared_ptr<schedule_t> get_schedule() const {
@@ -213,8 +324,7 @@ export namespace fabric::tasks {
     template <typename C, typename... Args>
     static auto schedule_helper(C coro, Args... args)
       -> task<typename decltype(coro(args...))::return_type> {
-      if constexpr (std::is_void_v<typename decltype(coro(args...)
-                    )::return_type>) {
+      if constexpr (std::is_void_v<typename decltype(coro(args...))::return_type>) {
         co_await coro(args...);
         co_return;
       } else {
