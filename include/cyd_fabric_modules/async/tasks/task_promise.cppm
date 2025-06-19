@@ -171,6 +171,19 @@ struct awaitable_get_executor {
   }
 };
 
+struct awaitable_switch_executor {
+  fabric::tasks::executor::sptr val;
+
+  bool await_ready() const noexcept {
+    return false;
+  }
+  template <typename P>
+  void await_suspend(fabric::tasks::task_handle<P> h) noexcept {
+    val->schedule_handle(h);
+  }
+  void await_resume() const noexcept {}
+};
+
 template <typename ResourceType>
 struct awaitable_get_resource {
   std::shared_ptr<ResourceType>                 val;
@@ -241,7 +254,7 @@ struct awaitable_sleep {
   fabric::tasks::executor::sptr exec;
 
   bool await_ready() const noexcept {
-    return delay == std::chrono::nanoseconds::zero();
+    return delay == fabric::tasks::duration::zero();
   } /// Always suspend!
 
   template <typename P>
@@ -280,11 +293,9 @@ export namespace fabric::this_task {
   task<bool> has_resource(tasks::task_resource_id<ResourceType> id = {}) {
     co_return co_await awaitable_has_resource<ResourceType>{id};
   }
+} // namespace fabric::this_task
 
-  task<> sleep(auto duration) {
-    co_await awaitable_sleep{duration};
-  }
-
+namespace fabric::tasks {
   class keep_alive_token {
     tasks::executor::sptr owner_executor_;
     bool                  moved_ = false;
@@ -319,9 +330,19 @@ export namespace fabric::this_task {
       }
     }
   };
+} // namespace fabric::tasks
 
-  task<keep_alive_token> keep_alive() {
-    co_return std::move(co_await keep_alive_token::make());
+export namespace fabric::this_task {
+  task<> sleep(auto duration) {
+    co_await awaitable_sleep{duration};
+  }
+
+  task<tasks::keep_alive_token> keep_alive() {
+    co_return std::move(co_await tasks::keep_alive_token::make());
+  }
+
+  task<> switch_executor(tasks::executor::sptr exec) {
+    co_await awaitable_switch_executor{exec};
   }
 } // namespace fabric::this_task
 
