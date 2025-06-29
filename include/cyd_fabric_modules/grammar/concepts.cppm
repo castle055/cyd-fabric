@@ -41,7 +41,6 @@ export namespace fabric {
   {
     requires RuleConcept<typename G::start>;
     requires (!TransientRuleConcept<typename G::start>);
-    G::name;
   };
 
 }
