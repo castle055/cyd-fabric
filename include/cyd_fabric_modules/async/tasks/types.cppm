@@ -20,7 +20,10 @@ export namespace fabric::tasks {
   template <typename T = void>
   using task_handle = std::coroutine_handle<T>;
 
-  template <typename>
+  template <typename Ret>
+  class task_promise_base;
+
+  template <typename Ret>
   class task_promise_t;
 
   class executor;

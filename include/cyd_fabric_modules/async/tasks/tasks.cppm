@@ -15,5 +15,10 @@ export import :executor;
 export import :task_promise;
 export import :async_lifetime;
 
-export namespace fabric::tasks {}
+export import :this_task.get_executor;
+export import :this_task.switch_executor;
+export import :this_task.resources;
+export import :this_task.sleep;
+export import :this_task.keep_alive;
 
+export namespace fabric::tasks {}

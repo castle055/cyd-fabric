@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 export module fabric.tasks:task;
+export import :types;
+export import :continuation;
 
 import std;
 import reflect;
 
 import fabric.logging;
 
-export import :types;
 
 using namespace std::chrono_literals;
 
@@ -67,7 +68,10 @@ export namespace fabric {
     }
 
     Ret await_resume()
-      requires((not std::same_as<void, Ret>) and (not std::is_copy_constructible_v<Ret>) and std::is_move_constructible_v<Ret>)
+      requires(
+        (not std::same_as<void, Ret>) and (not std::is_copy_constructible_v<Ret>) and
+        std::is_move_constructible_v<Ret>
+      )
     {
       return future_.get();
     }
@@ -95,3 +99,59 @@ export namespace fabric {
   template <typename T>
   constexpr bool is_task_v = is_task<T>::value;
 } // namespace fabric
+
+namespace fabric::tasks {
+  export template <typename Ret>
+  class task_promise_t: public task_promise_base<Ret> {
+  public:
+    std::suspend_always initial_suspend() {
+      return {};
+    }
+
+    continuation_t final_suspend() noexcept {
+      return {this->cont_};
+    }
+
+    void unhandled_exception() {
+      this->value_promise_.set_exception(std::current_exception());
+    }
+
+    task<Ret> get_return_object() {
+      return task<Ret>(
+        task_handle<task_promise_t>::from_promise(*this), this->value_promise_.get_future()
+      );
+    }
+
+    void return_value(Ret value) {
+      this->value_promise_.set_value(std::move(value));
+    }
+  };
+
+  export template <typename Ret>
+  requires std::is_void_v<Ret>
+  class task_promise_t<Ret>: public task_promise_base<Ret> {
+  public:
+    std::suspend_always initial_suspend() {
+      return {};
+    }
+
+    continuation_t final_suspend() noexcept {
+      return {this->cont_};
+    }
+
+    void unhandled_exception() {
+      this->value_promise_.set_exception(std::current_exception());
+    }
+
+    task<> get_return_object() {
+      return task<>(
+        task_handle<task_promise_t>::from_promise(*this), this->value_promise_.get_future()
+      );
+    }
+
+    void return_void() {
+      this->value_promise_.set_value();
+    }
+  };
+} // namespace fabric::tasks
+

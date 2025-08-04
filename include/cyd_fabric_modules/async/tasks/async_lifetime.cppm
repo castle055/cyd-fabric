@@ -13,6 +13,7 @@ import reflect;
 
 export import fabric.result;
 export import :task_promise;
+export import :this_task.keep_alive;
 
 namespace fabric::tasks {
   template <typename Data>
