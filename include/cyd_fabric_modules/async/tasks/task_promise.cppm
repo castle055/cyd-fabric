@@ -26,12 +26,13 @@ namespace fabric::tasks {
     std::shared_ptr<task_context> context_{};
     std::atomic_bool              overridden_ctx_{false};
     std::promise<Ret>             value_promise_{};
-    std::optional<task_handle<>>  cont_{std::nullopt};
+    continuation_t                cont_{std::nullopt, std::nullopt};
 
     void set_executor(const std::shared_ptr<executor>& e) {
       executor_ = e;
       schedule_ = e->get_schedule();
       context_  = e->get_spawn_context();
+      cont_.current_executor = e;
     }
 
     void set_executor(const std::weak_ptr<executor>& e) {
@@ -39,6 +40,7 @@ namespace fabric::tasks {
       executor_ = ex;
       schedule_ = ex->get_schedule();
       context_  = ex->get_spawn_context();
+      cont_.current_executor = ex;
     }
 
     void inherit_from(const auto& parent_task_promise) {

@@ -51,7 +51,7 @@ export namespace fabric {
     tasks::task_handle<promise_type> await_suspend(tasks::task_handle<P> h) {
       auto& p = h_.promise();
       p.inherit_from(h.promise());
-      p.cont_ = h;
+      p.cont_ = {p.executor_, h.promise().executor_, h};
       return h_;
     }
 
@@ -109,7 +109,7 @@ namespace fabric::tasks {
     }
 
     continuation_t final_suspend() noexcept {
-      return {this->cont_};
+      return this->cont_;
     }
 
     void unhandled_exception() {
@@ -136,7 +136,7 @@ namespace fabric::tasks {
     }
 
     continuation_t final_suspend() noexcept {
-      return {this->cont_};
+      return this->cont_;
     }
 
     void unhandled_exception() {

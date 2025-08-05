@@ -368,4 +368,18 @@ export namespace fabric::tasks {
       return schedule(clock::now(), std::move(coroutine), std::forward<Args>(args)...);
     }
   };
+
+
+  task_handle<> continuation_t::await_suspend(task_handle<> h) noexcept {
+    if (current_executor.has_value()) {
+      if (current_executor.value() == caller_executor.value()) {
+        return cont.value_or(std::noop_coroutine());
+      } else {
+        if (cont.has_value()) {
+          caller_executor.value()->schedule_handle(cont.value());
+        }
+      }
+    }
+    return std::noop_coroutine();
+  }
 } // namespace fabric::tasks

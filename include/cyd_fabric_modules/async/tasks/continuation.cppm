@@ -12,15 +12,15 @@ export import :types;
 
 export namespace fabric::tasks {
   struct continuation_t {
-    std::optional<task_handle<>> cont;
+    std::optional<std::shared_ptr<executor>> current_executor;
+    std::optional<std::shared_ptr<executor>> caller_executor;
+    std::optional<task_handle<>>             cont;
 
     bool await_ready() const noexcept {
       return not cont.has_value();
     }
 
-    task_handle<> await_suspend(task_handle<> h) noexcept {
-      return cont.value_or(std::noop_coroutine());
-    }
+    task_handle<> await_suspend(task_handle<> h) noexcept;
 
     void await_resume() const noexcept {}
   };
