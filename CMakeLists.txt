@@ -133,17 +133,26 @@ FILE(GLOB_RECURSE SRC_MOD_LIST CONFIGURE_DEPENDS
         ${FABRIC_INCLUDE_DIR}/*.cppm
         ${FABRIC_SOURCE_DIR}/*.cppm
 )
+FILE(GLOB_RECURSE SRC_MODI_LIST CONFIGURE_DEPENDS
+        ${FABRIC_INCLUDE_DIR}/*.cxx
+        ${FABRIC_SOURCE_DIR}/*.cxx
+)
 
 target_include_directories(cyd_fabric PUBLIC ${FABRIC_INCLUDE_DIR})
 target_compile_features(cyd_fabric PUBLIC cxx_std_23)
 target_sources(cyd_fabric
         PUBLIC ${SRC_LIST}
+
         PUBLIC
         FILE_SET cxx_modules
         #        FILE_SET "${APP_NAME}_modfiles"
         TYPE CXX_MODULES
         BASE_DIRS ${FABRIC_SOURCE_DIR} ${FABRIC_INCLUDE_DIR}
-        FILES ${SRC_MOD_LIST}
+        FILES
+        ${SRC_MOD_LIST}
+
+        PRIVATE
+        ${SRC_MODI_LIST}
 )
 target_link_libraries(cyd_fabric
         PUBLIC
