@@ -14,6 +14,7 @@ export import :continuation;
 export import :executor;
 export import :task_promise;
 export import :async_lifetime;
+export import :launch;
 
 export import :this_task.get_executor;
 export import :this_task.switch_executor;
