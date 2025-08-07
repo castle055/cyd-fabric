@@ -17,7 +17,8 @@ export import fabric.tasks;
 export import fabric.thread_name;
 
 namespace fabric {
-  std::atomic_flag main_executor_initialized{false};
+  std::atomic_flag      main_executor_initialized{false};
+  tasks::executor::sptr exec{nullptr};
 } // namespace fabric
 
 
@@ -30,6 +31,7 @@ void print_banner() {
   LOG::print{DEBUG}("");
 }
 
+
 export namespace fabric {
   int main(auto&& main_task) {
     print_banner();
@@ -37,8 +39,8 @@ export namespace fabric {
       throw std::logic_error("main_executor already initialized");
     }
 
-    auto                  main_exec_thread = std::make_shared<tasks::main_executor_thread_t>();
-    tasks::executor::sptr exec             = tasks::executor::make(main_exec_thread);
+    auto main_exec_thread = std::make_shared<tasks::main_executor_thread_t>();
+    exec                  = tasks::executor::make(main_exec_thread);
     LOG::print{DEBUG}("Initialized main executor");
 
     const io::io_context::sptr io_context = io::io_context::make<io::WORKER_THREAD>();
@@ -49,6 +51,7 @@ export namespace fabric {
 
     auto t = exec->schedule([task = std::move(main_task)] -> fabric::task<int> {
       LOG::print{DEBUG}("Main task started");
+      auto ka_token = co_await this_task::keep_alive();
       auto res = co_await task();
       LOG::print{DEBUG}("Main task done (returned {})", res);
       co_return res;
@@ -62,10 +65,14 @@ export namespace fabric {
     exec->join();
 
     if (result == 0) {
-      LOG::print{DEBUG}("Main task completed successfully");
+      LOG::print{INFO}("Main task completed successfully");
     } else {
-      LOG::print{ERROR}("Main task finished with error code: {}", result);
+      LOG::print{INFO}("Main task finished with error code: {}", result);
     }
     return result;
+  }
+
+  tasks::executor::sptr get_main_executor() {
+    return exec;
   }
 } // namespace fabric

@@ -76,6 +76,9 @@ export namespace fabric {
       return future_.get();
     }
 
+    bool done() const {
+      return h_.done();
+    }
     void wait() {
       future_.wait();
     }
@@ -98,6 +101,9 @@ export namespace fabric {
 
   template <typename T>
   constexpr bool is_task_v = is_task<T>::value;
+
+  template <typename T>
+  concept task_concept = is_task_v<T>;
 } // namespace fabric
 
 namespace fabric::tasks {
@@ -123,12 +129,23 @@ namespace fabric::tasks {
     }
 
     void return_value(Ret value) {
-      this->value_promise_.set_value(std::move(value));
+      if constexpr (std::is_lvalue_reference_v<Ret>) {
+        this->value_promise_.set_value(value);
+      } else if constexpr (std::is_move_constructible_v<Ret>) {
+        this->value_promise_.set_value(std::move(value));
+      } else {
+        this->value_promise_.set_value(value);
+      }
+    }
+
+    std::suspend_always yield_value(int a) {
+      this->reschedule();
+      return {};
     }
   };
 
   export template <typename Ret>
-  requires std::is_void_v<Ret>
+    requires std::is_void_v<Ret>
   class task_promise_t<Ret>: public task_promise_base<Ret> {
   public:
     std::suspend_always initial_suspend() {

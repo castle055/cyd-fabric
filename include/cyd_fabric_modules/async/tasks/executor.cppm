@@ -124,7 +124,7 @@ export namespace fabric::tasks {
       thread_id_                 = std::this_thread::get_id();
       std::stop_token stop_token = stop_source_.get_token();
       while (true) {
-        if ((stop_token.stop_requested() or schedule_->empty()) and keep_alive_.load() == 0) {
+        if (schedule_->empty() and keep_alive_.load() == 0) {
           break;
         }
         schedule_->wait();
@@ -201,6 +201,11 @@ export namespace fabric::tasks {
   public:
     using sptr = std::shared_ptr<executor>;
 
+    ~executor() {
+      request_stop();
+      join();
+    }
+
     static sptr make() {
       auto ptr   = std::shared_ptr<executor>(new executor());
       ptr->self_ = ptr;
@@ -256,6 +261,16 @@ export namespace fabric::tasks {
         schedule_->enqueue_delayed(due, handle);
       }
     }
+
+    //! \brief Enqueue an already instantiated task handle
+    void schedule_handle(const task_handle<>& handle, time_point due = clock::now() + 0ms) const {
+      if (due <= clock::now()) {
+        schedule_->enqueue(handle);
+      } else {
+        schedule_->enqueue_delayed(due, handle);
+      }
+    }
+
     //! \brief Enqueue an already instantiated task
     template <typename R>
     task<R> schedule(task<R>&& handle, time_point due = clock::now() + 0ms) const {

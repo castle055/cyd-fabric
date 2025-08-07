@@ -72,8 +72,9 @@ export namespace fabric::tasks {
 
     void run_all() {
       enque_delayed_tasks();
-      while (run())
-        ;
+      while (run()) {
+        enque_delayed_tasks();
+      }
     }
 
     void enque_delayed_tasks() {
