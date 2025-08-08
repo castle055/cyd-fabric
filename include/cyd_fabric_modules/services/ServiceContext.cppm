@@ -214,6 +214,25 @@ namespace fabric::services {
       LOG::print{INFO}("Found {} contexts in context chain", contexts.size());
     }
 
+    template <AbstractServiceConcept ServiceType>
+    task<std::optional<std::shared_ptr<ServiceType>>> find() {
+      co_await this_task::switch_executor(executor_);
+      if (service_registry_->has_service<ServiceType>()) {
+        co_return service_registry_->get_service<ServiceType>();
+      }
+      if (parent_ != nullptr) {
+        co_return co_await parent_->find<ServiceType>();
+      }
+      co_return std::nullopt;
+    }
+
+    template <AbstractServiceConcept ServiceType>
+    task<ServiceType&> require(
+      const char* file_name    = normalize(__builtin_FILE(), __FILE__),
+      const char* fun          = __builtin_FUNCTION(),
+      const unsigned long line = __builtin_LINE()
+    );
+
     sptr find_context_by_scope(ScopeTag::id_type id) {
       if (id == scope_id<CurrentScope> or scope_.id == id) {
         return self_.lock();
@@ -234,8 +253,17 @@ namespace fabric::services {
       return find_context_by_scope(scope_id<S>);
     }
 
+    task<bool> ready() const {
+      co_await fabric::this_task::switch_executor(executor_);
+      co_return service_registry_->get_missing_services().empty() and starting_services_.empty() and
+        ((parent_ == nullptr) or co_await parent_->ready());
+    }
+
     task<> await_ready() const {
       co_await fabric::this_task::switch_executor(executor_);
+      if (co_await ready()) {
+        co_return;
+      }
       while (co_await service_registry_->await_service_needed_or_started() != 0 and
              (not starting_services_.empty())) {
       };

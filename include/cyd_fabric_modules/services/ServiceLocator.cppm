@@ -112,4 +112,14 @@ namespace fabric::services {
       return *elapsed_awaiting_deps_;
     }
   };
+
+
+  template <AbstractServiceConcept ServiceType>
+  task<ServiceType&>
+  ServiceContext::require(const char* file_name, const char* fun, const unsigned long line) {
+    co_await this_task::switch_executor(executor_);
+    auto locator = make_locator(std::format("{}:{}:{}", file_name, fun, line));
+    co_return co_await locator->require<ServiceType>();
+  }
+
 } // namespace fabric::services
