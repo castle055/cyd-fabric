@@ -41,7 +41,8 @@ export namespace fabric::runtime {
     }
     print_banner();
 
-    exec = tasks::executor::make();
+    auto main_exec_thread = std::make_shared<tasks::executor_thread_t>();
+    exec                  = tasks::executor::make(main_exec_thread);
     LOG::print{DEBUG}("Initialized main executor");
 
     const io::io_context::sptr io_context = io::io_context::make<io::WORKER_THREAD>();
@@ -54,6 +55,7 @@ export namespace fabric::runtime {
       services::ServiceContext::make<services::GlobalScope>(exec, {"GlobalContext"});
 
     exec->schedule([task = std::move(main_task)] -> fabric::task<int> {
+      fabric::set_thread_name("main-thread");
       LOG::print{DEBUG}("Main task started");
       auto ka_token = co_await this_task::keep_alive();
       auto res      = co_await task();
