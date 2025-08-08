@@ -32,7 +32,7 @@ namespace fabric::services {
   export template <ScopeConcept S>
   constexpr std::string_view scope_name = refl::type_name<S>;
 
-  export struct RootScope: ScopeTag {};
+  export struct GlobalScope: ScopeTag {};
   export struct CurrentScope: ScopeTag {};
 
   export struct ScopeData {

@@ -15,10 +15,12 @@ export import fabric.io;
 export import fabric.logging;
 export import fabric.tasks;
 export import fabric.thread_name;
+export import fabric.services;
 
 namespace fabric {
-  std::atomic_flag      main_executor_initialized{false};
-  tasks::executor::sptr exec{nullptr};
+  std::atomic_flag               main_executor_initialized{false};
+  tasks::executor::sptr          exec{nullptr};
+  services::ServiceContext::sptr global_services{nullptr};
 } // namespace fabric
 
 
@@ -32,12 +34,40 @@ void print_banner() {
 }
 
 
-export namespace fabric {
-  int main(auto&& main_task) {
-    print_banner();
+export namespace fabric::runtime {
+  void main_async(auto&& main_task) {
     if (main_executor_initialized.test_and_set()) {
       throw std::logic_error("main_executor already initialized");
     }
+    print_banner();
+
+    exec = tasks::executor::make();
+    LOG::print{DEBUG}("Initialized main executor");
+
+    const io::io_context::sptr io_context = io::io_context::make<io::WORKER_THREAD>();
+    LOG::print{DEBUG}("Initialized IO context (WORKER_THREAD)");
+
+    exec->get_spawn_context()->set_resource(io_context);
+    LOG::print{DEBUG}("Attached IO context to main executor");
+
+    global_services =
+      services::ServiceContext::make<services::GlobalScope>(exec, {"GlobalContext"});
+
+    exec->schedule([task = std::move(main_task)] -> fabric::task<int> {
+      LOG::print{DEBUG}("Main task started");
+      auto ka_token = co_await this_task::keep_alive();
+      auto res      = co_await task();
+      LOG::print{DEBUG}("Main task done (returned {})", res);
+      co_await global_services->stop_all();
+      co_return res;
+    });
+  }
+
+  int main(auto&& main_task) {
+    if (main_executor_initialized.test_and_set()) {
+      throw std::logic_error("main_executor already initialized");
+    }
+    print_banner();
 
     auto main_exec_thread = std::make_shared<tasks::main_executor_thread_t>();
     exec                  = tasks::executor::make(main_exec_thread);
@@ -49,11 +79,15 @@ export namespace fabric {
     exec->get_spawn_context()->set_resource(io_context);
     LOG::print{DEBUG}("Attached IO context to main executor");
 
+    global_services =
+      services::ServiceContext::make<services::GlobalScope>(exec, {"GlobalContext"});
+
     auto t = exec->schedule([task = std::move(main_task)] -> fabric::task<int> {
       LOG::print{DEBUG}("Main task started");
       auto ka_token = co_await this_task::keep_alive();
-      auto res = co_await task();
+      auto res      = co_await task();
       LOG::print{DEBUG}("Main task done (returned {})", res);
+      co_await global_services->stop_all();
       co_return res;
     });
 
@@ -73,6 +107,18 @@ export namespace fabric {
   }
 
   tasks::executor::sptr get_main_executor() {
+    if (not main_executor_initialized.test()) {
+      throw fabric::exception("Fabric runtime not initialized");
+    }
     return exec;
   }
-} // namespace fabric
+} // namespace fabric::runtime
+
+export namespace fabric::runtime {
+  services::ServiceContext::sptr get_global_service_context() {
+    if (not main_executor_initialized.test()) {
+      throw fabric::exception("Fabric runtime not initialized");
+    }
+    return global_services;
+  }
+} // namespace fabric::runtime
