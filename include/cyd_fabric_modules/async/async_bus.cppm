@@ -21,6 +21,8 @@ export namespace fabric::async {
                      public tasks::executor::sptr,
                      public ebus {
   public: /// @name Construction & RAII
+    using sptr = std::shared_ptr<async_bus_t>;
+    
     // ! Constructor
     async_bus_t()
         : tasks::executor::sptr(tasks::executor::make()),
