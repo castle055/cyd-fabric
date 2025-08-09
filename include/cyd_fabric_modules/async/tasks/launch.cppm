@@ -17,7 +17,7 @@ import reflect;
 
 export namespace fabric {
   template <typename P>
-  fabric::task<> launch(tasks::task_handle<P>&& task) {
+  task<> launch(tasks::task_handle<P>&& task) {
     const tasks::executor& exec = co_await this_task::get_executor();
     exec.schedule_handle(std::move(task));
     // co_yield 123;
@@ -25,15 +25,31 @@ export namespace fabric {
   }
 
   template <typename P>
-  fabric::task<> launch(const tasks::task_handle<P>& task) {
+  task<> launch(const tasks::task_handle<P>& task) {
     const tasks::executor& exec = co_await this_task::get_executor();
     exec.schedule_handle(task);
     // co_yield 123;
     co_return;
   }
 
+  template <typename R>
+  task<> launch(task<R>&& task) {
+    const tasks::executor& exec = co_await this_task::get_executor();
+    exec.schedule(std::move(task));
+    // co_yield 123;
+    co_return;
+  }
+
+  template <typename R>
+  task<> launch(const task<R>& task) {
+    const tasks::executor& exec = co_await this_task::get_executor();
+    exec.schedule(task);
+    // co_yield 123;
+    co_return;
+  }
+
   template <template <typename> typename Container = std::list>
-  fabric::task<> launch(const Container<tasks::task_handle<>>& tasks) {
+  task<> launch(const Container<tasks::task_handle<>>& tasks) {
     const tasks::executor& exec = co_await this_task::get_executor();
     for (const auto& task: tasks) {
       exec.schedule_handle(task);
@@ -42,12 +58,12 @@ export namespace fabric {
     co_return;
   }
 
-  fabric::task<> launch(const std::list<tasks::task_handle<>>& tasks) {
+  task<> launch(const std::list<tasks::task_handle<>>& tasks) {
     return launch<std::list>(tasks);
   }
 
   // template <typename P>
-  // fabric::task<fabric::task<P>> launch(task<P> task) {
+  // task<task<P>> launch(task<P> task) {
   //   const tasks::executor& exec = co_await this_task::get_executor();
   //   auto                   t    = exec.schedule(std::move(task));
   //   co_yield 123;
