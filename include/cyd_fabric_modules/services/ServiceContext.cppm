@@ -215,15 +215,14 @@ namespace fabric::services {
     }
 
     template <AbstractServiceConcept ServiceType>
-    task<std::optional<std::shared_ptr<ServiceType>>> find() {
-      co_await this_task::switch_executor(executor_);
+    std::optional<std::shared_ptr<ServiceType>> find() {
       if (service_registry_->has_service<ServiceType>()) {
-        co_return service_registry_->get_service<ServiceType>();
+        return service_registry_->get_service<ServiceType>();
       }
       if (parent_ != nullptr) {
-        co_return co_await parent_->find<ServiceType>();
+        return parent_->find<ServiceType>();
       }
-      co_return std::nullopt;
+      return std::nullopt;
     }
 
     template <AbstractServiceConcept ServiceType>
