@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  integrators.cppm
@@ -10,7 +10,7 @@ export module fabric.linalg:integrators;
 
 import std;
 
-import :concepts;
+import fabric.linalg.concepts;
 import :vector;
 import :matrix;
 

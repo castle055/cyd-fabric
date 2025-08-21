@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  vector.cppm
@@ -11,6 +11,8 @@ export module fabric.linalg:vector;
 import std;
 import packtl;
 
+import fabric.linalg.concepts;
+
 export template<typename T, std::size_t SIZE>
 struct vec {
   T data[SIZE] { };
@@ -22,6 +24,10 @@ struct vec {
       data[i] = item;
       ++i;
     }
+  }
+
+  static constexpr vec zero() {
+    return vec{};
   }
 
   scalar &operator[](std::size_t index) {
@@ -71,6 +77,19 @@ struct vec {
     return ret;
   }
 
+  vec& operator+=(const vec &rhl) {
+    for (std::size_t i = 0; i < SIZE; ++i) {
+      (*this)[i] += rhl[i];
+    }
+    return *this;
+  }
+
+  vec& operator-=(const vec &rhl) {
+    for (std::size_t i = 0; i < SIZE; ++i) {
+      (*this)[i] -= rhl[i];
+    }
+    return *this;
+  }
 
   template<typename V, typename O = decltype(std::declval<scalar>() + std::declval<typename V::scalar>())>
   vec<O, SIZE> operator+(const V &other) const & {

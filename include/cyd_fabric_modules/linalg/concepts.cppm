@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  concepts.cppm
@@ -6,12 +6,15 @@
  *!
  */
 
-export module fabric.linalg:concepts;
+export module fabric.linalg.concepts;
 
 import std;
 
 export
 {
+  template <typename T>
+  concept ScalarType = std::is_scalar_v<T>;
+
   template<typename F, typename FT>
   struct valid_fun {
     constexpr static bool valid = false;
