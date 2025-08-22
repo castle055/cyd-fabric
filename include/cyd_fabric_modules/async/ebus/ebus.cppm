@@ -177,7 +177,8 @@ export namespace fabric::async {
   private:
     template <EventType T>
     void log_event(const T& it) {
-      LOG::print{DEBUG
+      LOG::print{
+        DEBUG
       }("<EVENT> {}: {}", refl::type_name<T>, refl::serializer<formats::json_fmt>::to_string(it));
     }
 
@@ -214,18 +215,20 @@ export namespace fabric::async {
       requires(EventType<event_type_from_handler<decltype(c)>>)
     {
       using EventT = event_type_from_handler<decltype(c)>;
-      return listener<EventT>{on_event_raw(
-        EventT::type,
-        [c = std::move(c)](const event& ev) -> task<> {
+      return listener<EventT>{
+        on_event_raw(EventT::type, [c = std::move(c)](const event& ev) -> task<> {
           co_await c(ev.as<EventT>());
           co_return;
-        }
-      )};
+        })
+      };
     }
 
     template <typename T>
     inline auto on_event(auto&& c) -> listener<event_type_from_handler<decltype(c)>>
-      requires(EventType<event_type_from_handler<decltype(c)>> and std::same_as<T, event_type_from_handler<decltype(c)>>)
+      requires(
+        EventType<event_type_from_handler<decltype(c)>> and
+        std::same_as<T, event_type_from_handler<decltype(c)>>
+      )
     {
       return on_event(c);
     }
@@ -251,6 +254,19 @@ export namespace fabric::async {
           }
         }
       }
+    }
+
+    template <EventType T>
+    task<T> await() {
+      co_return co_await event_awaitable<T>{this};
+    }
+
+    template <EventType T>
+    task<T> await(auto&& filter) {
+      T ev{};
+      while (ev = co_await await<T>(), not filter(ev))
+        ;
+      co_return ev;
     }
 
     bool is_runner_claimed() const {
@@ -289,6 +305,30 @@ export namespace fabric::async {
     awaitable_events events_awaitable{};
   private
     TEST_PUBLIC: ebus_runner* runner_claimed_ = nullptr;
+
+    template <EventType T>
+    struct event_awaitable {
+      ebus* bus;
+      std::optional<listener<T>> listener{std::nullopt};
+      T event;
+
+      bool await_ready() const noexcept {
+        return false;
+      }
+
+      template <typename P>
+      void await_suspend(std::coroutine_handle<P> h) noexcept {
+        listener = bus->on_event<T>([=, this](const T& ev) -> fabric::task<> {
+          event = ev;
+          h.promise().reschedule();
+          co_return;
+        });
+      }
+
+      T await_resume() noexcept {
+        return event;
+      }
+    };
   };
 
   void raw_listener::remove() {
