@@ -56,7 +56,7 @@ set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 set(CMAKE_CXX_MODULE_STD ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -pthread -fexperimental-library")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++ -pthread -fexperimental-library")
 
 project(cyd_fabric LANGUAGES CXX C)
 
@@ -75,23 +75,6 @@ include(ExternalProject)
 include(FetchContent)
 
 find_package(PkgConfig)
-
-#[[                           CONFIGURE STD MODULE                           ]]#
-# add_library(std)
-# target_sources(std
-#         PUBLIC
-#         FILE_SET cxx_modules
-#         #        FILE_SET "${APP_NAME}_modfiles"
-#         TYPE CXX_MODULES
-#         BASE_DIRS /usr/share/libc++/v1
-#         FILES /usr/share/libc++/v1/std.cppm
-#         /usr/share/libc++/v1/std.compat.cppm
-# )
-# target_compile_options(std
-#     PUBLIC
-#     -Wno-reserved-module-identifier
-#     -Wno-deprecated-declarations
-# )
 
 #[[                           CONFIGURE PACKTL                               ]]#
 FetchContent_Declare(packtl
