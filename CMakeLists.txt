@@ -93,9 +93,6 @@ find_package(PkgConfig)
 #     -Wno-deprecated-declarations
 # )
 
-#[[                          CONFIGURE CAIROMM-1.16                          ]]#
-find_package(CAIROMM)
-
 #[[                           CONFIGURE PACKTL                               ]]#
 FetchContent_Declare(packtl
         GIT_REPOSITORY https://github.com/castle055/packtl.git
@@ -156,7 +153,6 @@ target_sources(cyd_fabric
 )
 target_link_libraries(cyd_fabric
         PUBLIC
-        cairomm
         yaml-cpp
         jpeg
         unwind
