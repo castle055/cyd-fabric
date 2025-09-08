@@ -55,6 +55,7 @@ export namespace fabric::tasks {
 
 export namespace fabric::this_task {
   task<tasks::keep_alive_token> keep_alive() {
-    co_return std::move(co_await tasks::keep_alive_token::make());
+    auto ka = co_await tasks::keep_alive_token::make();
+    co_return co_await tasks::keep_alive_token::make();
   }
 } // namespace fabric::this_task

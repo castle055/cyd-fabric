@@ -14,12 +14,18 @@ export import :continuation;
 export import :executor;
 export import :task_promise;
 export import :async_lifetime;
+
+export import :observable;
 export import :launch;
+export import :when_all;
+export import :when_any;
+export import :with_cancellation;
 
 export import :this_task.get_executor;
 export import :this_task.switch_executor;
 export import :this_task.resources;
 export import :this_task.sleep;
 export import :this_task.keep_alive;
+export import :this_task.cancellation;
 
 export namespace fabric::tasks {}

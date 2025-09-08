@@ -18,25 +18,32 @@ using namespace std::chrono_literals;
 
 std::size_t executor_id{0};
 
+namespace fabric::tasks::detail {
+  thread_local executor* current_executor_{nullptr};
+}
+
 export namespace fabric::tasks {
   class executor_thread_base {
   public:
     virtual ~executor_thread_base() = default;
 
-    virtual void                        join()              = 0;
-    virtual void                        request_stop()      = 0;
-    virtual void                        keep_alive(bool ka) = 0;
-    virtual std::thread::id             id() const          = 0;
-    virtual std::shared_ptr<schedule_t> get_schedule()      = 0;
-    virtual bool                        is_running() const  = 0;
+    virtual void                        join()                       = 0;
+    virtual void                        request_stop()               = 0;
+    virtual void                        keep_alive(bool ka)          = 0;
+    virtual std::thread::id             id() const                   = 0;
+    virtual std::shared_ptr<schedule_t> get_schedule()               = 0;
+    virtual bool                        is_running() const           = 0;
+    virtual void                        set_executor(executor* exec) = 0;
   };
 
   class executor_thread_t: public executor_thread_base {
     const std::size_t           id_{executor_id++};
+    executor*                   executor_{nullptr};
     std::shared_ptr<schedule_t> schedule_{std::make_shared<tasks::schedule_t>()};
     std::jthread                thread_;
     std::latch                  join_wait_{1};
     std::atomic_int             keep_alive_{0};
+    std::atomic_flag            ready_{false};
     std::atomic_flag            dead_{false}; // thread has stopped and has been joined
 
   public:
@@ -44,6 +51,8 @@ export namespace fabric::tasks {
         : thread_(
             [this](std::stop_token stop_token, const std::shared_ptr<schedule_t>& sched) {
               fabric::set_thread_name(std::format("executor-{}", id_));
+              ready_.wait(false);
+              detail::current_executor_ = executor_;
               while (true) {
                 if (stop_token.stop_requested() and sched->empty() and keep_alive_.load() == 0) {
                   break;
@@ -105,11 +114,18 @@ export namespace fabric::tasks {
     bool is_running() const override {
       return not dead_.test();
     }
+
+    void set_executor(executor* exec) override {
+      executor_ = exec;
+      ready_.test_and_set();
+      ready_.notify_all();
+    }
   };
 
 
   class main_executor_thread_t: public executor_thread_base {
     const std::size_t           id_{executor_id++};
+    executor*                   executor_{nullptr};
     std::shared_ptr<schedule_t> schedule_{std::make_shared<schedule_t>()};
     std::latch                  join_wait_{1};
     std::atomic_int             keep_alive_{0};
@@ -122,6 +138,7 @@ export namespace fabric::tasks {
 
     void run() {
       thread_id_                 = std::this_thread::get_id();
+      detail::current_executor_  = executor_;
       std::stop_token stop_token = stop_source_.get_token();
       while (true) {
         if (schedule_->empty() and keep_alive_.load() == 0) {
@@ -181,6 +198,10 @@ export namespace fabric::tasks {
     bool is_running() const override {
       return not dead_.test();
     }
+
+    void set_executor(executor* exec) override {
+      executor_ = exec;
+    }
   };
 
   class executor {
@@ -192,11 +213,15 @@ export namespace fabric::tasks {
 
     executor()
         : thread_(std::make_shared<executor_thread_t>()),
-          schedule_(thread_->get_schedule()) {}
+          schedule_(thread_->get_schedule()) {
+      thread_->set_executor(this);
+    }
 
     explicit executor(const std::shared_ptr<executor_thread_base>& thread)
         : thread_(thread),
-          schedule_(thread_->get_schedule()) {}
+          schedule_(thread_->get_schedule()) {
+      thread_->set_executor(this);
+    }
 
   public:
     using sptr = std::shared_ptr<executor>;
@@ -254,6 +279,9 @@ export namespace fabric::tasks {
     //! \brief Enqueue an already instantiated task handle
     template <typename P>
     void schedule_handle(const task_handle<P>& handle, time_point due = clock::now() + 0ms) const {
+      if (handle.done()) {
+        return;
+      }
       handle.promise().set_executor(self_);
       if (due <= clock::now()) {
         schedule_->enqueue(handle);
@@ -264,6 +292,9 @@ export namespace fabric::tasks {
 
     //! \brief Enqueue an already instantiated task handle
     void schedule_handle(const task_handle<>& handle, time_point due = clock::now() + 0ms) const {
+      if (handle.done()) {
+        return;
+      }
       if (due <= clock::now()) {
         schedule_->enqueue(handle);
       } else {
@@ -273,28 +304,14 @@ export namespace fabric::tasks {
 
     //! \brief Enqueue an already instantiated task
     template <typename R>
-    task<R> schedule(task<R>&& handle, time_point due = clock::now() + 0ms) const {
-      schedule_handle(handle.get_handle(), due);
-      return std::move(handle);
-    }
-
-    //! \brief Enqueue an already instantiated task
-    template <typename R>
-    task<R>& schedule(task<R>& handle, time_point due = clock::now() + 0ms) const {
+    task<R> schedule(task<R> handle, time_point due = clock::now() + 0ms) const {
       schedule_handle(handle.get_handle(), due);
       return handle;
     }
 
     //! \brief Enqueue an already instantiated task
     template <typename R>
-    task<R> schedule(task<R>&& handle, duration delay) const {
-      schedule_handle(handle.get_handle(), clock::now() + delay);
-      return std::move(handle);
-    }
-
-    //! \brief Enqueue an already instantiated task
-    template <typename R>
-    task<R>& schedule(task<R>& handle, duration delay) const {
+    task<R> schedule(task<R> handle, duration delay) const {
       schedule_handle(handle.get_handle(), clock::now() + delay);
       return handle;
     }
@@ -385,16 +402,18 @@ export namespace fabric::tasks {
   };
 
 
-  task_handle<> continuation_t::await_suspend(task_handle<> h) noexcept {
-    if (current_executor.has_value()) {
-      if (current_executor.value() == caller_executor.value()) {
-        return cont.value_or(std::noop_coroutine());
-      } else {
-        if (cont.has_value()) {
-          caller_executor.value()->schedule_handle(cont.value());
-        }
+  task_handle<> continuation_list_t::await_suspend(task_handle<> h) noexcept {
+    if (nullptr != current_executor) {
+      for (const auto& [exec, handle]: continuations) {
+        exec->schedule_handle(handle);
       }
     }
     return std::noop_coroutine();
   }
 } // namespace fabric::tasks
+
+export namespace fabric::this_executor {
+  tasks::executor& get() {
+    return *tasks::detail::current_executor_;
+  }
+} // namespace fabric::this_executor

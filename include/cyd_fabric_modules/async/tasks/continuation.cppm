@@ -12,16 +12,26 @@ export import :types;
 
 export namespace fabric::tasks {
   struct continuation_t {
-    std::optional<std::shared_ptr<executor>> current_executor;
-    std::optional<std::shared_ptr<executor>> caller_executor;
-    std::optional<task_handle<>>             cont;
+    executor*     executor;
+    task_handle<> handle;
+  };
+
+  struct continuation_list_t {
+    executor*                         current_executor{nullptr};
+    std::forward_list<continuation_t> continuations;
+
+    void emplace_continuation(executor* exec, task_handle<> handle) {
+      continuations.emplace_front(exec, handle);
+    }
 
     bool await_ready() const noexcept {
-      return not cont.has_value();
+      return false;
     }
 
     task_handle<> await_suspend(task_handle<> h) noexcept;
 
     void await_resume() const noexcept {}
   };
+
+  constexpr auto ssss = sizeof(continuation_list_t);
 } // namespace fabric::tasks

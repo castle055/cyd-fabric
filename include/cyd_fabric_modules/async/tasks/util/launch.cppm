@@ -33,19 +33,11 @@ export namespace fabric {
   }
 
   template <typename R>
-  task<> launch(task<R>&& task) {
-    const tasks::executor& exec = co_await this_task::get_executor();
-    exec.schedule(std::move(task));
-    // co_yield 123;
-    co_return;
-  }
-
-  template <typename R>
-  task<> launch(const task<R>& task) {
+  task<task<R>> launch(task<R> task) {
     const tasks::executor& exec = co_await this_task::get_executor();
     exec.schedule(task);
     // co_yield 123;
-    co_return;
+    co_return task;
   }
 
   template <template <typename> typename Container = std::list>

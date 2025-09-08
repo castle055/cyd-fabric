@@ -38,8 +38,12 @@ export namespace fabric::this_task {
   }
 }
 
-export awaitable_sleep operator co_await(fabric::tasks::duration delay) {
-  return awaitable_sleep{delay};
+// export awaitable_sleep operator co_await(fabric::tasks::duration delay) {
+//   return awaitable_sleep{delay};
+// }
+//
+export awaitable_sleep operator co_await(std::chrono::duration<long double> delay) {
+  return awaitable_sleep{std::chrono::duration_cast<fabric::tasks::duration>(delay)};
 }
 
 export awaitable_sleep operator co_await(fabric::tasks::time_point time_point) {

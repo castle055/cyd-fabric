@@ -25,6 +25,7 @@ export namespace fabric::tasks {
     };
     concurrent_queue<delayed_task_t, std::priority_queue> delayed_task_queue_{};
     concurrent_queue<task_handle<>>                       task_queue_{};
+    std::optional<task_handle<>>                          current_task_{std::nullopt};
 
     std::condition_variable cv{};
     std::mutex              mtx{};
@@ -57,12 +58,13 @@ export namespace fabric::tasks {
     bool run() {
       bool work_left = false;
       if (auto task_opt = task_queue_.try_pop(); task_opt.has_value()) {
-        auto& it = task_opt.value();
+        current_task_ = task_opt;
         try {
-          it.resume();
+          current_task_.value().resume();
         } catch (const std::exception& e) {
           std::cerr << e.what() << std::endl;
         }
+        current_task_ = std::nullopt;
         if (not task_queue_.empty()) {
           work_left = true;
         }
@@ -115,6 +117,10 @@ export namespace fabric::tasks {
     void notify() {
       set_next_wakeup(clock::now() - 1s); // wake up now
       cv.notify_all();
+    }
+
+    std::optional<task_handle<>> get_current_task() const {
+      return current_task_;
     }
   };
 } // namespace fabric::tasks
