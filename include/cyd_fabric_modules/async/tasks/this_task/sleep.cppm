@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  sleep.cppm
- *! \brief 
+ *! \brief
  *!
  */
 
@@ -36,12 +36,12 @@ export namespace fabric::this_task {
   task<> sleep(auto duration) {
     co_await awaitable_sleep{duration};
   }
-}
+} // namespace fabric::this_task
 
 // export awaitable_sleep operator co_await(fabric::tasks::duration delay) {
 //   return awaitable_sleep{delay};
 // }
-//
+
 export awaitable_sleep operator co_await(std::chrono::duration<long double> delay) {
   return awaitable_sleep{std::chrono::duration_cast<fabric::tasks::duration>(delay)};
 }

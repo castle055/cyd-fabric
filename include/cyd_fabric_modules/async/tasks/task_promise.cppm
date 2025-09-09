@@ -49,7 +49,7 @@ namespace fabric::tasks {
     }
   };
 
-  template <typename T>
+  export template <typename T>
   class task_result_storage<T&> {
     T* ptr = nullptr;
 
@@ -65,7 +65,7 @@ namespace fabric::tasks {
     }
   };
 
-  template <typename T>
+  export template <typename T>
   class task_result_storage<const T&> {
     const T* ptr = nullptr;
 
@@ -82,8 +82,9 @@ namespace fabric::tasks {
     std::exception_ptr exception_{nullptr};
 
   protected:
-    bool                         cancelled_{false};
-    std::optional<task_handle<>> awaiting_cancellation_{std::nullopt};
+    bool                                                   detached_{false};
+    bool                                                   cancelled_{false};
+    std::forward_list<std::pair<executor*, task_handle<>>> awaiting_cancellation_{};
 
   public:
     executor::sptr                executor_{};
@@ -104,8 +105,12 @@ namespace fabric::tasks {
       return cancelled_;
     }
 
-    void await_cancellation(task_handle<> h) {
-      awaiting_cancellation_ = h;
+    void await_cancellation(executor* exec, task_handle<> h) {
+      awaiting_cancellation_.emplace_front(exec, h);
+    }
+
+    void detach() {
+      detached_ = true;
     }
 
     void set_executor(const std::shared_ptr<executor>& e) {
@@ -184,6 +189,16 @@ namespace fabric::tasks {
     std::weak_ptr<executor> get_executor() const {
       return executor_;
     }
+
+    void cancel() {
+      if (not cancelled_) {
+        cancelled_ = true;
+        for (const auto& [exec, h]: awaiting_cancellation_) {
+          exec->schedule_handle(h);
+        }
+        awaiting_cancellation_.clear();
+      }
+    }
   };
 } // namespace fabric::tasks
 
@@ -203,6 +218,7 @@ namespace fabric::tasks {
 
     continuation_list_t final_suspend() noexcept {
       this->cont_.current_executor = this->executor_.get();
+      this->cont_.detached         = this->detached_;
       return this->cont_;
     }
 
@@ -211,7 +227,7 @@ namespace fabric::tasks {
     }
 
     task<Ret> get_return_object() {
-      return {task_handle<task_promise_t>::from_promise(*this)};
+      return task<Ret>{task_handle<task_promise_t>::from_promise(*this)};
     }
 
     void return_value(Ret value) {
@@ -221,16 +237,6 @@ namespace fabric::tasks {
         return_value_.construct(std::move(value));
       } else {
         return_value_.construct(value);
-      }
-    }
-
-    void cancel() {
-      if (not this->cancelled_) {
-        this->cancelled_ = true;
-        if (this->awaiting_cancellation_.has_value()) {
-          this->executor_->schedule_handle(this->awaiting_cancellation_.value());
-          this->awaiting_cancellation_ = std::nullopt;
-        }
       }
     }
 
@@ -250,6 +256,7 @@ namespace fabric::tasks {
 
     continuation_list_t final_suspend() noexcept {
       this->cont_.current_executor = this->executor_.get();
+      this->cont_.detached         = this->detached_;
       return this->cont_;
     }
 
@@ -258,20 +265,10 @@ namespace fabric::tasks {
     }
 
     task<> get_return_object() {
-      return {task_handle<task_promise_t>::from_promise(*this)};
+      return task<>{task_handle<task_promise_t>::from_promise(*this)};
     }
 
     void return_void() {}
-
-    void cancel() {
-      if (not this->cancelled_) {
-        this->cancelled_ = true;
-        if (this->awaiting_cancellation_.has_value()) {
-          this->executor_->schedule_handle(this->awaiting_cancellation_.value());
-          this->awaiting_cancellation_ = std::nullopt;
-        }
-      }
-    }
 
     // std::suspend_always yield_value(int a) {
     //   this->reschedule();

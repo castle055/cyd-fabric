@@ -19,6 +19,7 @@ export namespace fabric::tasks {
   struct continuation_list_t {
     executor*                         current_executor{nullptr};
     std::forward_list<continuation_t> continuations;
+    bool                              detached{false};
 
     void emplace_continuation(executor* exec, task_handle<> handle) {
       continuations.emplace_front(exec, handle);
@@ -28,10 +29,8 @@ export namespace fabric::tasks {
       return false;
     }
 
-    task_handle<> await_suspend(task_handle<> h) noexcept;
+    void await_suspend(task_handle<> h) noexcept;
 
     void await_resume() const noexcept {}
   };
-
-  constexpr auto ssss = sizeof(continuation_list_t);
 } // namespace fabric::tasks

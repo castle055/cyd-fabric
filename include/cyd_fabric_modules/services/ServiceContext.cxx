@@ -85,8 +85,8 @@ task<> stop_all_services_task(
 void ServiceContext::stop_all_services() {
   if (not running_services_.empty()) {
     executor_->schedule(
-      stop_all_services_task, scope_, options_, service_registry_, std::move(running_services_)
-    );
+      stop_all_services_task(scope_, options_, service_registry_, std::move(running_services_))
+    ).detach();
     running_services_ = {};
   }
 }

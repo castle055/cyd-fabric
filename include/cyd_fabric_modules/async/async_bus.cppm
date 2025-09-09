@@ -35,7 +35,7 @@ export namespace fabric::async {
       get()->schedule([] -> task<> {
         LOG::print{DEBUG}("Bus Ready");
         co_return;
-      });
+      }());
     }
     // ! Copy
     async_bus_t(const async_bus_t& rhs)            = delete;

@@ -52,7 +52,7 @@ export namespace fabric::tasks {
 
     ~async_lifetime() {
       if (nullptr != data) {
-        data->owner_executor->schedule([data = std::move(data)] -> task<> {
+        data->owner_executor->schedule([](std::unique_ptr<async_lifetime_data<Data>> data) -> task<> {
           if (is_result_v<DestructRet<T>>) {
             auto e = co_await T::destructor(*data);
             if (not e.has_value()) {
@@ -63,7 +63,7 @@ export namespace fabric::tasks {
             co_await T::destructor(*data);
             co_return;
           }
-        });
+        }(std::move(data))).detach();
       }
     }
 

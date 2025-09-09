@@ -14,6 +14,7 @@ export import :continuation;
 export import :executor;
 export import :task_promise;
 export import :async_lifetime;
+export import :detached_task;
 
 export import :observable;
 export import :launch;

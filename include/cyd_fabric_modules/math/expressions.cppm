@@ -66,8 +66,8 @@ namespace newton {
 }
 
 void testest() {
-  newton::second_law::isolate<newton::second_law::sym_a> e;
-  e;
+  // newton::second_law::isolate<newton::second_law::sym_a> e;
+  // e;
 }
 
 // decltype(it) identity(auto it) {

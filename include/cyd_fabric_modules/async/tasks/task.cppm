@@ -9,11 +9,15 @@ import std;
 import reflect;
 
 import fabric.logging;
+import fabric.exception;
 
 
 using namespace std::chrono_literals;
 
 export namespace fabric {
+  template <typename Ret = void>
+  using shared_task = std::shared_ptr<task<Ret>>;
+
   template <typename Ret = void>
   struct task {
     using promise_type = tasks::task_promise_t<Ret>;
@@ -21,12 +25,34 @@ export namespace fabric {
     using return_type  = Ret;
 
   private:
-    tasks::task_handle<promise_type> h_;
+    tasks::task_handle<promise_type> h_{nullptr};
 
   public:
-    task(tasks::task_handle<promise_type> h__)
+    explicit task(tasks::task_handle<promise_type> h__)
         : h_(h__) {}
 
+    ~task() noexcept(false) {
+      if (h_ != nullptr) {
+        if (done() or not running()) {
+          h_.destroy();
+        } else {
+          throw fabric::exception("Task was destroyed before finishing.");
+        }
+      }
+    }
+
+    task(const task&)            = delete;
+    task& operator=(const task&) = delete;
+
+    task(task&& other) noexcept
+        : h_(std::move(other.h_)) {
+      other.h_ = nullptr;
+    }
+    task& operator=(task&& other) noexcept {
+      h_       = std::move(other.h_);
+      other.h_ = nullptr;
+      return *this;
+    }
 
     operator tasks::task_handle<promise_type>() const {
       return h_;
@@ -151,7 +177,7 @@ export namespace fabric {
       // }
     }
 
-    task operator co_await() & {
+    task& operator co_await() & {
       return *this;
     }
 
@@ -191,18 +217,12 @@ export namespace fabric {
       }
     };
     immediate_awaiter operator co_await() && {
-      return immediate_awaiter{*this};
+      return immediate_awaiter{std::move(*this)};
     }
 
     bool done() const {
       return h_.done();
     }
-    // void wait() {
-    //   h_.promise().get_completion_latch().wait();
-    // }
-    // void try_wait() {
-    //   h_.promise().get_completion_latch().try_wait();
-    // }
 
     auto& get()
       requires((not std::same_as<void, Ret>) and std::is_copy_constructible_v<Ret>)
@@ -226,8 +246,16 @@ export namespace fabric {
     void cancel() {
       if (not done()) {
         h_.promise().cancel();
+      } else {
+        // LOG::print{WARN}("Task already completed");
       }
     }
+
+    shared_task<Ret> share() {
+      return shared_task<Ret>(new task(std::move(*this)));
+    }
+
+    detached_task detach();
   };
 
   template <typename>

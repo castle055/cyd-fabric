@@ -62,7 +62,7 @@ export namespace fabric::runtime {
       LOG::print{DEBUG}("Main task done (returned {})", res);
       co_await global_services->stop_all();
       co_return res;
-    });
+    }());
   }
 
   int main(auto&& main_task) {
@@ -91,7 +91,7 @@ export namespace fabric::runtime {
       LOG::print{DEBUG}("Main task done (returned {})", res);
       co_await global_services->stop_all();
       co_return res;
-    });
+    }());
 
     LOG::print{DEBUG}("Entering main executor");
     main_exec_thread->run();

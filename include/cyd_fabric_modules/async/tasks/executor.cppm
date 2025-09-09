@@ -302,113 +302,123 @@ export namespace fabric::tasks {
       }
     }
 
-    //! \brief Enqueue an already instantiated task
     template <typename R>
-    task<R> schedule(task<R> handle, time_point due = clock::now() + 0ms) const {
+    void schedule(const task<R>& handle, time_point due = clock::now() + 0ms) const {
+      schedule_handle(handle.get_handle(), due);
+    }
+
+    template <typename R>
+    void schedule(const task<R>& handle, duration delay) const {
+      schedule_handle(handle.get_handle(), clock::now() + delay);
+    }
+
+    template <typename R>
+    task<R> schedule(task<R>&& handle, time_point due = clock::now() + 0ms) const {
       schedule_handle(handle.get_handle(), due);
       return handle;
     }
 
-    //! \brief Enqueue an already instantiated task
     template <typename R>
-    task<R> schedule(task<R> handle, duration delay) const {
+    task<R> schedule(task<R>&& handle, duration delay) const {
       schedule_handle(handle.get_handle(), clock::now() + delay);
       return handle;
     }
 
-    //! \brief Enqueue anything that is a coroutine, so anything that returns `task<>`
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(const C& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      }
-    task<R> schedule(time_point due, C& coroutine, Args&&... args) const {
-      auto t = coroutine(std::forward<Args>(args)...);
-      schedule_handle(t.get_handle(), due);
-      return t;
-    }
-
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(const C& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      }
-    task<R> schedule(duration delay, C& coroutine, Args&&... args) const {
-      return schedule(clock::now() + delay, coroutine, std::forward<Args>(args)...);
-    }
-
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(const C& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      }
-    task<R> schedule(C& coroutine, Args&&... args) const {
-      return schedule(clock::now(), coroutine, std::forward<Args>(args)...);
-    }
-
-  private:
-    template <typename C, typename... Args>
-    static auto schedule_helper(C coro, Args... args)
-      -> task<typename decltype(coro(args...))::return_type> {
-      if constexpr (std::is_void_v<typename decltype(coro(args...))::return_type>) {
-        co_await coro(args...);
-        co_return;
-      } else {
-        co_return co_await coro(args...);
-      }
-    }
-
-  public:
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(C&& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      } and (not(std::is_lvalue_reference_v<C>))
-    task<R> schedule(time_point due, C&& coroutine, Args&&... args) const {
-      auto t = schedule_helper(std::forward<C>(coroutine), std::forward<Args>(args)...);
-      schedule_handle(t.get_handle(), due);
-      return t;
-    }
-
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(C&& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      } and (not(std::is_lvalue_reference_v<C>))
-    task<R> schedule(duration delay, C&& coroutine, Args&&... args) const {
-      return schedule(clock::now() + delay, std::move(coroutine), std::forward<Args>(args)...);
-    }
-
-    template <
-      typename C,
-      typename... Args,
-      typename R = typename std::invoke_result_t<C, Args...>::return_type>
-      requires requires(C&& c, Args&&... args) {
-        { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
-      } and (not(std::is_lvalue_reference_v<C>))
-    task<R> schedule(C&& coroutine, Args&&... args) const {
-      return schedule(clock::now(), std::move(coroutine), std::forward<Args>(args)...);
-    }
+    //   //! \brief Enqueue anything that is a coroutine, so anything that returns `task<>`
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(const C& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     }
+    //   task<R> schedule(time_point due, C& coroutine, Args&&... args) const {
+    //     auto t = coroutine(std::forward<Args>(args)...);
+    //     schedule_handle(t.get_handle(), due);
+    //     return t;
+    //   }
+    //
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(const C& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     }
+    //   task<R> schedule(duration delay, C& coroutine, Args&&... args) const {
+    //     return schedule(clock::now() + delay, coroutine, std::forward<Args>(args)...);
+    //   }
+    //
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(const C& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     }
+    //   task<R> schedule(C& coroutine, Args&&... args) const {
+    //     return schedule(clock::now(), coroutine, std::forward<Args>(args)...);
+    //   }
+    //
+    // private:
+    //   template <typename C, typename... Args>
+    //   static auto schedule_helper(C coro, Args... args)
+    //     -> task<typename decltype(coro(args...))::return_type> {
+    //     if constexpr (std::is_void_v<typename decltype(coro(args...))::return_type>) {
+    //       co_await coro(args...);
+    //       co_return;
+    //     } else {
+    //       co_return co_await coro(args...);
+    //     }
+    //   }
+    //
+    // public:
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(C&& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     } and (not(std::is_lvalue_reference_v<C>))
+    //   task<R> schedule(time_point due, C&& coroutine, Args&&... args) const {
+    //     auto t = schedule_helper(std::forward<C>(coroutine), std::forward<Args>(args)...);
+    //     schedule_handle(t.get_handle(), due);
+    //     return t;
+    //   }
+    //
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(C&& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     } and (not(std::is_lvalue_reference_v<C>))
+    //   task<R> schedule(duration delay, C&& coroutine, Args&&... args) const {
+    //     return schedule(clock::now() + delay, std::move(coroutine), std::forward<Args>(args)...);
+    //   }
+    //
+    //   template <
+    //     typename C,
+    //     typename... Args,
+    //     typename R = typename std::invoke_result_t<C, Args...>::return_type>
+    //     requires requires(C&& c, Args&&... args) {
+    //       { c(std::forward<Args>(args)...) } -> std::convertible_to<task<R>>;
+    //     } and (not(std::is_lvalue_reference_v<C>))
+    //   task<R> schedule(C&& coroutine, Args&&... args) const {
+    //     return schedule(clock::now(), std::move(coroutine), std::forward<Args>(args)...);
+    //   }
   };
 
 
-  task_handle<> continuation_list_t::await_suspend(task_handle<> h) noexcept {
+  void continuation_list_t::await_suspend(task_handle<> h) noexcept {
     if (nullptr != current_executor) {
       for (const auto& [exec, handle]: continuations) {
         exec->schedule_handle(handle);
       }
     }
-    return std::noop_coroutine();
+    if (detached) {
+      h.destroy();
+    }
   }
 } // namespace fabric::tasks
 

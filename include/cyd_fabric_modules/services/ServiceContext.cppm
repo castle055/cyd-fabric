@@ -32,7 +32,7 @@ namespace fabric::services {
     std::shared_ptr<ServiceContext>                            parent_;
     ScopeData                                                  scope_;
     ServiceRegistry::sptr                                      service_registry_;
-    std::unordered_map<ServiceBase::id_type, fabric::task<>>   starting_services_{};
+    std::unordered_set<ServiceBase::id_type>                   starting_services_{};
     std::unordered_map<ServiceBase::id_type, ServiceBuilder>   service_factories_{};
     std::list<std::pair<ServiceBase::id_type, ServiceBuilder>> running_services_{};
     std::stop_source                                           stop_source_{};
@@ -49,9 +49,11 @@ namespace fabric::services {
           parent_(parent),
           scope_(scope),
           service_registry_(ServiceRegistry::make()) {
-      executor_->schedule([&] -> fabric::task<> {
-        co_await this->make_services(stop_source_.get_token());
-      });
+      executor_
+        ->schedule([&] -> fabric::task<> {
+          co_await this->make_services(stop_source_.get_token());
+        }())
+        .detach();
     }
 
   public:
@@ -62,8 +64,8 @@ namespace fabric::services {
     template <ScopeConcept Scope = CurrentScope>
     static sptr make(
       const fabric::tasks::executor::sptr& executor,
-      const sptr& parent,
-      ServiceContextOptions options = {}
+      const sptr&                          parent,
+      ServiceContextOptions                options = {}
     ) {
       auto ptr   = sptr(new ServiceContext(executor, parent, ScopeData::from<Scope>(), options));
       ptr->self_ = ptr;
@@ -166,13 +168,13 @@ namespace fabric::services {
          service_name<ServiceType>,
          service_name<Implementation>);
       }
-      starting_services_.emplace(
-        service_id<ServiceType>,
-        co_await fabric::launch(
-          [&](ServiceBuilder builder) -> fabric::task<> { co_await start_service(builder); },
+      starting_services_.insert(service_id<ServiceType>);
+      fabric::launch(
+        start_service(
           ServiceBuilder::from<ServiceType, Implementation>(std::forward<Args>(args)...)
         )
-      );
+      )
+        .detach();
       if constexpr (std::same_as<ServiceType, Implementation>) {
         LOG::print{DEBUG}("Start task scheduled for service: {:?}", service_name<ServiceType>);
       } else {
@@ -227,9 +229,9 @@ namespace fabric::services {
 
     template <AbstractServiceConcept ServiceType>
     task<ServiceType&> require(
-      const char* file_name    = normalize(__builtin_FILE(), __FILE__),
-      const char* fun          = __builtin_FUNCTION(),
-      const unsigned long line = __builtin_LINE()
+      const char*         file_name = normalize(__builtin_FILE(), __FILE__),
+      const char*         fun       = __builtin_FUNCTION(),
+      const unsigned long line      = __builtin_LINE()
     );
 
     sptr find_context_by_scope(ScopeTag::id_type id) {
@@ -296,13 +298,8 @@ namespace fabric::services {
         for (auto& [service_id, builder]: missing_services) {
           if (not starting_services_.contains(service_id)) {
             LOG::print{DEBUG}("Starting missing service: {:?}", builder.name);
-            starting_services_.emplace(
-              service_id,
-              co_await fabric::launch(
-                [&](ServiceBuilder builder) -> fabric::task<> { co_await start_service(builder); },
-                builder
-              )
-            );
+            starting_services_.insert(service_id);
+            fabric::launch(start_service(builder)).detach();
             LOG::print{DEBUG}("Start task scheduled for missing service: {:?}", builder.name);
           }
         }

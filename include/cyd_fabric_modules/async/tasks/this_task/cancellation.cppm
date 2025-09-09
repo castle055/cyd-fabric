@@ -36,7 +36,7 @@ struct awaitable_until_cancelled {
   }
   template <typename P>
   void await_suspend(fabric::tasks::task_handle<P> h) noexcept {
-    promise->await_cancellation(h);
+    promise->await_cancellation(h.promise().executor_.get(), h);
   }
   void await_resume() const noexcept {}
 };

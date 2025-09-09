@@ -52,7 +52,7 @@ namespace fabric {
   export template <typename R, typename... Rs>
     requires(std::is_same_v<R, Rs> and ...)
   task<std::array<safe_result_type<task<R>>, 1 + sizeof...(Rs)>>
-  when_all(task<R> t, task<Rs>... ts) {
+  when_all(task<R>& t, task<Rs>&... ts) {
     const tasks::executor& exec = co_await this_task::get_executor();
 
     schedule_if_needed(exec, t);
