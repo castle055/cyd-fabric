@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  logging.cppm
@@ -22,3 +22,6 @@ export import fabric.logging.levels;
 export import fabric.logging.targets.stdout;
 export import fabric.logging.targets.stderr;
 export import fabric.logging.targets.file;
+
+//! ANSI Codes
+export import fabric.logging.ansi_codes;
