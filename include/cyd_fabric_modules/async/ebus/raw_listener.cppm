@@ -53,12 +53,12 @@ export namespace fabric::async {
 
     task<> operator()(const tasks::executor& exec, const event::sptr& ev) const {
       if (nullptr != func_ && active) {
-        exec.schedule([=,this] -> task<> {
+        exec.schedule([=,this](event::sptr _ev) -> task<> {
           if (nullptr != func_ && active) {
-            co_await func_->operator()(*ev);
+            co_await func_->operator()(*_ev);
           }
           co_return;
-        }()).detach();
+        }(ev)).detach();
       }
       co_return;
     }

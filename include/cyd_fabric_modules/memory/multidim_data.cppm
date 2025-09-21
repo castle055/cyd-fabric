@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2025, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 export module fabric.memory.multidim_data;
@@ -90,7 +90,7 @@ struct md_buffer_t {
     size_t total_new_size = compute_total_size(new_size);
 
     //auto* old_data = this->data;
-    this->data = (E*)realloc(this->data, sizeof(E) * total_new_size);
+    this->data = (E*)std::realloc(this->data, sizeof(E) * total_new_size);
     //this->data = (E*) calloc(1, sizeof(E) * total_new_size);
     //this->copy_from(old_data, {0, 0}, {0, 0}, total_size > total_new_size ? new_size : size);
     //std::free(old_data);

@@ -411,12 +411,16 @@ export namespace fabric::tasks {
 
 
   void continuation_list_t::await_suspend(task_handle<> h) noexcept {
+    // Continuations might destroy the frame so copy/move what's needed first
+    bool is_detached = detached;
+    auto conts       = std::move(continuations);
+
     if (nullptr != current_executor) {
-      for (const auto& [exec, handle]: continuations) {
+      for (const auto& [exec, handle]: conts) {
         exec->schedule_handle(handle);
       }
     }
-    if (detached) {
+    if (is_detached) {
       h.destroy();
     }
   }

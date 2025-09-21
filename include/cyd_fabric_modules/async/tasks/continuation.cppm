@@ -18,7 +18,7 @@ export namespace fabric::tasks {
 
   struct continuation_list_t {
     executor*                         current_executor{nullptr};
-    std::forward_list<continuation_t> continuations;
+    std::forward_list<continuation_t> continuations{};
     bool                              detached{false};
 
     void emplace_continuation(executor* exec, task_handle<> handle) {
