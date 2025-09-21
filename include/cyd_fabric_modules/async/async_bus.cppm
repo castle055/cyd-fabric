@@ -22,20 +22,22 @@ export namespace fabric::async {
                      public ebus {
   public: /// @name Construction & RAII
     using sptr = std::shared_ptr<async_bus_t>;
-    
+
     // ! Constructor
     async_bus_t()
         : tasks::executor::sptr(tasks::executor::make()),
-          event_processing_task_(get()->schedule(ebus::event_processing_task())),
+          event_processing_task_(get()->schedule(ebus::event_processing_task()).share()),
           stop_bus_listener(on_event([&](const StopBusEvent& ev) -> task<> {
             get()->request_stop();
             LOG::print{DEBUG}("Stop Bus Event received. Executor stop requested.");
             co_return;
           })) {
-      get()->schedule([] -> task<> {
-        LOG::print{DEBUG}("Bus Ready");
-        co_return;
-      }());
+      get()
+        ->schedule([] -> task<> {
+          LOG::print{DEBUG}("Bus Ready");
+          co_return;
+        }())
+        .detach();
     }
     // ! Copy
     async_bus_t(const async_bus_t& rhs)            = delete;
@@ -48,9 +50,9 @@ export namespace fabric::async {
       const auto data = std::make_shared<timer_data_t>(opts.interval, opts.repeat, callback);
 
       if (opts.run_now) {
-        get()->schedule(timer_task, data);
+        get()->schedule(timer_task(data)).detach();
       } else {
-        get()->schedule(tasks::clock::now() + opts.interval, timer_task, data);
+        get()->schedule(timer_task(data), tasks::clock::now() + opts.interval).detach();
       }
 
       return timer_t{data};
@@ -94,7 +96,7 @@ export namespace fabric::async {
     }
 
   private:
-    task<>                 event_processing_task_;
+    shared_task<>          event_processing_task_;
     listener<StopBusEvent> stop_bus_listener;
   };
 } // namespace fabric::async
