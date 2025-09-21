@@ -58,7 +58,7 @@ export namespace fabric::async {
             co_await func_->operator()(*ev);
           }
           co_return;
-        }());
+        }()).detach();
       }
       co_return;
     }
