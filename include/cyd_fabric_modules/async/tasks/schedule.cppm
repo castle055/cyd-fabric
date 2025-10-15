@@ -73,6 +73,7 @@ export namespace fabric::tasks {
     }
 
     void run_all() {
+      reset_next_wakeup();
       enque_delayed_tasks();
       while (run()) {
         enque_delayed_tasks();
