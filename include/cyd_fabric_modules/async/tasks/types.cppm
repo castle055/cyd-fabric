@@ -13,14 +13,6 @@ export namespace fabric {
   struct task;
 
   class detached_task;
-}
-export namespace fabric::tasks {
-  using clock      = std::chrono::steady_clock;
-  using time_point = clock::time_point;
-  using duration   = clock::duration;
-
-  template <typename T = void>
-  using task_handle = std::coroutine_handle<T>;
 
   template <typename T>
   class task_result_storage;
@@ -29,6 +21,14 @@ export namespace fabric::tasks {
 
   template <typename Ret>
   class task_promise_t;
+} // namespace fabric
+export namespace fabric::tasks {
+  using clock      = std::chrono::steady_clock;
+  using time_point = clock::time_point;
+  using duration   = clock::duration;
+
+  template <typename T = void>
+  using task_handle = std::coroutine_handle<T>;
 
   class executor;
 

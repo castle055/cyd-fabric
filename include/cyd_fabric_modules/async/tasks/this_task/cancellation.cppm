@@ -29,7 +29,7 @@ struct awaitable_is_cancelled {
 };
 
 struct awaitable_until_cancelled {
-  fabric::tasks::task_promise_base* promise;
+  fabric::task_promise_base* promise;
 
   bool await_ready() const noexcept {
     return promise->is_cancelled();
@@ -50,7 +50,7 @@ export namespace fabric::this_task {
   awaitable_until_cancelled until_cancelled() {
     const auto t = this_executor::get().get_schedule()->get_current_task().value();
     auto&      promise =
-      std::coroutine_handle<tasks::task_promise_base>::from_address(t.address()).promise();
+      std::coroutine_handle<task_promise_base>::from_address(t.address()).promise();
     return awaitable_until_cancelled{&promise};
   }
 } // namespace fabric::this_task

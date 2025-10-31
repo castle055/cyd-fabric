@@ -19,8 +19,8 @@ export namespace fabric {
   class detached_task {
     tasks::task_handle<> h_;
 
-    tasks::task_promise_base& get_promise() const {
-      return std::coroutine_handle<tasks::task_promise_base>::from_address(h_.address()).promise();
+    task_promise_base& get_promise() const {
+      return std::coroutine_handle<task_promise_base>::from_address(h_.address()).promise();
     }
 
   public:

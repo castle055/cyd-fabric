@@ -20,7 +20,7 @@ export namespace fabric {
 
   template <typename Ret = void>
   struct task {
-    using promise_type = tasks::task_promise_t<Ret>;
+    using promise_type = task_promise_t<Ret>;
     using handle_type  = tasks::task_handle<promise_type>;
     using return_type  = Ret;
 

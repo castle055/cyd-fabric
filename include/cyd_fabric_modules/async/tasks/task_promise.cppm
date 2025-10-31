@@ -17,7 +17,7 @@ export import :executor;
 
 using namespace std::chrono_literals;
 
-namespace fabric::tasks {
+namespace fabric {
   export template <typename T>
   class task_result_storage {
     using result_type = std::remove_reference_t<T>;
@@ -29,23 +29,24 @@ namespace fabric::tasks {
 
     ~task_result_storage() {
       if (constructed_) {
-        std::destroy_at(reinterpret_cast<result_type*>(&storage_));
+        std::destroy_at(reinterpret_cast<result_type*>(&storage_[0]));
       }
     }
 
     template <typename... Args>
     void construct(Args&&... args) {
       if (constructed_) {
-        std::destroy_at(reinterpret_cast<result_type*>(&storage_));
+        std::destroy_at(reinterpret_cast<result_type*>(&storage_[0]));
       }
-      std::construct_at(reinterpret_cast<result_type*>(&storage_), std::forward<Args>(args)...);
+      std::construct_at(reinterpret_cast<result_type*>(&storage_[0]), std::forward<Args>(args)...);
+      constructed_ = true;
     }
 
     T& get() {
-      return *reinterpret_cast<result_type*>(&storage_);
+      return *reinterpret_cast<result_type*>(&storage_[0]);
     }
     const T& get() const {
-      return *reinterpret_cast<result_type*>(&storage_);
+      return *reinterpret_cast<result_type*>(&storage_[0]);
     }
   };
 
@@ -84,14 +85,14 @@ namespace fabric::tasks {
   protected:
     bool                                                   detached_{false};
     bool                                                   cancelled_{false};
-    std::forward_list<std::pair<executor*, task_handle<>>> awaiting_cancellation_{};
+    std::forward_list<std::pair<tasks::executor*, tasks::task_handle<>>> awaiting_cancellation_{};
 
   public:
-    executor::sptr                executor_{};
-    std::weak_ptr<schedule_t>     schedule_{};
-    std::shared_ptr<task_context> context_{};
+    tasks::executor::sptr                executor_{};
+    std::weak_ptr<tasks::schedule_t>     schedule_{};
+    std::shared_ptr<tasks::task_context> context_{};
     std::atomic_bool              overridden_ctx_{false};
-    continuation_list_t           cont_{};
+    tasks::continuation_list_t           cont_{};
 
     void set_exception(std::exception_ptr exception) {
       exception_ = exception;
@@ -105,7 +106,7 @@ namespace fabric::tasks {
       return cancelled_;
     }
 
-    void await_cancellation(executor* exec, task_handle<> h) {
+    void await_cancellation(tasks::executor* exec, tasks::task_handle<> h) {
       awaiting_cancellation_.emplace_front(exec, h);
     }
 
@@ -113,14 +114,14 @@ namespace fabric::tasks {
       detached_ = true;
     }
 
-    void set_executor(const std::shared_ptr<executor>& e) {
+    void set_executor(const std::shared_ptr<tasks::executor>& e) {
       executor_              = e;
       schedule_              = e->get_schedule();
       context_               = e->get_spawn_context();
       cont_.current_executor = e.get();
     }
 
-    void set_executor(const std::weak_ptr<executor>& e) {
+    void set_executor(const std::weak_ptr<tasks::executor>& e) {
       auto ex                = e.lock();
       executor_              = ex;
       schedule_              = ex->get_schedule();
@@ -137,56 +138,56 @@ namespace fabric::tasks {
     }
 
     template <typename T>
-    void set_resource(const std::shared_ptr<T>& res, task_resource_id<T> id = {}) {
+    void set_resource(const std::shared_ptr<T>& res, tasks::task_resource_id<T> id = {}) {
       if (not overridden_ctx_.load()) {
-        context_ = task_context::make_copy(context_);
+        context_ = tasks::task_context::make_copy(context_);
         overridden_ctx_.store(true);
       }
       context_->set_resource(res, id);
     }
 
     template <typename T>
-    bool has_resource(task_resource_id<T> id = {}) {
+    bool has_resource(tasks::task_resource_id<T> id = {}) {
       return context_->has_resource(id);
     }
 
     template <typename T>
-    std::shared_ptr<T> get_resource(task_resource_id<T> id = {}) {
+    std::shared_ptr<T> get_resource(tasks::task_resource_id<T> id = {}) {
       return context_->get_resource(id);
     }
 
     void reschedule() {
       if (not schedule_.expired()) {
         schedule_.lock()->enqueue(
-          task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
+          tasks::task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
         );
       } else {
         throw std::logic_error{"invalid schedule"};
       }
     }
 
-    void reschedule(time_point when) {
+    void reschedule(tasks::time_point when) {
       if (not schedule_.expired()) {
         schedule_.lock()->enqueue_delayed(
-          when, task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
+          when, tasks::task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
         );
       } else {
         throw std::logic_error{"invalid schedule"};
       }
     }
 
-    void reschedule(duration delay) {
+    void reschedule(tasks::duration delay) {
       if (not schedule_.expired()) {
         schedule_.lock()->enqueue_delayed(
-          clock::now() + delay,
-          task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
+          tasks::clock::now() + delay,
+          tasks::task_handle<task_promise_base>::from_promise(*static_cast<task_promise_base*>(this))
         );
       } else {
         throw std::logic_error{"invalid schedule"};
       }
     }
 
-    std::weak_ptr<executor> get_executor() const {
+    std::weak_ptr<tasks::executor> get_executor() const {
       return executor_;
     }
 
@@ -202,7 +203,7 @@ namespace fabric::tasks {
   };
 } // namespace fabric::tasks
 
-namespace fabric::tasks {
+namespace fabric {
   export template <typename Ret>
   class task_promise_t: public task_promise_base {
     task_result_storage<Ret> return_value_{};
@@ -216,7 +217,7 @@ namespace fabric::tasks {
       return {};
     }
 
-    continuation_list_t final_suspend() noexcept {
+    tasks::continuation_list_t final_suspend() noexcept {
       this->cont_.current_executor = this->executor_.get();
       this->cont_.detached         = this->detached_;
       return this->cont_;
@@ -227,7 +228,7 @@ namespace fabric::tasks {
     }
 
     task<Ret> get_return_object() {
-      return task<Ret>{task_handle<task_promise_t>::from_promise(*this)};
+      return task<Ret>{tasks::task_handle<task_promise_t>::from_promise(*this)};
     }
 
     void return_value(Ret value) {
@@ -254,7 +255,7 @@ namespace fabric::tasks {
       return {};
     }
 
-    continuation_list_t final_suspend() noexcept {
+    tasks::continuation_list_t final_suspend() noexcept {
       this->cont_.current_executor = this->executor_.get();
       this->cont_.detached         = this->detached_;
       return this->cont_;
@@ -265,7 +266,7 @@ namespace fabric::tasks {
     }
 
     task<> get_return_object() {
-      return task<>{task_handle<task_promise_t>::from_promise(*this)};
+      return task<>{tasks::task_handle<task_promise_t>::from_promise(*this)};
     }
 
     void return_void() {}
