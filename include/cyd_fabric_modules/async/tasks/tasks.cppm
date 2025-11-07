@@ -30,3 +30,7 @@ export import :this_task.keep_alive;
 export import :this_task.cancellation;
 
 export namespace fabric::tasks {}
+
+export namespace fabric {
+  inline constexpr fabric::task<> (*noop_task)(){[] -> task<> { co_return; }};
+} // namespace fabric
