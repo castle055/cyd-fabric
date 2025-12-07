@@ -26,8 +26,10 @@ export namespace fabric::async {
     // ! Constructor
     async_bus_t()
         : tasks::executor::sptr(tasks::executor::make()),
-          event_processing_task_(get()->schedule(ebus::event_processing_task()).share()),
+          event_processing_task_(get()->schedule(ebus::event_processing_task()).detach()),
           stop_bus_listener(on_event([&](const StopBusEvent& ev) -> task<> {
+            event_processing_task_.cancel();
+            co_await event_processing_task_;
             get()->request_stop();
             LOG::print{DEBUG}("Stop Bus Event received. Executor stop requested.");
             co_return;
@@ -45,6 +47,10 @@ export namespace fabric::async {
     // ! Move
     async_bus_t(async_bus_t&& rhs)                 = delete;
     async_bus_t& operator=(async_bus_t&& rhs)      = delete;
+
+    ~async_bus_t() {
+      event_processing_task_.cancel();
+    }
 
     timer_t create_timer(timer_options_t opts, auto callback) {
       const auto data = std::make_shared<timer_data_t>(opts.interval, opts.repeat, callback);
@@ -96,7 +102,7 @@ export namespace fabric::async {
     }
 
   private:
-    shared_task<>          event_processing_task_;
+    detached_task          event_processing_task_;
     listener<StopBusEvent> stop_bus_listener;
   };
 } // namespace fabric::async

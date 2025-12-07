@@ -166,10 +166,10 @@ export namespace fabric::async {
     task<> event_processing_task() {
       LOG::print{DEBUG}("Event processing started");
       const auto& exec = co_await this_task::get_executor();
-      while (true) {
-        co_await events_awaitable;
+      while (not co_await this_task::is_cancelled()) {
         swap_ebuss();
         co_await process_all_events_task(exec, back_ebus);
+        co_await events_awaitable;
       }
       co_return;
     }
