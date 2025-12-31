@@ -92,14 +92,9 @@ export namespace fabric {
         (std::is_copy_constructible_v<Ret>)
       )
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        auto e = h_.promise().get_exception();
-        if (e != nullptr) {
-          throw e;
-        }
+      throw_if_needed();
         std::remove_reference_t<Ret>& res{h_.promise().get_result()};
         return std::move(res);
-      }
     }
 
     auto& await_resume()
@@ -108,27 +103,17 @@ export namespace fabric {
         (not std::is_copy_constructible_v<Ret>)
       )
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        auto e = h_.promise().get_exception();
-        if (e != nullptr) {
-          throw e;
-        }
-        std::remove_reference_t<Ret>& res{h_.promise().get_result()};
-        return res;
-      }
+      throw_if_needed();
+      std::remove_reference_t<Ret>& res{h_.promise().get_result()};
+      return res;
     }
 
     auto& await_resume()
       requires((not std::same_as<void, Ret>) and std::is_lvalue_reference_v<Ret>)
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        auto e = h_.promise().get_exception();
-        if (e != nullptr) {
-          throw e;
-        }
-        Ret res{h_.promise().get_result()};
-        return res;
-      }
+      throw_if_needed();
+      Ret res{h_.promise().get_result()};
+      return res;
     }
 
     auto await_resume()
@@ -137,15 +122,10 @@ export namespace fabric {
         (std::is_copy_constructible_v<Ret>)
       )
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        auto e = h_.promise().get_exception();
-        if (e != nullptr) {
-          throw e;
-        }
-        Ret res{h_.promise().get_result()};
-        // h_.destroy();
-        return std::move(res);
-      }
+      throw_if_needed();
+      Ret res{h_.promise().get_result()};
+      // h_.destroy();
+      return std::move(res);
     }
 
     void await_resume() &
@@ -154,10 +134,7 @@ export namespace fabric {
         ((not std::is_reference_v<Ret>) and (not std::is_copy_constructible_v<Ret>))
       )
     {
-      auto e = h_.promise().get_exception();
-      if (e != nullptr) {
-        throw e;
-      }
+      throw_if_needed();
     }
 
     Ret await_resume() &&
@@ -167,10 +144,7 @@ export namespace fabric {
       )
     {
       // if constexpr (not std::is_void_v<Ret>) {
-      auto e = h_.promise().get_exception();
-      if (e != nullptr) {
-        throw e;
-      }
+      throw_if_needed();
       Ret res = std::move(h_.promise().get_result());
       // h_.destroy();
       return std::move(res);
@@ -224,12 +198,17 @@ export namespace fabric {
       return h_.done();
     }
 
+    void get()
+      requires(std::same_as<void, Ret>)
+    {
+      throw_if_needed();
+    }
+
     auto& get()
       requires((not std::same_as<void, Ret>) and std::is_copy_constructible_v<Ret>)
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        return h_.promise().get_result();
-      }
+      throw_if_needed();
+      return h_.promise().get_result();
     }
 
     auto&& get()
@@ -238,9 +217,8 @@ export namespace fabric {
         std::is_move_constructible_v<Ret>
       )
     {
-      if constexpr (not std::is_void_v<Ret>) {
-        return std::move(h_.promise().get_result());
-      }
+      throw_if_needed();
+      return std::move(h_.promise().get_result());
     }
 
     void cancel() {
@@ -256,6 +234,14 @@ export namespace fabric {
     }
 
     detached_task detach();
+
+  private:
+    void throw_if_needed() {
+      const auto& e = h_.promise().get_exception();
+      if (e != nullptr) {
+        std::rethrow_exception(e);
+      }
+    }
   };
 
   template <typename>
