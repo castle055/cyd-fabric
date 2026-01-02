@@ -276,4 +276,12 @@ namespace fabric {
     //   return {};
     // }
   };
-} // namespace fabric::tasks
+} // namespace fabric
+
+void fabric::tasks::detail::throw_if_needed(void* address) {
+  auto& promise = std::coroutine_handle<task_promise_base>::from_address(address).promise();
+  if (auto e = promise.get_exception(); e != nullptr) {
+    std::rethrow_exception(e);
+  }
+}
+

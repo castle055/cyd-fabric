@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Víctor Castillo Agüero.
+// Copyright (c) 2025-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  main_executor.cppm
@@ -11,7 +11,6 @@ export module fabric.main;
 import std;
 import reflect;
 
-export import fabric.io;
 export import fabric.logging;
 export import fabric.tasks;
 export import fabric.thread_name;
@@ -45,12 +44,6 @@ export namespace fabric::runtime {
     exec                  = tasks::executor::make(main_exec_thread);
     LOG::print{DEBUG}("Initialized main executor");
 
-    const io::io_context::sptr io_context = io::io_context::make<io::WORKER_THREAD>();
-    LOG::print{DEBUG}("Initialized IO context (WORKER_THREAD)");
-
-    exec->get_spawn_context()->set_resource(io_context);
-    LOG::print{DEBUG}("Attached IO context to main executor");
-
     global_services =
       services::ServiceContext::make<services::GlobalScope>(exec, {"GlobalContext"});
 
@@ -74,12 +67,6 @@ export namespace fabric::runtime {
     auto main_exec_thread = std::make_shared<tasks::main_executor_thread_t>();
     exec                  = tasks::executor::make(main_exec_thread);
     LOG::print{DEBUG}("Initialized main executor");
-
-    const io::io_context::sptr io_context = io::io_context::make<io::WORKER_THREAD>();
-    LOG::print{DEBUG}("Initialized IO context (WORKER_THREAD)");
-
-    exec->get_spawn_context()->set_resource(io_context);
-    LOG::print{DEBUG}("Attached IO context to main executor");
 
     global_services =
       services::ServiceContext::make<services::GlobalScope>(exec, {"GlobalContext"});

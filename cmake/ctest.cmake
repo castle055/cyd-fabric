@@ -1,7 +1,6 @@
 # Copyright (c) 2024, Víctor Castillo Agüero.
 # SPDX-License-Identifier: GPL-3.0-or-later
-
-macro(target_configure_test_directory TEST_TARGET TEST_DIR)
+macro(target_configure_test_directory TEST_TARGET TEST_DIR TEST_TARGET_LIST)
     enable_testing()
 
     add_custom_target(TEST_SUITE_${TEST_TARGET})
@@ -21,25 +20,33 @@ macro(target_configure_test_directory TEST_TARGET TEST_DIR)
             string(SUBSTRING ${TDir} 1 -1 TDir)
         endif ()
 
+
         get_filename_component(TName ${test} NAME_WLE)
-        add_executable(TEST_${TName} ${test})
-        reflect_target(TEST_${TName})
-        target_link_libraries(TEST_${TName} PRIVATE ${TEST_TARGET})
-        target_include_directories(TEST_${TName} PRIVATE ${TEST_DIR}/common)
-
-        add_dependencies(TEST_SUITE_${TEST_TARGET} TEST_${TName})
-
         set(TFullName ${TName})
         if (NOT "${TDir}" STREQUAL "")
             set(TFullName "${TDir}/${TName}")
+            string(REPLACE "/" "." TFullName ${TFullName})
         endif ()
 
-        file(STRINGS ${test} TLines)
-        foreach (line ${TLines})
-            if ("${line}" MATCHES "^TEST\\(\"(.*)\"\\)")
-                set(case ${CMAKE_MATCH_1})
-                add_test(NAME "${TFullName} - ${case}" COMMAND $<TARGET_FILE:TEST_${TName}> "${case}")
-            endif ()
-        endforeach ()
+        add_executable(${TFullName} ${test})
+        LIST(APPEND "${TEST_TARGET_LIST}" "${TFullName}")
+        target_link_libraries(${TFullName} PRIVATE ${TEST_TARGET})
+        target_link_libraries(${TFullName} PUBLIC gtest gtest_main)
+        target_include_directories(${TFullName} PRIVATE ${TEST_DIR}/common)
+
+        add_dependencies(TEST_SUITE_${TEST_TARGET} ${TFullName})
+
+        gtest_add_tests(
+                TARGET      ${TFullName}
+                TEST_PREFIX "${TFullName}::")
+
+#
+#        file(STRINGS ${test} TLines)
+#        foreach (line ${TLines})
+#            if ("${line}" MATCHES "^TEST\\(\"(.*)\"\\)")
+#                set(case ${CMAKE_MATCH_1})
+#                add_test(NAME "${TFullName}.${case}" COMMAND $<TARGET_FILE:TEST_${TName}> "${case}")
+#            endif ()
+#        endforeach ()
     endforeach ()
 endmacro()

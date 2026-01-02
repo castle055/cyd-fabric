@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  log_entry.cppm
@@ -30,7 +30,7 @@ export namespace LOG {
   struct entry_t {
     std::chrono::system_clock::time_point timestamp;
     std::filesystem::path                 path{};
-    unsigned int                          linenum = 0;
+    unsigned long                         linenum = 0;
     std::string_view                      function{""};
     std::string_view                      message{""};
     LEVEL                                 level{INFO};

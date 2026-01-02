@@ -1,8 +1,8 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  apply.cppm
- *! \brief 
+ *! \brief
  *!
  */
 
@@ -12,60 +12,72 @@ export import packtl;
 // import fabric.refl;
 
 export namespace fabric::ts {
-  template<typename...>
+  template <typename...>
   struct with_type;
 }
 
 namespace fabric::ts::impl {
-  template<typename...>
+  template <typename...>
   struct with_type;
 }
 
 namespace fabric::ts {
-  template<typename... Args>
-  struct with_type: impl::with_type<packtl::pack<Args...>> {
-  };
+  template <typename... Args>
+  struct with_type: impl::with_type<packtl::pack<Args...>> {};
 
-  template<template <typename...> typename Pack, typename... Args>
-  struct with_type<Pack<Args...>>: impl::with_type<Pack<Args...>> {
-  };
+  template <template <typename...> typename Pack, typename... Args>
+  struct with_type<Pack<Args...>>: impl::with_type<Pack<Args...>> {};
 
-  template<template <std::size_t...> typename Pack, std::size_t... Args>
-  struct with_type<Pack<Args...>>: impl::with_type<Pack<Args...>> {
-  };
-}
+  template <template <std::size_t...> typename Pack, std::size_t... Args>
+  struct with_type<Pack<Args...>>: impl::with_type<Pack<Args...>> {};
+} // namespace fabric::ts
 
 namespace fabric::ts::impl {
-  template<typename... Args>
+  template <typename... Args>
   struct with_type<packtl::pack<Args...>> {
-    template<template <typename...> typename Transform>
+    template <template <typename...> typename Transform>
     using apply = with_type<packtl::pack<typename Transform<Args...>::type>>;
 
-    template<template <typename...> typename Transform>
+    template <template <typename...> typename Transform, typename... TArgs>
+    using apply_w_args = with_type<packtl::pack<typename Transform<TArgs..., Args...>::type>>;
+
+    template <template <typename...> typename Transform>
     using apply_as_pack = with_type<typename Transform<packtl::pack<Args...>>::type>;
 
-    using done = std::conditional_t<sizeof...(Args) == 1, typename packtl::get_first<Args...>::type, packtl::pack<Args...>>;
+    template <template <typename...> typename Transform, typename... TArgs>
+    using apply_as_pack_w_args =
+      with_type<typename Transform<TArgs..., packtl::pack<Args...>>::type>;
+
+    using result_pack = packtl::pack<Args...>;
+
+    using done = std::conditional_t<
+      (sizeof...(Args) == 0),
+      packtl::pack<>,
+      std::conditional_t<
+        sizeof...(Args) == 1,
+        typename packtl::get_first<Args..., std::monostate>::type,
+        packtl::pack<Args...>>>;
   };
 
-  template<template <typename...> typename Pack, typename... Args>
+  template <template <typename...> typename Pack, typename... Args>
   struct with_type<Pack<Args...>> {
-    template<template <typename...> typename Transform>
+    template <template <typename...> typename Transform>
     using apply = with_type<Pack<typename Transform<Args...>::type>>;
 
-    template<template <typename...> typename Transform>
+    template <template <typename...> typename Transform>
     using apply_as_pack = with_type<typename Transform<Pack<Args...>>::type>;
 
     using done = Pack<Args...>;
   };
 
-  template<template <std::size_t...> typename Pack, std::size_t... Args>
+  template <template <std::size_t...> typename Pack, std::size_t... Args>
   struct with_type<Pack<Args...>> {
-    template<template <std::size_t...> typename Transform>
+    template <template <std::size_t...> typename Transform>
     using apply = with_type<Pack<Transform<Args...>::value>>;
 
-    template<template <typename...> typename Transform>
+    template <template <typename...> typename Transform>
     using apply_as_pack = with_type<typename Transform<Pack<Args...>>::type>;
 
     using done = Pack<Args...>;
   };
-}
+} // namespace fabric::ts::impl

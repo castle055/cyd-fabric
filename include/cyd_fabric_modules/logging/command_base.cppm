@@ -1,32 +1,31 @@
-// Copyright (c) 2024, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  command_base.cppm
- *! \brief 
+ *! \brief
  *!
  */
 
 export module fabric.logging:command_base;
 export import :context;
+import std;
+import reflect;
+export import fabric.source_location;
 
 export namespace LOG {
-  void log_entry(const entry_t &entry) {
-    for (const auto &filter: config::filters) {
-      auto &constraint = filter.constraint_;
-      if (constraint.matches_path(entry.path)
-          && constraint.matches_function(entry.function)
-          && constraint.matches_message(entry.message)
-          && constraint.matches_linenum(entry.linenum)
-          && constraint.matches_level(entry.level)
-      ) {
+  void log_entry(const entry_t& entry) {
+    for (const auto& filter: config::filters) {
+      auto& constraint = filter.constraint_;
+      if (constraint.matches_path(entry.path) && constraint.matches_function(entry.function) &&
+          constraint.matches_message(entry.message) && constraint.matches_linenum(entry.linenum) &&
+          constraint.matches_level(entry.level)) {
         config::targets.at(filter.target_.id_hash)->append(entry);
       }
     }
   }
-}
+} // namespace LOG
 
-export
-{
+export {
   constexpr const char* normalize(const char* path, const char* path_ref) {
     std::size_t i = 0;
     while (path[i] == path_ref[i] && path[i] != '\0' && path_ref[i] != '\0') {

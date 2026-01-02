@@ -95,6 +95,15 @@ FetchContent_MakeAvailable(cpp_reflect)
 #[[                              CONFIGURE cURL                              ]]#
 find_package(CURL REQUIRED)
 
+#[[                         CONFIGURE GOOGLE TESTS                           ]]#
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/v1.17.0.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 ################################################################################
 #[[                           CONFIGURE CYD FABRIC                           ]]#
 ################################################################################
@@ -147,13 +156,30 @@ target_link_libraries(cyd_fabric
 )
 
 
+#################################################################################
+##[[                             CONFIGURE TESTS                              ]]#
+#################################################################################
+#include(${FABRIC_CMAKE_DIR}/ctest.cmake)
+#
+#if (FABRIC_DEV_MODE AND FABRIC_BUILD_TESTS)
+#    target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR} TEST_TARGET_LIST)
+#    foreach (TEST IN LISTS TEST_TARGET_LIST)
+#        reflect_target(${TEST})
+#    endforeach ()
+#endif ()
+
 ################################################################################
 #[[                             CONFIGURE TESTS                              ]]#
 ################################################################################
-include(${FABRIC_CMAKE_DIR}/ctest.cmake)
-
+#include(CTest)
+enable_testing()
+include(GoogleTest)
 if (FABRIC_DEV_MODE AND FABRIC_BUILD_TESTS)
-    target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR})
+    include(cmake/ctest.cmake)
+    target_configure_test_directory(cyd_fabric ${FABRIC_TEST_DIR} TEST_TARGET_LIST)
+    foreach (TEST IN LISTS TEST_TARGET_LIST)
+        reflect_target(${TEST})
+    endforeach ()
 endif ()
 
 

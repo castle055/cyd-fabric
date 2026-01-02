@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Víctor Castillo Agüero.
+// Copyright (c) 2025-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  result.cppm
@@ -10,180 +10,330 @@ export module fabric.result;
 
 import std;
 import reflect;
+import packtl;
 
+import fabric.ts.apply;
+import fabric.templates.functor_arguments;
 import fabric.logging;
-export import :result_void;
+import fabric.exception;
+export import fabric.error;
 
-export namespace fabric {
-  template <typename E, typename T = void>
-  class result {
-    std::variant<std::monostate, T, E> value_{};
+template <ErrorConcept E>
+class ErrorAdapter {
+public:
+  using error_type = E;
+};
 
-    bool is_unset() const {
-      return value_.index() == 0;
+
+template <typename T>
+struct ResultStorage;
+
+template <typename T>
+  requires(not std::is_void_v<T>)
+struct ResultStorage<T> {
+  T value{};
+};
+
+template <>
+struct ResultStorage<void> {};
+
+export template <typename... Ts>
+struct Result {
+private:
+  using first_T = typename packtl::get_first<packtl::pack<Ts...>>::type;
+
+  static constexpr bool first_T_is_void        = std::is_void_v<first_T>;
+  static constexpr bool result_is_void         = first_T_is_void or ErrorConcept<first_T>;
+  static constexpr bool first_T_is_return_type = not ErrorConcept<first_T>;
+
+public:
+  using result_type         = std::conditional_t<result_is_void, void, first_T>;
+  using result_storage_type = ResultStorage<result_type>;
+  using error_types         = std::conditional_t<
+            first_T_is_return_type,
+            typename packtl::remove_first<1, Ts...>::type,
+            packtl::pack<Ts...>>;
+
+  static constexpr std::size_t error_type_count   = packtl::get_size<error_types>::value;
+  static constexpr bool        can_contain_errors = error_type_count > 0;
+
+  template <ErrorConcept E>
+  static constexpr bool can_contain_error = packtl::has_item<E, error_types>::value;
+
+  using error_union = std::conditional_t<
+    can_contain_errors,
+    typename packtl::swap_pack<error_types, std::variant>::type,
+    void>;
+
+private:
+  template <ErrorConcept E>
+  using without_error_type = packtl::swap_pack<
+    typename fabric::ts::with_type<error_types>                           //
+    ::template apply_as_pack_w_args<packtl::take_one_out, E>              //
+    ::template apply_as_pack_w_args<packtl::prepend, result_storage_type> //
+    ::result_pack,
+    Result>::type;
+
+  using value_union = std::conditional_t<
+    (not can_contain_errors),
+    std::variant<std::monostate, ResultStorage<result_type>>,
+    std::variant<std::monostate, ResultStorage<result_type>, error_union>>;
+
+private:
+  value_union value_{};
+
+public:
+  // Default construct
+  Result()
+    requires (result_is_void or std::is_default_constructible_v<result_type>)
+  {
+    value_.template emplace<result_storage_type>();
+  }
+
+  // construct from value
+  template <typename R = result_type>
+    requires(not result_is_void and not ErrorConcept<R> and std::convertible_to<R, result_type>)
+  Result(const R& ret)
+    requires std::is_copy_constructible_v<result_type>
+      : value_(result_storage_type{result_type(ret)}) {}
+
+  template <typename R = result_type>
+    requires(not result_is_void and not ErrorConcept<R> and std::convertible_to<R, result_type>)
+  Result(R&& ret)
+      : value_(result_storage_type{result_type(std::move(ret))}) {}
+
+  // construct from error
+  template <ErrorConcept E>
+    requires can_contain_error<E>
+  Result(const E& err) {
+    value_.template emplace<error_union>(err);
+  }
+
+  template <ErrorConcept E>
+    requires can_contain_error<E>
+  Result(E&& err) {
+    value_.template emplace<error_union>(std::move(err));
+  }
+
+  // construct from different Result type
+  template <ErrorConcept... Es>
+    requires(can_contain_error<Es> and ...)
+  Result(Result<result_type, Es...>&& res) {
+    if (res.ok()) {
+      value_.template emplace<result_storage_type>(
+        result_storage_type{result_type(std::move(res.value()))}
+      );
+    } else {
+      std::visit(
+        [&]<ErrorConcept E>(const E& err) { value_.template emplace<error_union>(std::move(err)); },
+        res.error()
+      );
     }
+  }
 
-  public:
-    using error_type = E;
-    using value_type = T;
-
-    result() = default;
-    result(const result& other)
-      requires std::is_copy_constructible_v<T>
-    {
-      if (other.has_value()) {
-        value_.template emplace<T>(std::get<1>(other.value_));
+  template <typename R, ErrorConcept... Es>
+    requires(
+      (can_contain_error<Es> and ...) and (result_is_void or std::is_convertible_v<R, result_type>)
+    )
+  Result(Result<R, Es...>&& res) {
+    if (res.ok()) {
+      if constexpr (result_is_void) {
+        value_.template emplace<result_storage_type>(result_storage_type{});
       } else {
-        if (not other.is_unset()) {
-          value_.template emplace<E>(std::get<2>(other.value_));
-        }
+        value_.template emplace<result_storage_type>(
+          result_storage_type{result_type(std::move(res.value()))}
+        );
       }
     }
-    result& operator=(const result& other)
-      requires std::is_copy_constructible_v<T>
-    {
-      if (other.has_value()) {
-        value_.template emplace<T>(std::get<1>(other.value_));
-      } else {
-        if (not other.is_unset()) {
-          value_.template emplace<E>(std::get<2>(other.value_));
-        }
-      }
-      return *this;
+    if (not res.ok()) {
+      std::visit(
+        [&]<ErrorConcept E>(const E& err) { value_.template emplace<error_union>(std::move(err)); },
+        res.error()
+      );
     }
-    result(result&& other)
-      requires std::is_move_constructible_v<T>
-    {
-      if (other.has_value()) {
-        value_.template emplace<T>(std::move(std::get<1>(other.value_)));
-      } else {
-        if (not other.is_unset()) {
-          value_.template emplace<E>(std::get<2>(other.value_));
-        }
-      }
-    }
-    result& operator=(result&& other)
-      requires std::is_move_constructible_v<T>
-    {
-      if (other.has_value()) {
-        value_.template emplace<T>(std::move(std::get<1>(other.value_)));
-      } else {
-        if (not other.is_unset()) {
-          value_.template emplace<E>(std::get<2>(other.value_));
-        }
-      }
-      return *this;
-    }
-    result(const T& val)
-        : value_(val) {}
-    result(T&& val)
-        : value_(std::move(val)) {}
-    result(E err)
-        : value_(err) {}
+  }
 
-    bool has_value() const {
-      return value_.index() == 1;
-    }
-    bool ok() const {
-      return has_value();
-    }
+  Result(Result<void>&& err)
+    requires(result_is_void and error_type_count == 0)
+      : value_(result_storage_type{}) {}
 
-    T&& value() {
-      if (has_value()) {
-        return std::move(std::get<1>(value_));
-      } else {
-        if (is_unset()) {
-          throw std::logic_error("result does not hold a value or an error");
-        } else {
-          throw std::get<2>(value_).make_exception();
-        }
-      }
-    }
+  Result(Result<>&& err)
+    requires(result_is_void and error_type_count == 0)
+      : value_(result_storage_type{}) {}
 
-    T* operator->() {
-      if (has_value()) {
-        return &std::get<1>(value_);
-      } else {
-        if (is_unset()) {
-          throw std::logic_error("result does not hold a value or an error");
-        } else {
-          throw std::get<2>(value_).make_exception();
-        }
+  // construct from error union
+  template <ErrorConcept... Es>
+    requires(can_contain_error<Es> and ...)
+  Result(std::variant<Es...>&& errors) {
+    std::visit(
+      [&]<ErrorConcept E>(E&& err) { value_.template emplace<error_union>(std::move(err)); }, errors
+    );
+  }
+  template <ErrorConcept... Es>
+    requires(can_contain_error<Es> and ...)
+  Result(const std::variant<Es...>& errors) {
+    std::visit(
+      [&]<ErrorConcept E>(const E& err) { value_.template emplace<error_union>(err); }, errors
+    );
+  }
+
+  // No Copy
+  Result(const Result& other)            = delete;
+  Result& operator=(const Result& other) = delete;
+
+  // Default Move
+  Result(Result&& other)            = default;
+  Result& operator=(Result&& other) = default;
+
+  template <typename Self>
+    requires(result_is_void)
+  void throw_error(this Self&& self, const fabric::SourceLocation& source_location = {}) {
+    std::forward<Self>(self).throw_if_error(source_location);
+  }
+
+  template <typename Self>
+    requires(not result_is_void)
+  auto&& throw_error(this Self&& self, const fabric::SourceLocation& source_location = {}) {
+    std::forward<Self>(self).throw_if_error(source_location);
+    return std::forward<Self>(self).value();
+  }
+
+  template <typename E>
+    requires can_contain_error<E>
+  auto throw_error(const fabric::SourceLocation& source_location = {}) {
+    if (not ok()) {
+      const error_union& err = error();
+      if (std::holds_alternative<E>(err)) {
+        throw ErrorException{std::get<E>(err), 0, source_location};
       }
     }
 
-    E error() const {
-      if (not has_value()) {
-        if (is_unset()) {
-          throw std::logic_error("result does not hold a value or an error");
-        } else {
-          return std::get<2>(value_);
-        }
-      } else {
-        throw fabric::exception("result does not hold error");
+    if constexpr (packtl::get_size<error_types>::value > 1) {
+      return without_error_type<E>{std::move(*this)};
+    } else {
+      return value();
+    }
+  }
+
+  template <typename E, typename Handler>
+    requires(
+      std::same_as<E, typename fabric::first_argument<Handler>::type> and can_contain_error<E> and
+      requires(E e, Handler h) { h(e); }
+    )
+  auto handle_error(Handler&& handler) {
+    if (not ok()) {
+      const error_union& err = error();
+      if (std::holds_alternative<E>(err)) {
+        const E& error = std::get<E>(err);
+        handler(error);
       }
     }
 
-    template <typename U>
-      requires(not std::same_as<void, U>)
-    result<E, U> map_value(auto&& f) const {
-      if (has_value()) {
-        return result<E, U>(f(std::move(std::get<1>(value_))));
-      } else {
-        if (is_unset()) {
-          return result<E, U>();
-        } else {
-          return result<E, U>(std::get<2>(value_));
-        }
+    if constexpr (packtl::get_size<error_types>::value > 1) {
+      return without_error_type<E>{std::move(*this)};
+    } else {
+      return value();
+    }
+  }
+
+  template <typename Handler>
+    requires(
+      can_contain_error<typename fabric::first_argument<Handler>::type> and
+      requires(typename fabric::first_argument<Handler>::type e, Handler h) { h(e); }
+    )
+  auto handle_error(Handler&& handler) {
+    using E = fabric::first_argument<Handler>::type;
+    return handle_error<E, Handler>(std::forward<Handler>(handler));
+  }
+
+  template <class Self>
+    requires(not result_is_void)
+  auto&& value(this Self&& self, const fabric::SourceLocation& source_location = {}) {
+    self.throw_if_error(source_location);
+    return std::get<result_storage_type>(std::forward<Self>(self).value_).value;
+  }
+
+  template <typename EUnion = error_union>
+    requires(can_contain_errors)
+  const EUnion& error(const fabric::SourceLocation& source_location = {}) const {
+    if (ok()) {
+      throw InvalidErrorAccessException{0, source_location};
+    }
+    return std::get<2>(value_);
+  }
+
+  bool ok() const {
+    return std::holds_alternative<result_storage_type>(value_);
+  }
+
+private:
+  void throw_if_error(const fabric::SourceLocation& source_location = {}) const {
+    if constexpr (can_contain_errors) {
+      if (not ok()) {
+        const error_union& err = error();
+        std::visit(
+          [source_location]<typename E>(E&& error) {
+            throw ErrorException{std::forward<E>(error), 0, source_location};
+          },
+          err
+        );
       }
     }
+  }
+};
 
-    template <typename U>
-      requires(std::same_as<void, U>)
-    result<E> map_value() const {
-      if (has_value()) {
-        return result<E>();
-      } else {
-        if (is_unset()) {
-          return result<E>();
-        } else {
-          return result<E>(std::get<2>(value_));
-        }
-      }
-    }
+export template <>
+struct Result<> {
+  using result_type                             = void;
+  using error_types                             = packtl::pack<>;
+  static constexpr std::size_t error_type_count = 0;
+  using error_union                             = void;
 
-    result<E, T> map_error(auto&& f) const {
-      if (has_value()) {
-        return result(std::move(std::get<1>(value_)));
-      } else {
-        if (is_unset()) {
-          throw std::logic_error("result does not hold a value or an error");
-        } else {
-          return result(f(std::get<2>(value_)));
-        }
-      }
-    }
+  // Default construct
+  Result() = default;
 
-    T&& unwrap(
-      const char* file_name    = normalize(__builtin_FILE(), __FILE__),
-      const char* fun          = __builtin_FUNCTION(),
-      const unsigned long line = __builtin_LINE()
-    ) {
-      if (has_value()) {
-        return std::move(std::get<1>(value_));
-      }
-      if (is_unset()) {
-        throw std::logic_error("result does not hold a value or an error");
-      }
-      throw std::get<2>(value_).make_exception(0, file_name, fun, line);
-    }
-  };
+  // construct from different Result type
+  template <typename R>
+    requires(not ErrorConcept<R>)
+  Result(Result<R>&& err) {}
 
-  template <typename>
-  struct is_result: std::false_type {};
-  template <typename E, typename R>
-  struct is_result<result<E, R>>: std::true_type {};
+  // No Copy
+  Result(const Result& other)            = delete;
+  Result& operator=(const Result& other) = delete;
 
-  template <typename T>
-  constexpr bool is_result_v = is_result<T>::value;
-} // namespace fabric::io
+  // Default Move
+  Result(Result&& other)            = default;
+  Result& operator=(Result&& other) = default;
+
+  bool ok() const {
+    return true;
+  }
+};
+
+template <typename>
+struct is_result: std::false_type {};
+template <typename R, ErrorConcept... Errs>
+struct is_result<Result<R, Errs...>>: std::true_type {};
+
+template <typename T>
+constexpr bool is_result_v = is_result<T>::value;
+
+export template <typename T>
+concept ResultConcept = is_result_v<T>;
+
+template <typename...>
+struct map_result_type_t;
+
+template <typename T, typename R, ErrorConcept... Errs>
+  requires(not ErrorConcept<R>)
+struct map_result_type_t<Result<R, Errs...>, T> {
+  using type = Result<T, Errs...>;
+};
+
+template <typename T, ErrorConcept... Errs>
+struct map_result_type_t<Result<Errs...>, T> {
+  using type = Result<T, Errs...>;
+};
+
+export template <typename... Args>
+using map_result_type = map_result_type_t<Args...>::type;

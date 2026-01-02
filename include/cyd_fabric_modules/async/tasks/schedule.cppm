@@ -13,6 +13,9 @@ export import :types;
 
 using namespace std::chrono_literals;
 
+namespace fabric::tasks::detail {
+  void throw_if_needed(void* address);
+}
 export namespace fabric::tasks {
   class schedule_t {
     struct delayed_task_t {
@@ -64,6 +67,9 @@ export namespace fabric::tasks {
         } catch (const std::exception& e) {
           std::cerr << e.what() << std::endl;
         }
+
+        detail::throw_if_needed(current_task_.value().address());
+
         current_task_ = std::nullopt;
         if (not task_queue_.empty()) {
           work_left = true;

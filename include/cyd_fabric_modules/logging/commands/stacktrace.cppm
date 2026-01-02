@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  print.cppm
@@ -103,10 +103,8 @@ static std::string cleanup_name(const std::string& str) {
 
 export namespace LOG {
   class stacktrace {
-    std::string         function;
-    const char*         path;
-    std::uint_least32_t linenum;
-    LEVEL               level;
+    fabric::SourceLocation location;
+    LEVEL                  level;
 
     std::vector<std::string> backtrace_items{};
 
@@ -116,16 +114,12 @@ export namespace LOG {
     NO_MOVE(stacktrace);
 
     explicit constexpr stacktrace(
-      const LEVEL         level       = ERROR,
-      unsigned int        skip_frames = 0,
-      const char*         file_name   = normalize(__builtin_FILE(), __FILE__),
-      const char*         fun         = __builtin_FUNCTION(),
-      const unsigned long line        = __builtin_LINE()
+      const LEVEL                   level       = ERROR,
+      unsigned int                  skip_frames = 0,
+      const fabric::SourceLocation& location = {}
     )
-        : level(level) {
-      function = fun;
-      linenum  = line;
-      path     = file_name;
+        : location(location),
+          level(level) {
 
       unw_cursor_t  cursor;
       unw_context_t context;
@@ -227,11 +221,11 @@ export namespace LOG {
         message.append(item).append("\n");
       }
       message = message.substr(0, message.size() - 1);
-      log_entry({
+      log_entry(LOG::entry_t{
         .timestamp = std::chrono::system_clock::now(),
-        .path      = std::filesystem::path{path},
-        .linenum   = linenum,
-        .function  = function,
+        .path      = std::filesystem::path{location.file_name},
+        .linenum   = location.line,
+        .function  = location.function_name,
         .message   = message,
         .level     = level,
       });

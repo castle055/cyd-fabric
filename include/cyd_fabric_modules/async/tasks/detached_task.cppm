@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 export module fabric.tasks:detached_task;
@@ -54,7 +54,7 @@ export namespace fabric {
     void await_resume() {
       auto e = get_promise().get_exception();
       if (e != nullptr) {
-        throw e;
+        std::rethrow_exception(e);
       }
     }
 

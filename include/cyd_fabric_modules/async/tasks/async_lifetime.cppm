@@ -1,10 +1,13 @@
-// Copyright (c) 2025, Víctor Castillo Agüero.
+// Copyright (c) 2025-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /*! \file  async_lifetime.cppm
  *! \brief
  *!
  */
+
+module;
+#include <fabric/unwrap.h>
 
 export module fabric.tasks:async_lifetime;
 
@@ -18,14 +21,12 @@ export import :this_task.keep_alive;
 namespace fabric::tasks {
   template <typename Data>
   struct async_lifetime_data: public Data {
-    tasks::executor::sptr       owner_executor;
-    keep_alive_token ka_token; // keep executor alive until request is done
+    tasks::executor::sptr owner_executor;
+    keep_alive_token      ka_token; // keep executor alive until request is done
 
     template <typename... Args>
     async_lifetime_data(
-      const tasks::executor::sptr&  owner_executor,
-      keep_alive_token&& ka_token,
-      Args&&... args
+      const tasks::executor::sptr& owner_executor, keep_alive_token&& ka_token, Args&&... args
     )
         : Data(std::forward<Args>(args)...),
           owner_executor(owner_executor),
@@ -52,18 +53,17 @@ export namespace fabric::tasks {
 
     ~async_lifetime() {
       if (nullptr != data) {
-        data->owner_executor->schedule([](std::unique_ptr<async_lifetime_data<Data>> data) -> task<> {
-          if (is_result_v<DestructRet<T>>) {
-            auto e = co_await T::destructor(*data);
-            if (not e.has_value()) {
-              e.error().throw_exception();
+        data->owner_executor
+          ->schedule([](std::unique_ptr<async_lifetime_data<Data>> data) -> task<> {
+            if (ResultConcept<DestructRet<T>>) {
+              (co_await T::destructor(*data)).throw_error();
+              co_return;
+            } else {
+              co_await T::destructor(*data);
+              co_return;
             }
-            co_return;
-          } else {
-            co_await T::destructor(*data);
-            co_return;
-          }
-        }(std::move(data))).detach();
+          }(std::move(data)))
+          .detach();
       }
     }
 
@@ -78,7 +78,7 @@ export namespace fabric::tasks {
         co_return;
       } else {
         auto r = co_await T::destructor(*data);
-        data = nullptr;
+        data   = nullptr;
         co_return std::move(r);
       }
     }
@@ -97,11 +97,13 @@ export namespace fabric::tasks {
 
     template <typename S = T, typename... Args>
       requires(std::same_as<S, T>)
-    static task<result<typename ConstructRet<S, Args...>::error_type, S>> make(Args&&... args) {
+    static task<map_result_type<ConstructRet<S, Args...>, S>> make(Args&&... args) {
       T obj{};
-      co_return (co_await obj.constructor(std::forward<Args>(args)...)).template map_value<S>([&] {
-        return std::move(obj);
-      });
+      auto res = co_await obj.constructor(std::forward<Args>(args)...);
+      if (not res.ok()) {
+        co_return res.error();
+      }
+      co_return std::move(obj);
     }
 
   protected:

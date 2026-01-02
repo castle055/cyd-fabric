@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, Víctor Castillo Agüero.
+// Copyright (c) 2024-2026, Víctor Castillo Agüero.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 export module fabric.tasks:task;
@@ -34,6 +34,7 @@ export namespace fabric {
     ~task() noexcept(false) {
       if (h_ != nullptr) {
         if (done() or not running()) {
+          throw_if_needed();
           h_.destroy();
         } else {
           throw fabric::exception("Task was destroyed before finishing.");
@@ -93,8 +94,8 @@ export namespace fabric {
       )
     {
       throw_if_needed();
-        std::remove_reference_t<Ret>& res{h_.promise().get_result()};
-        return std::move(res);
+      std::remove_reference_t<Ret>& res{h_.promise().get_result()};
+      return std::move(res);
     }
 
     auto& await_resume()
@@ -167,7 +168,9 @@ export namespace fabric {
       }
       void await_resume()
         requires(std::same_as<void, Ret>)
-      {}
+      {
+        task.throw_if_needed();
+      }
       auto& await_resume()
         requires((not std::same_as<void, Ret>) and (std::is_reference_v<Ret>))
       {
@@ -236,9 +239,13 @@ export namespace fabric {
     detached_task detach();
 
   private:
+    bool already_thrown{false};
     void throw_if_needed() {
+      if (already_thrown)
+        return;
       const auto& e = h_.promise().get_exception();
       if (e != nullptr) {
+        already_thrown = true;
         std::rethrow_exception(e);
       }
     }
